@@ -9,15 +9,23 @@ pg.types.setTypeParser(20, (v) => (v === null ? null : parseInt(v, 10)))
 const POOLED = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING || process.env.DATABASE_URL
 const DIRECT = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL || process.env.DATABASE_URL
 
+// Strip sslmode from the URL so our ssl config (below) wins — Supabase's pooler
+// presents a cert outside the default trust chain, so we disable verification.
+function clean(cs) {
+  if (!cs) return cs
+  try { const u = new URL(cs); u.searchParams.delete('sslmode'); return u.toString() } catch { return cs }
+}
+const SSL = { rejectUnauthorized: false }
+
 // reuse a single pool across warm invocations
 export function pool() {
   if (!globalThis.__kcemsPool) {
-    globalThis.__kcemsPool = new pg.Pool({ connectionString: POOLED, ssl: { rejectUnauthorized: false }, max: 3 })
+    globalThis.__kcemsPool = new pg.Pool({ connectionString: clean(POOLED), ssl: SSL, max: 3 })
   }
   return globalThis.__kcemsPool
 }
 export function directClient() {
-  return new pg.Client({ connectionString: DIRECT, ssl: { rejectUnauthorized: false } })
+  return new pg.Client({ connectionString: clean(DIRECT), ssl: SSL })
 }
 export const q = (text, params) => pool().query(text, params)
 
