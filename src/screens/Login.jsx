@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useStore, useSelectors } from '../store.jsx'
+import { useStore } from '../store.jsx'
 import { ROLES } from '../data/model.js'
 import { LogoMark } from '../components/Logo.jsx'
 
@@ -12,21 +12,20 @@ const DEMO = [
 ]
 
 export default function Login() {
-  const { dispatch } = useStore()
-  const { authenticate } = useSelectors()
+  const { login } = useStore()
   const nav = useNavigate()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  const go = (user) => {
-    dispatch({ type: 'LOGIN', userId: user.id })
-    nav(user.mustChangePassword ? '/change-password' : (ROLES[user.role]?.landing || '/'), { replace: true })
-  }
+  const go = (user) => nav(user.mustChangePassword ? '/change-password' : (ROLES[user.role]?.landing || '/'), { replace: true })
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
-    const res = authenticate(username, password)
+    setBusy(true)
+    const res = await login(username, password)
+    setBusy(false)
     if (!res.ok) {
       setErr(res.reason === 'disabled' ? 'This account has been disabled. Contact the owner.' : 'Wrong username or password.')
       return
@@ -35,7 +34,7 @@ export default function Login() {
     go(res.user)
   }
 
-  const quick = (u) => { const res = authenticate(u, 'kcems'); if (res.ok) go(res.user) }
+  const quick = async (u) => { const res = await login(u, 'kcems'); if (res.ok) go(res.user) }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', background: 'radial-gradient(120% 70% at 80% -10%, rgba(92,230,46,.10), transparent 55%)' }}>
@@ -68,7 +67,7 @@ export default function Login() {
 
             {err && <div style={{ marginTop: 14, font: '600 12px/1.4 var(--f-body)', color: 'var(--danger)', background: 'var(--danger-soft)', border: '1px solid rgba(242,112,79,.25)', borderRadius: 10, padding: '10px 13px' }}>{err}</div>}
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', height: 50, marginTop: 20, fontSize: 15 }}>Sign in</button>
+            <button type="submit" className="btn btn-primary" disabled={busy} style={{ width: '100%', height: 50, marginTop: 20, fontSize: 15 }}>{busy ? 'Signing in…' : 'Sign in'}</button>
             <div style={{ marginTop: 16, font: '500 12px/1 var(--f-body)', color: 'var(--text-40)' }}>Forgot your password? Ask the owner or admin to reset it.</div>
           </div>
         </form>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
-import { useStore, useSelectors } from '../store.jsx'
+import { useStore, useSelectors, LIVE } from '../store.jsx'
 import { ROLES } from '../data/model.js'
 import { LogoMark } from '../components/Logo.jsx'
 
@@ -12,18 +12,26 @@ export default function ChangePassword() {
   const [pw, setPw] = useState('')
   const [confirm, setConfirm] = useState('')
   const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
 
   if (!me) return <Navigate to="/login" replace />
   const forced = me.mustChangePassword
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
-    const check = authenticate(me.username, cur)
-    if (!check.ok) return setErr('Current password is incorrect.')
+    if (!LIVE) {
+      const check = authenticate(me.username, cur) // server verifies in live mode
+      if (!check.ok) return setErr('Current password is incorrect.')
+    }
     if (pw.length < 4) return setErr('New password must be at least 4 characters.')
     if (pw === cur) return setErr('New password must be different from the current one.')
     if (pw !== confirm) return setErr('The two new passwords don’t match.')
-    dispatch({ type: 'CHANGE_PASSWORD', userId: me.id, password: pw })
+    setBusy(true)
+    const res = await dispatch({ type: 'CHANGE_PASSWORD', userId: me.id, password: pw, currentPassword: cur })
+    setBusy(false)
+    if (LIVE && res && res.status !== 200) {
+      return setErr(res.body?.error === 'bad_current' ? 'Current password is incorrect.' : 'Could not update password. Try again.')
+    }
     toast('Password updated')
     nav(ROLES[me.role]?.landing || '/', { replace: true })
   }
@@ -61,7 +69,7 @@ export default function ChangePassword() {
 
         {err && <div style={{ marginTop: 14, font: '600 12px/1.4 var(--f-body)', color: 'var(--danger)', background: 'var(--danger-soft)', border: '1px solid rgba(242,112,79,.25)', borderRadius: 10, padding: '10px 13px' }}>{err}</div>}
 
-        <button type="submit" className="btn btn-primary" style={{ width: '100%', height: 48, marginTop: 20 }}>Save password</button>
+        <button type="submit" className="btn btn-primary" disabled={busy} style={{ width: '100%', height: 48, marginTop: 20 }}>{busy ? 'Saving…' : 'Save password'}</button>
         {!forced && <button type="button" className="btn btn-ghost" style={{ width: '100%', marginTop: 10 }} onClick={() => nav(-1)}>Cancel</button>}
       </form>
     </div>

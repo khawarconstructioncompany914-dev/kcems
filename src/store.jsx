@@ -153,23 +153,85 @@ function reducer(state, action) {
 // ---------------- context ----------------
 const StoreCtx = createContext(null)
 
-export function StoreProvider({ children }) {
-  const [state, dispatch] = useReducer(reducer, undefined, load)
+// Data source: "supabase" talks to the live /api backend; anything else = local demo.
+export const LIVE = import.meta.env.VITE_DATA_SOURCE === 'supabase'
+
+const API = {
+  async get(path) {
+    const r = await fetch(path, { credentials: 'same-origin' })
+    let body = {}; try { body = await r.json() } catch { /* ignore */ }
+    return { status: r.status, body }
+  },
+  async post(path, data) {
+    const r = await fetch(path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data || {}) })
+    let body = {}; try { body = await r.json() } catch { /* ignore */ }
+    return { status: r.status, body }
+  },
+}
+
+function useToasts() {
   const [toasts, setToasts] = useState([])
   const tid = useRef(0)
-
-  useEffect(() => {
-    try { localStorage.setItem(KEY, JSON.stringify(state)) } catch { /* ignore */ }
-  }, [state])
-
   const toast = useCallback((msg, tone = 'accent') => {
     const id = ++tid.current
     setToasts((t) => [...t, { id, msg, tone }])
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 2600)
   }, [])
+  return { toasts, toast }
+}
 
-  const value = useMemo(() => ({ state, dispatch, toast, toasts }), [state, toasts, toast])
+// ---- local (in-browser demo) ----
+function LocalStoreProvider({ children }) {
+  const [state, dispatch] = useReducer(reducer, undefined, load)
+  const { toasts, toast } = useToasts()
+  useEffect(() => { try { localStorage.setItem(KEY, JSON.stringify(state)) } catch { /* ignore */ } }, [state])
+  const login = useCallback(async (username, password) => {
+    const res = makeSelectors(state).authenticate(username, password)
+    if (res.ok) dispatch({ type: 'LOGIN', userId: res.user.id })
+    return res
+  }, [state])
+  const logout = useCallback(async () => dispatch({ type: 'LOGOUT' }), [])
+  const value = useMemo(() => ({ state, dispatch, toast, toasts, login, logout, loading: false }), [state, toasts, toast, login, logout])
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>
+}
+
+// ---- live (Supabase via the /api layer) ----
+const EMPTY = { users: [], sites: [], expenses: [], funds: [], audit: [], session: null }
+function LiveStoreProvider({ children }) {
+  const [state, setState] = useState(EMPTY)
+  const [loading, setLoading] = useState(true)
+  const { toasts, toast } = useToasts()
+  const hydrate = useCallback(async () => {
+    const { status, body } = await API.get('/api/data')
+    if (status === 200) setState({ users: body.users || [], sites: body.sites || [], expenses: body.expenses || [], funds: body.funds || [], audit: [], session: body.session || null })
+    else setState((s) => ({ ...s, session: null }))
+    setLoading(false)
+  }, [])
+  useEffect(() => { hydrate() }, [hydrate])
+  const login = useCallback(async (username, password) => {
+    const { status, body } = await API.post('/api/login', { username, password })
+    if (status === 200) { await hydrate(); return { ok: true, user: body.user } }
+    return { ok: false, reason: body.error || 'bad_password' }
+  }, [hydrate])
+  const logout = useCallback(async () => { await API.post('/api/logout'); setState(EMPTY) }, [])
+  const dispatch = useCallback(async (action) => {
+    if (action.type === 'LOGOUT') return logout()
+    if (action.type === 'LOGIN' || action.type === 'SWITCH_USER') return
+    const res = await API.post('/api/action', action)
+    await hydrate()
+    return res
+  }, [hydrate, logout])
+  const value = useMemo(() => ({ state, dispatch, toast, toasts, login, logout, loading }), [state, toasts, toast, loading, dispatch, login, logout])
+  if (loading) return <Splash />
+  return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>
+}
+
+function Splash() {
+  return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-root)', color: 'var(--accent)', font: '700 13px/1 var(--f-mono)', letterSpacing: '.1em' }}>KCEMS · loading…</div>
+}
+
+export function StoreProvider({ children }) {
+  return LIVE ? <LiveStoreProvider>{children}</LiveStoreProvider> : <LocalStoreProvider>{children}</LocalStoreProvider>
 }
 
 export function useStore() {
