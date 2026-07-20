@@ -96,16 +96,22 @@ async function seed(client) {
   ]
 
   await client.query('begin')
+  // site.engineer_id and app_user.site_id reference each other, so break the
+  // cycle: users first with a null site (engineers precede supervisors in the
+  // array, satisfying the self-FK), then sites, then backfill supervisor sites.
+  for (const u of users) {
+    await client.query(
+      `insert into app_user (id,name,username,phone,email,role,engineer_id,site_id,password_hash,must_change_password,status)
+       values ($1,$2,$3,$4,$5,$6,$7,null,$8,false,'active')`,
+      [u[0], u[1], u[2], u[3], u[4], u[5], u[6], hash])
+  }
   for (const s of sites) {
     await client.query(
       `insert into site (id,name,label,city,phase,engineer_id,budget,status,opening_materials,opening_labour,opening_fuel,opening_tea_food)
        values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`, s)
   }
   for (const u of users) {
-    await client.query(
-      `insert into app_user (id,name,username,phone,email,role,engineer_id,site_id,password_hash,must_change_password,status)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,false,'active')`,
-      [u[0], u[1], u[2], u[3], u[4], u[5], u[6], u[7], hash])
+    if (u[7]) await client.query('update app_user set site_id = $1 where id = $2', [u[7], u[0]])
   }
   for (const f of funds) {
     await client.query(
