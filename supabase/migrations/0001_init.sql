@@ -53,8 +53,9 @@ create table if not exists app_user (
   created_at            timestamptz not null default now()
 );
 
-alter table site
-  add constraint site_engineer_fk foreign key (engineer_id) references app_user(id);
+do $$ begin
+  alter table site add constraint site_engineer_fk foreign key (engineer_id) references app_user(id);
+exception when duplicate_object then null; end $$;
 
 -- ---------- expenses (the central record; runs the state machine) ----------
 create table if not exists expense (
