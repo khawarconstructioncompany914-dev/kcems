@@ -6,8 +6,8 @@ import bcrypt from 'bcryptjs'
 // pg parses int8/bigint as strings by default — return them as JS numbers.
 pg.types.setTypeParser(20, (v) => (v === null ? null : parseInt(v, 10)))
 
-const POOLED = process.env.POSTGRES_URL || process.env.DATABASE_URL
-const DIRECT = process.env.POSTGRES_URL_NON_POOLING || POOLED
+const POOLED = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING || process.env.DATABASE_URL
+const DIRECT = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL || process.env.DATABASE_URL
 
 // reuse a single pool across warm invocations
 export function pool() {
