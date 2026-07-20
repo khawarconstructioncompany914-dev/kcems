@@ -1,4 +1,4 @@
-import { currentUser, q, json, readBody, hashPassword, checkPassword } from './_lib.js'
+import { currentUser, q, json, readBody, hashPassword, checkPassword, supaStorage } from './_lib.js'
 
 // Mirrors the client reducer, but authorized server-side (Build Spec §2)
 // and running the atomic state-machine RPCs (§3). Front-end refetches /api/data after.
@@ -23,8 +23,20 @@ export default async function handler(req, res) {
       case 'LOG_EXPENSE': {
         if (me.role !== 'supervisor') return deny(res)
         const p = b.payload || {}
+        let bill = p.bill ? 'bill' : null
+        if (p.billData) {
+          const sb = supaStorage()
+          if (sb) {
+            try {
+              const buf = Buffer.from(String(p.billData).split(',').pop(), 'base64')
+              const path = `${me.id}/${Date.now()}.jpg`
+              const up = await sb.storage.from('bills').upload(path, buf, { contentType: 'image/jpeg', upsert: false })
+              if (!up.error) bill = path
+            } catch { /* fall back to marker */ }
+          }
+        }
         await q('select kcems_log_expense($1,$2,$3,$4,$5,$6)',
-          [me.id, p.siteId || me.site_id, Math.round(p.amount), p.category, p.note, p.bill ? 'bill' : null])
+          [me.id, p.siteId || me.site_id, Math.round(p.amount), p.category, p.note, bill])
         return ok(res)
       }
 

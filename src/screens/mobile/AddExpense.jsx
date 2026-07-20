@@ -5,6 +5,19 @@ import { formatMoney, CATEGORIES } from '../../data/model.js'
 
 const CATS = ['materials', 'labour', 'fuel', 'tea_food']
 
+// downscale + JPEG-compress the bill so uploads stay small and fast
+async function compress(file, max = 1280, quality = 0.72) {
+  if (!file) return null
+  try {
+    const img = await createImageBitmap(file)
+    const scale = Math.min(1, max / Math.max(img.width, img.height))
+    const w = Math.round(img.width * scale), h = Math.round(img.height * scale)
+    const c = document.createElement('canvas'); c.width = w; c.height = h
+    c.getContext('2d').drawImage(img, 0, 0, w, h)
+    return c.toDataURL('image/jpeg', quality)
+  } catch { return null }
+}
+
 export default function AddExpense() {
   const nav = useNavigate()
   const { dispatch, toast } = useStore()
@@ -17,7 +30,8 @@ export default function AddExpense() {
   const [amount, setAmount] = useState('')
   const [cat, setCat] = useState('materials')
   const [note, setNote] = useState('')
-  const [photo, setPhoto] = useState(null) // { url, name }
+  const [photo, setPhoto] = useState(null) // { url, name, file }
+  const [busy, setBusy] = useState(false)
 
   const amt = Math.max(0, Math.round(Number(amount.toString().replace(/[^\d]/g, '')) || 0))
   const valid = amt > 0 && note.trim() && !!photo
@@ -26,17 +40,17 @@ export default function AddExpense() {
     const f = e.target.files?.[0]
     if (!f) return
     if (photo?.url) URL.revokeObjectURL(photo.url)
-    setPhoto({ url: URL.createObjectURL(f), name: f.name })
+    setPhoto({ url: URL.createObjectURL(f), name: f.name, file: f })
     e.target.value = '' // allow re-selecting the same file
   }
   const clearPhoto = () => { if (photo?.url) URL.revokeObjectURL(photo.url); setPhoto(null) }
 
-  const submit = () => {
-    if (!valid) return
-    // NOTE: in demo mode the photo stays on-device (preview only). Once Supabase
-    // storage is wired, the file uploads to the private "bills" bucket and the
-    // returned URL is saved as billImageUrl.
-    dispatch({ type: 'LOG_EXPENSE', payload: { supervisorId: me.id, siteId: me.siteId, amount: amt, category: cat, note: note.trim(), bill: true } })
+  const submit = async () => {
+    if (!valid || busy) return
+    setBusy(true)
+    const billData = await compress(photo.file) // uploaded to the private "bills" bucket in live mode
+    await dispatch({ type: 'LOG_EXPENSE', payload: { supervisorId: me.id, siteId: me.siteId, amount: amt, category: cat, note: note.trim(), bill: true, billData } })
+    setBusy(false)
     toast(`Sent to ${eng?.name.split(' ')[0]} for review`)
     nav('/m/history')
   }
@@ -101,8 +115,8 @@ export default function AddExpense() {
       </div>
 
       <div style={{ flex: 'none', padding: '14px 20px 26px', background: 'linear-gradient(0deg, var(--bg-panel) 70%, transparent)' }}>
-        <button className="btn btn-primary" style={{ width: '100%', height: 52, fontSize: 15, opacity: valid ? 1 : 0.5 }} disabled={!valid} onClick={submit}>
-          {photo ? `Send to ${eng?.name.split(' ')[0] || 'engineer'} for review →` : 'Add a bill photo to send'}
+        <button className="btn btn-primary" style={{ width: '100%', height: 52, fontSize: 15, opacity: valid && !busy ? 1 : 0.5 }} disabled={!valid || busy} onClick={submit}>
+          {busy ? 'Sending…' : photo ? `Send to ${eng?.name.split(' ')[0] || 'engineer'} for review →` : 'Add a bill photo to send'}
         </button>
       </div>
     </div>

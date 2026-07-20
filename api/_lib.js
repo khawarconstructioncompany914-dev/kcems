@@ -2,6 +2,15 @@
 import pg from 'pg'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import { createClient } from '@supabase/supabase-js'
+
+// service-role Supabase client for the private "bills" storage bucket
+export function supaStorage() {
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return null
+  return createClient(url, key, { auth: { persistSession: false } })
+}
 
 // pg parses int8/bigint as strings by default — return them as JS numbers.
 pg.types.setTypeParser(20, (v) => (v === null ? null : parseInt(v, 10)))
