@@ -42,7 +42,7 @@ export default async function handler(req, res) {
 
 async function seed(client) {
   const hash = hashPassword('kcems')
-  const U = (id) => `00000000-0000-0000-0000-0000000000${id}`
+  const U = (id) => '00000000-0000-0000-0000-' + String(id).padStart(12, '0')
 
   const users = [
     [U('01'), 'Messam Khawar', 'messam', '+92 300 8500011', 'messam@khawar.pk', 'owner', null, null],
