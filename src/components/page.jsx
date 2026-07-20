@@ -16,7 +16,7 @@ export function PageHeader({ eyebrow, title, sub, right }) {
 export function Kpi({ label, value, sub, color = '#fff', accent }) {
   return (
     <div className="card" style={{ padding: '18px 20px', flex: 1, minWidth: 150, position: 'relative', overflow: 'hidden' }}>
-      {accent && <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 80% at 100% 0%, rgba(92,230,46,.08), transparent 60%)', pointerEvents: 'none' }} />}
+      {accent && <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 80% at 100% 0%, rgba(92,232,56,.08), transparent 60%)', pointerEvents: 'none' }} />}
       <div style={{ font: '600 10px/1 var(--f-mono)', letterSpacing: '.06em', color: 'var(--text-40)', textTransform: 'uppercase' }}>{label}</div>
       <div className="num" style={{ font: '700 26px/1 var(--f-display)', color, marginTop: 12 }}>{value}</div>
       {sub && <div style={{ font: '500 11px/1.3 var(--f-body)', color: 'var(--text-42)', marginTop: 8 }}>{sub}</div>}

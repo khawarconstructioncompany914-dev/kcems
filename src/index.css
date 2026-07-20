@@ -5,16 +5,16 @@
    ============================================================ */
 :root {
   /* color */
-  --accent:        #5CE62E;
-  --accent-hover:  #7DF04F;
-  --accent-ink:    #0B0C0B;   /* text on accent */
-  --accent-soft:   rgba(92, 230, 46, .14);
-  --accent-line:   rgba(92, 230, 46, .30);
+  --accent:        #5CE838;
+  --accent-hover:  #7BF255;
+  --accent-ink:    #0a0b0a;   /* text on accent */
+  --accent-soft:   rgba(92, 232, 56, .14);
+  --accent-line:   rgba(92, 232, 56, .30);
 
-  --bg-root:   #050605;
-  --bg-panel:  #0B0C0B;
-  --surface:   #151714;   /* raised card */
-  --input:     #141613;   /* field bg */
+  --bg-root:   #070807;
+  --bg-panel:  #0a0b0a;
+  --surface:   #111311;   /* raised card */
+  --input:     #111311;   /* field bg */
 
   --border:    #23261F;
   --border-2:  #1C1C1C;   /* panel outline */
@@ -37,10 +37,10 @@
   --text-32:   rgba(255,255,255,.32);
   --text-25:   rgba(255,255,255,.25);
 
-  /* type */
-  --f-display: 'Space Grotesk', sans-serif;   /* numbers, KPI figures, headings */
-  --f-body:    'Plus Jakarta Sans', system-ui, sans-serif;
-  --f-mono:    'IBM Plex Mono', monospace;    /* eyebrows, codes, meta */
+  /* type — Khawar brand */
+  --f-display: 'Archivo', system-ui, sans-serif;   /* numbers, KPI figures, headings */
+  --f-body:    'Archivo', system-ui, sans-serif;
+  --f-mono:    'Space Mono', monospace;             /* eyebrows, codes, meta */
 
   /* radius */
   --r-card: 16px;
@@ -68,7 +68,7 @@ a:hover { color: var(--accent-hover); }
 
 button { font-family: inherit; }
 
-::selection { background: rgba(92,230,46,.28); color: #fff; }
+::selection { background: rgba(92,232,56,.28); color: #fff; }
 
 /* thin scrollbars in dark surfaces */
 * { scrollbar-width: thin; scrollbar-color: #2a2d26 transparent; }
@@ -100,7 +100,7 @@ button { font-family: inherit; }
   transition: border-color .15s, box-shadow .15s;
 }
 .field::placeholder { color: var(--text-40); }
-.field:focus { border-color: var(--accent-line); box-shadow: 0 0 0 3px rgba(92,230,46,.10); }
+.field:focus { border-color: var(--accent-line); box-shadow: 0 0 0 3px rgba(92,232,56,.10); }
 textarea.field { height: auto; padding: 12px 15px; resize: vertical; line-height: 1.5; }
 select.field { appearance: none; cursor: pointer; }
 
@@ -191,6 +191,7 @@ select.field { appearance: none; cursor: pointer; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes scaleIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 .fade-up { animation: fadeUp .4s cubic-bezier(.2,.7,.2,1) both; }
 .fade-in { animation: fadeIn .3s ease both; }
 
@@ -201,7 +202,7 @@ select.field { appearance: none; cursor: pointer; }
   align-items: center;
   justify-content: center;
   padding: 30px 16px;
-  background: radial-gradient(120% 60% at 80% 0%, rgba(92,230,46,.07), transparent 55%);
+  background: radial-gradient(120% 60% at 80% 0%, rgba(92,232,56,.07), transparent 55%);
 }
 .phone {
   width: 340px;
@@ -250,7 +251,7 @@ select.field { appearance: none; cursor: pointer; }
   background: var(--accent); color: var(--accent-ink);
   display: flex; align-items: center; justify-content: center;
   font: 300 34px/1 var(--f-body); border: none; cursor: pointer;
-  box-shadow: 0 14px 30px -8px rgba(92,230,46,.6);
+  box-shadow: 0 14px 30px -8px rgba(92,232,56,.6);
   transition: transform .1s;
 }
 .phone-fab:active { transform: translateX(-50%) scale(.94); }
@@ -274,6 +275,51 @@ select.field { appearance: none; cursor: pointer; }
   transition: all .12s; white-space: nowrap;
 }
 .chip.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 700; }
+
+/* ---------- login (Khawar "routes" hero) ---------- */
+@keyframes arcDraw { to { stroke-dashoffset: 0; } }
+@keyframes arcBreathe { 0%,100% { opacity: .92; } 50% { opacity: .62; } }
+@keyframes arcSway { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(7px,-6px,0) scale(1.015); } }
+@keyframes arcShimmer { 0%,100% { filter: drop-shadow(0 0 6px rgba(92,232,56,.45)); } 50% { filter: drop-shadow(0 0 13px rgba(92,232,56,.9)); } }
+@keyframes deckFlow { to { stroke-dashoffset: -240; } }
+
+.login-wrap { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: row-reverse; background: var(--bg-root); }
+.login-hero {
+  flex: 1 1 auto; position: relative; overflow: hidden;
+  background: radial-gradient(110% 90% at 55% 40%, rgba(92,232,56,.08), transparent 65%), #090a09;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-left: 1px solid rgba(92,232,56,.10);
+}
+.login-form-panel {
+  flex: 0 0 clamp(360px, 40vw, 520px);
+  background: linear-gradient(180deg, #0c0e0c 0%, #090a09 100%);
+  position: relative; display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(30px, 4vw, 54px); overflow-y: auto;
+}
+.login-form-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent) 40%, var(--accent) 60%, transparent); opacity: .5; }
+.login-input {
+  width: 100%; box-sizing: border-box; background: #111311;
+  border: 1px solid rgba(92,232,56,.16); border-radius: 11px;
+  padding: 15px 16px; color: #fff; font: 400 14px/1 var(--f-mono); outline: none;
+  transition: border-color .18s, box-shadow .18s;
+}
+.login-input::placeholder { color: rgba(255,255,255,.3); }
+.login-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(92,232,56,.16); }
+.login-btn {
+  width: 100%; border: none; background: var(--accent); color: var(--accent-ink);
+  font: 800 16px/1 var(--f-display); letter-spacing: .01em; padding: 16px; border-radius: 11px;
+  cursor: pointer; transition: box-shadow .2s, transform .12s;
+}
+.login-btn:hover:not(:disabled) { box-shadow: 0 6px 30px rgba(92,232,56,.42); transform: translateY(-1px); }
+.login-btn:active:not(:disabled) { transform: translateY(0); }
+.login-btn:disabled { opacity: .6; cursor: not-allowed; }
+.login-label { font: 400 11px/1 var(--f-mono); letter-spacing: .2em; color: rgba(255,255,255,.55); display: block; margin-bottom: 9px; }
+
+@media (max-width: 900px) {
+  .login-wrap { flex-direction: column; }
+  .login-hero { flex: 0 0 40vh; min-height: 288px; border-left: none; border-bottom: 1px solid rgba(92,232,56,.10); }
+  .login-form-panel { flex: 1 1 auto; padding: 26px 22px 34px; }
+}
 
 /* toast */
 .toast-wrap {

@@ -1,23 +1,27 @@
-// KCEMS logo mark — a white tile with an acid-green "beam" monogram.
-export function LogoMark({ size = 40, radius = 11 }) {
+// KCEMS logo — the real Khawar Construction mark (green on transparent).
+const SRC = '/logo-green.png'
+
+// small tile version — sidebar, forms
+export function LogoMark({ size = 44, radius = 12 }) {
   return (
-    <div style={{ width: size, height: size, borderRadius: radius, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-      <svg width={size * 0.62} height={size * 0.62} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-        {/* stylised K / girder */}
-        <path d="M5 4h5v10.5L20 4h6.5L15 15.8 27 28h-7L10 17.6V28H5V4Z" fill="#0B0C0B" />
-        <rect x="4" y="4" width="24" height="3" rx="1.5" fill="#5CE62E" />
-      </svg>
+    <div style={{ width: size, height: size, borderRadius: radius, background: '#0f110f', border: '1px solid rgba(92,232,56,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', boxShadow: '0 0 22px rgba(92,232,56,.10) inset' }}>
+      <img src={SRC} alt="Khawar Construction" style={{ width: Math.round(size * 0.64), height: 'auto', display: 'block', filter: 'drop-shadow(0 0 6px rgba(92,232,56,.55))' }} />
     </div>
   )
 }
 
-export function Wordmark({ mark = 40, stacked = true }) {
+// large free-standing logo for the login hero
+export function LogoImage({ width = 340, float = true }) {
+  return <img src={SRC} alt="Khawar Construction" style={{ width, height: 'auto', display: 'block', filter: 'drop-shadow(0 0 30px rgba(92,232,56,.55))', animation: float ? 'floatY 6s ease-in-out infinite' : 'none' }} />
+}
+
+export function Wordmark({ mark = 44, stacked = true }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
       <LogoMark size={mark} />
-      <div>
-        <div style={{ font: `800 17px/1 var(--f-display)`, color: '#fff', letterSpacing: '-.01em' }}>KCEMS</div>
-        {stacked && <div style={{ font: `500 10px/1.2 var(--f-mono)`, color: 'var(--text-40)', marginTop: 3, letterSpacing: '.08em' }}>EXPENSE MGMT</div>}
+      <div style={{ lineHeight: 1 }}>
+        <div style={{ font: '900 18px/1 var(--f-display)', color: '#fff', letterSpacing: '.02em' }}>KCEMS</div>
+        {stacked && <div style={{ font: '400 10px/1.2 var(--f-mono)', color: 'var(--text-40)', marginTop: 4, letterSpacing: '.16em' }}>EXPENSE MGMT</div>}
       </div>
     </div>
   )
