@@ -20,13 +20,13 @@ export default function ReviewQueue() {
         sub="Expenses your supervisors logged, waiting for a first-stage check. Open the bill, then pass up to finance, return to fix, or reject."
       />
 
-      <div style={{ display: 'flex', gap: 14, marginBottom: 26, flexWrap: 'wrap' }}>
+      <div className="r-row" style={{ marginBottom: 26 }}>
         <Kpi label="Waiting on you" value={queue.length} sub="in engineer review" accent />
         <Kpi label="Queue value" value={formatMoney(queueTotal)} sub="if all passed up" />
         <Kpi label="Your supervisors" value={supCount} sub="wired under you" />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: 14 }}>
+      <div className="r-cards" style={{ '--r-min': '420px' }}>
         {queue.length === 0
           ? <Empty title="Inbox zero 🎉" sub="No expenses waiting for review right now." />
           : queue.map((e) => <ExpenseCard key={e.id} e={e} mode="engineer" />)}
@@ -35,7 +35,7 @@ export default function ReviewQueue() {
       {returned.length > 0 && (
         <>
           <div style={{ font: '700 14px/1 var(--f-body)', color: 'var(--text-70)', margin: '30px 0 14px' }}>Returned — waiting on the supervisor to fix</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: 14 }}>
+          <div className="r-cards" style={{ '--r-min': '420px' }}>
             {returned.map((e) => <ExpenseCard key={e.id} e={e} mode="none" />)}
           </div>
         </>

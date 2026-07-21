@@ -24,13 +24,13 @@ export default function People() {
         right={canFund && <button className="btn btn-primary" onClick={() => setFunds(true)}>+ Add funds</button>}
       />
 
-      <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
+      <div className="r-row" style={{ marginBottom: 24 }}>
         <Kpi label="Supervisors" value={list.length} accent />
         <Kpi label="Cash in field" value={formatCompact(totalCash)} sub="sum of cash-in-hand" />
         <Kpi label="Owed back" value={formatMoney(totalOwed)} color={totalOwed ? 'var(--danger)' : '#fff'} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 14 }}>
+      <div className="r-cards" style={{ '--r-min': '340px' }}>
         {list.map((s) => {
           const bal = cashInHand(s.id)
           const owed = owedBack(s.id)

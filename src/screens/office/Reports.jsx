@@ -50,7 +50,7 @@ export default function Reports() {
     <div className="fade-up">
       <PageHeader eyebrow="Reports · exports" title="Build a report" sub="Filter the ledger by date, site and status, preview the rows, then export for accounts. CSV downloads for real; Excel/PDF are stubbed in this prototype." />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, alignItems: 'start', maxWidth: 1160 }}>
+      <div className="r-grid" style={{ alignItems: 'start', maxWidth: 1160 }}>
         <Card pad={24}>
           <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff', marginBottom: 16 }}>Filters</div>
           <div style={{ display: 'flex', gap: 10 }}>

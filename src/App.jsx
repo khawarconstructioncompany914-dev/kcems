@@ -2,10 +2,11 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useSelectors } from './store.jsx'
 import { ROLES } from './data/model.js'
 import { Toasts } from './components/bits.jsx'
+import AppShell from './components/AppShell.jsx'
 
 import Login from './screens/Login.jsx'
 import ChangePassword from './screens/ChangePassword.jsx'
-import DesktopShell from './screens/office/DesktopShell.jsx'
+
 import Dashboard from './screens/office/Dashboard.jsx'
 import ReviewQueue from './screens/office/ReviewQueue.jsx'
 import Approvals from './screens/office/Approvals.jsx'
@@ -16,14 +17,15 @@ import SiteDetail from './screens/office/SiteDetail.jsx'
 import Reports from './screens/office/Reports.jsx'
 import AdminAccess from './screens/office/AdminAccess.jsx'
 
-import MobileShell from './screens/mobile/MobileShell.jsx'
-import MobileHome from './screens/mobile/Home.jsx'
-import MobileAdd from './screens/mobile/AddExpense.jsx'
-import MobileHistory from './screens/mobile/History.jsx'
-import MobileFunds from './screens/mobile/Funds.jsx'
-import MobileMe from './screens/mobile/Me.jsx'
+import FieldHome from './screens/mobile/Home.jsx'
+import LogExpense from './screens/mobile/AddExpense.jsx'
+import FieldHistory from './screens/mobile/History.jsx'
+import FieldFunds from './screens/mobile/Funds.jsx'
+import FieldMe from './screens/mobile/Me.jsx'
 
-// Route the authed user to their role's landing surface (Build Spec §1 router).
+const OFFICE = ['owner', 'admin', 'finance', 'engineer']
+
+// Send the authed user to their role's landing surface.
 function Landing() {
   const { me } = useSelectors()
   if (!me) return <Navigate to="/login" replace />
@@ -31,24 +33,16 @@ function Landing() {
   return <Navigate to={ROLES[me.role]?.landing || '/login'} replace />
 }
 
-// Guard: office roles (owner/admin/finance/engineer). Supervisors -> mobile.
-function RequireOffice({ children }) {
+// Authentication only — this guard knows nothing about roles or devices.
+function RequireAuth({ children }) {
   const { me } = useSelectors()
   const loc = useLocation()
   if (!me) return <Navigate to="/login" replace state={{ from: loc.pathname }} />
   if (me.mustChangePassword) return <Navigate to="/change-password" replace />
-  if (me.role === 'supervisor') return <Navigate to="/m" replace />
   return children
 }
 
-function RequireMobile({ children }) {
-  const { me } = useSelectors()
-  if (!me) return <Navigate to="/login" replace />
-  if (me.mustChangePassword) return <Navigate to="/change-password" replace />
-  return children
-}
-
-// Per-route role gate (Build Spec §2) — falls back to the user's landing.
+// Per-route permission (Build Spec §2) — falls back to the user's landing.
 function RoleGate({ roles, children }) {
   const { me } = useSelectors()
   if (!me) return <Navigate to="/login" replace />
@@ -64,26 +58,25 @@ export default function App() {
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/" element={<Landing />} />
 
-        {/* Office (desktop) surfaces */}
-        <Route element={<RequireOffice><DesktopShell /></RequireOffice>}>
+        {/* One shell for every role; the shell adapts to the viewport, not the role. */}
+        <Route element={<RequireAuth><AppShell /></RequireAuth>}>
+          {/* office surfaces */}
           <Route path="/dashboard" element={<RoleGate roles={['owner', 'admin', 'finance']}><Dashboard /></RoleGate>} />
-          <Route path="/review" element={<ReviewQueue />} />
-          <Route path="/approvals" element={<Approvals />} />
-          <Route path="/people" element={<People />} />
-          <Route path="/people/:id" element={<PersonLedger />} />
-          <Route path="/sites" element={<Sites />} />
-          <Route path="/sites/:id" element={<SiteDetail />} />
-          <Route path="/reports" element={<RoleGate roles={['owner', 'finance']}><Reports /></RoleGate>} />
-          <Route path="/admin" element={<RoleGate roles={['owner', 'admin']}><AdminAccess /></RoleGate>} />
-        </Route>
+          <Route path="/review"    element={<RoleGate roles={['owner', 'engineer']}><ReviewQueue /></RoleGate>} />
+          <Route path="/approvals" element={<RoleGate roles={['owner', 'finance']}><Approvals /></RoleGate>} />
+          <Route path="/people"      element={<RoleGate roles={OFFICE}><People /></RoleGate>} />
+          <Route path="/people/:id"  element={<RoleGate roles={OFFICE}><PersonLedger /></RoleGate>} />
+          <Route path="/sites"       element={<RoleGate roles={OFFICE}><Sites /></RoleGate>} />
+          <Route path="/sites/:id"   element={<RoleGate roles={OFFICE}><SiteDetail /></RoleGate>} />
+          <Route path="/reports"   element={<RoleGate roles={['owner', 'finance']}><Reports /></RoleGate>} />
+          <Route path="/admin"     element={<RoleGate roles={['owner', 'admin']}><AdminAccess /></RoleGate>} />
 
-        {/* Supervisor field app (mobile) */}
-        <Route path="/m" element={<RequireMobile><MobileShell /></RequireMobile>}>
-          <Route index element={<MobileHome />} />
-          <Route path="add" element={<MobileAdd />} />
-          <Route path="history" element={<MobileHistory />} />
-          <Route path="funds" element={<MobileFunds />} />
-          <Route path="me" element={<MobileMe />} />
+          {/* field surfaces (supervisor) — same shell, same breakpoints */}
+          <Route path="/home"        element={<RoleGate roles={['supervisor']}><FieldHome /></RoleGate>} />
+          <Route path="/history"     element={<RoleGate roles={['supervisor']}><FieldHistory /></RoleGate>} />
+          <Route path="/funds"       element={<RoleGate roles={['supervisor']}><FieldFunds /></RoleGate>} />
+          <Route path="/me"          element={<RoleGate roles={['supervisor']}><FieldMe /></RoleGate>} />
+          <Route path="/log-expense" element={<RoleGate roles={['supervisor']}><LogExpense /></RoleGate>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

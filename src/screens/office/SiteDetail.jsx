@@ -19,9 +19,9 @@ export default function SiteDetail() {
 
   return (
     <div className="fade-up">
-      <Link to="/sites" style={{ font: '600 12px/1 var(--f-body)', color: 'var(--text-50)' }}>‹ Sites</Link>
+      <Link to="/sites" className="tap" style={{ font: '600 12px/1 var(--f-body)', color: 'var(--text-50)' }}>‹ Sites</Link>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr .9fr', gap: 18, alignItems: 'start', marginTop: 16 }}>
+      <div className="r-grid" style={{ '--r-cols': '1.1fr .9fr', alignItems: 'start', marginTop: 16 }}>
         {/* left: budget + categories */}
         <Card pad={26}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
@@ -72,7 +72,7 @@ export default function SiteDetail() {
                 <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 11, paddingTop: 4 }}>
                   <Monogram name={s.name} color="var(--accent)" soft="var(--accent-soft)" size={34} radius={17} />
                   <div style={{ font: '500 12px/1.3 var(--f-body)', color: 'var(--text-70)', flex: 1 }}>{s.name} · <b style={{ color: '#fff' }}>{formatMoney(bal.cash)}</b> cash in hand</div>
-                  <Link to={`/people/${s.id}`} style={{ font: '600 12px/1 var(--f-body)' }}>Ledger →</Link>
+                  <Link to={`/people/${s.id}`} className="tap" style={{ font: '600 12px/1 var(--f-body)' }}>Ledger →</Link>
                 </div>
               )
             })}

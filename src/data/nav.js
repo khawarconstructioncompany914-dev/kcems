@@ -1,0 +1,51 @@
+// ============================================================
+// KCEMS · single navigation source of truth.
+// ROLE decides WHICH items a user gets. DEVICE decides how they
+// are rendered (sidebar >= md, bottom tab bar < md) — see AppShell.
+// Nothing in here may reference a device or a layout.
+// ============================================================
+
+// 24x24 stroke icons (single `d` may contain sub-paths)
+export const NAV_ICONS = {
+  dashboard: 'M3 12h7V3H3v9Zm0 9h7v-6H3v6Zm11 0h7V12h-7v9Zm0-18v6h7V3h-7Z',
+  approvals: 'M4 12l5 5L20 6',
+  review:    'M9 11l2 2 4-4M4 5h16v14H4z',
+  people:    'M16 11a4 4 0 10-8 0 4 4 0 008 0Zm-9 9a5 5 0 0110 0',
+  sites:     'M3 21V8l9-5 9 5v13M9 21v-6h6v6',
+  reports:   'M7 15l3-3 2 2 4-5M4 4v16h16',
+  admin:     'M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4Z',
+  home:      'M3 11l9-8 9 8M5 10v10h14V10',
+  history:   'M3.2 12a9 9 0 1 0 2.9-6.6L3 8m0-5v5h5M12 7v5.3l3.6 2.1',
+  funds:     'M3 7h18v12H3zM3 11h18M6.5 15.5h4',
+  me:        'M16 10.5a4 4 0 10-8 0 4 4 0 008 0M5.5 20a6.5 6.5 0 0113 0',
+  more:      'M5 12h.01M12 12h.01M19 12h.01',
+}
+
+// label = sidebar text, short = bottom-tab text (must stay tiny)
+export const NAV_ITEMS = {
+  dashboard: { to: '/dashboard', label: 'Dashboard',     short: 'HOME' },
+  approvals: { to: '/approvals', label: 'Approvals',     short: 'APPROVE' },
+  review:    { to: '/review',    label: 'Review queue',  short: 'REVIEW' },
+  people:    { to: '/people',    label: 'People',        short: 'PEOPLE' },
+  sites:     { to: '/sites',     label: 'Sites',         short: 'SITES' },
+  reports:   { to: '/reports',   label: 'Reports',       short: 'REPORTS' },
+  admin:     { to: '/admin',     label: 'Users & access', short: 'ADMIN' },
+  home:      { to: '/home',      label: 'Home',          short: 'HOME' },
+  history:   { to: '/history',   label: 'My history',    short: 'HISTORY' },
+  funds:     { to: '/funds',     label: 'Funds',         short: 'FUNDS' },
+  me:        { to: '/me',        label: 'Me',            short: 'ME' },
+}
+
+// role -> ordered nav keys (first 4 become the phone's primary tabs)
+export const ROLE_NAV = {
+  owner:      ['dashboard', 'approvals', 'people', 'sites', 'reports', 'admin'],
+  admin:      ['dashboard', 'people', 'sites', 'admin'],
+  finance:    ['approvals', 'people', 'sites', 'reports'],
+  engineer:   ['review', 'people', 'sites'],
+  supervisor: ['home', 'history', 'funds', 'me'],
+}
+
+// how many nav items fit comfortably in a phone tab bar before overflowing
+export const MAX_TABS = 4
+
+export const navFor = (role) => (ROLE_NAV[role] || []).map((k) => ({ key: k, ...NAV_ITEMS[k] }))

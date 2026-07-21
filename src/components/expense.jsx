@@ -52,7 +52,7 @@ export function ExpenseCard({ e, mode }) {
       {e.returnNote && <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--info)', background: 'var(--info-soft)', border: '1px solid rgba(120,170,255,.25)', borderRadius: 10, padding: '9px 12px' }}>↩ Returned: {e.returnNote}</div>}
       {e.rejectReason && <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--danger)', background: 'var(--danger-soft)', border: '1px solid rgba(242,112,79,.25)', borderRadius: 10, padding: '9px 12px' }}>✕ {e.rejectReason}</div>}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
         <button className="btn btn-ghost btn-sm" onClick={() => setBill(true)}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M3 17l5-6 4 4 3-4 6 7" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="2"/></svg>
           Bill

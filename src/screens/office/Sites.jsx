@@ -16,7 +16,7 @@ export default function Sites() {
         sub={me.role === 'engineer' ? 'The sites wired under you. Budget, spend and remaining update as expenses are approved.' : 'Every active project. Budget, spend and remaining update live as expenses are approved.'}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
+      <div className="r-cards" style={{ '--r-min': '360px', gap: 16 }}>
         {sites.map((s) => {
           const sp = siteSpend(s.id)
           const eng = userById(s.engineerId)

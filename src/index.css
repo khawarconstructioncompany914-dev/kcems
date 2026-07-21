@@ -47,6 +47,11 @@
   --r-ctrl: 11px;
   --r-pill: 8px;
 
+  /* layout — single source of truth for the responsive breakpoint.
+     CSS can't use custom properties inside @media, so the literal 768px
+     appears only in the APP SHELL section below. Keep them in sync. */
+  --bp-md: 768px;
+
   color-scheme: dark;
 }
 
@@ -195,58 +200,61 @@ select.field { appearance: none; cursor: pointer; }
 .fade-up { animation: fadeUp .4s cubic-bezier(.2,.7,.2,1) both; }
 .fade-in { animation: fadeIn .3s ease both; }
 
-/* ---------- mobile / phone frame ---------- */
-.phone-stage {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 30px 16px;
-  background: radial-gradient(120% 60% at 80% 0%, rgba(92,232,56,.07), transparent 55%);
+/* ============================================================
+   APP SHELL — the ONLY place the layout breakpoint is defined.
+   Single breakpoint: 768px (see --bp-md). Sidebar at/above it,
+   bottom tab bar below it. Role never decides which one renders.
+   Screens must use the responsive utilities further down rather
+   than declaring their own media queries.
+   ============================================================ */
+.app-shell { min-height: 100vh; min-height: 100dvh; background: var(--bg-root); display: flex; flex-direction: column; }
+
+/* --- sidebar: hidden on phones --- */
+.app-sidebar { display: none; }
+.app-nav { display: flex; flex-direction: column; gap: 3px; }
+.app-nav-link {
+  display: flex; align-items: center; gap: 11px;
+  min-height: 44px; padding: 10px 12px; border-radius: 11px;
+  font: 600 13px/1 var(--f-body); text-decoration: none;
+  color: var(--text-70); background: transparent; border: none;
+  cursor: pointer; width: 100%; text-align: left;
+  transition: background .12s, color .12s;
 }
-.phone {
-  width: 340px;
-  height: 724px;
-  border-radius: 46px;
-  background: #000;
-  border: 1px solid #232323;
-  padding: 11px;
-  box-shadow: 0 50px 110px -50px #000;
-  position: relative;
-  flex: none;
+.app-nav-link:hover { color: #fff; background: rgba(255,255,255,.04); }
+.app-nav-link.on { color: var(--accent-ink); background: var(--accent); }
+
+/* --- top bar: phones only --- */
+.app-topbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px;
+  border-bottom: 1px solid var(--border-2); background: var(--bg-panel);
+  position: sticky; top: 0; z-index: 20;
 }
-.phone-notch {
-  position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-  width: 112px; height: 28px; background: #000; border-radius: 16px; z-index: 5;
-}
-.phone-screen {
-  width: 100%; height: 100%;
-  border-radius: 36px; overflow: hidden;
-  background: var(--bg-panel);
-  position: relative;
-  display: flex; flex-direction: column;
-}
-.phone-status {
-  height: 44px; flex: none;
-  display: flex; align-items: flex-end; justify-content: space-between;
-  padding: 0 26px 6px;
-  font: 600 12px/1 var(--f-body); color: #fff;
-}
-.phone-body { flex: 1; overflow-y: auto; overflow-x: hidden; }
-.phone-tabbar {
-  height: 66px; flex: none;
+
+/* --- content --- */
+.app-main { flex: 1; min-width: 0; width: 100%; padding: 20px 16px calc(86px + env(safe-area-inset-bottom, 0px)); }
+
+/* --- bottom tabs: phones only (44px+ touch targets) --- */
+.app-tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: flex; align-items: stretch; justify-content: space-around;
   background: #0E100E; border-top: 1px solid #1C1E1B;
-  display: flex; align-items: center; justify-content: space-around;
-  padding: 0 8px 14px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-.phone-tab { display: flex; flex-direction: column; align-items: center; gap: 5px; background: none; border: none; cursor: pointer; padding: 0; }
-.phone-tab .ico { width: 18px; height: 18px; border-radius: 6px; border: 2px solid #3A3D36; transition: all .15s; }
-.phone-tab .ico.round { border-radius: 50%; }
-.phone-tab .lbl { font: 600 9px/1 var(--f-mono); color: var(--text-40); }
-.phone-tab.on .ico { background: var(--accent); border-color: var(--accent); }
-.phone-tab.on .lbl { color: var(--accent); font-weight: 700; }
-.phone-fab {
-  position: absolute; left: 50%; transform: translateX(-50%); bottom: 80px; z-index: 6;
+.app-tab {
+  flex: 1 1 0; min-width: 0; min-height: 56px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  background: none; border: none; cursor: pointer; padding: 8px 4px;
+  color: var(--text-40); text-decoration: none;
+}
+.app-tab .app-tab-lbl { font: 700 9px/1 var(--f-mono); letter-spacing: .05em; }
+.app-tab.on { color: var(--accent); }
+.app-tab-gap { flex: 0 0 64px; }
+
+/* --- supervisor quick action --- */
+.app-fab {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px)); z-index: 40;
   width: 58px; height: 58px; border-radius: 19px;
   background: var(--accent); color: var(--accent-ink);
   display: flex; align-items: center; justify-content: center;
@@ -254,16 +262,57 @@ select.field { appearance: none; cursor: pointer; }
   box-shadow: 0 14px 30px -8px rgba(92,232,56,.6);
   transition: transform .1s;
 }
-.phone-fab:active { transform: translateX(-50%) scale(.94); }
-.phone-caption { margin-top: 14px; font: 600 11px/1 var(--f-mono); color: var(--text-50); text-align: center; }
+.app-fab:active { transform: translateX(-50%) scale(.94); }
 
-@media (max-width: 440px) {
-  .phone-stage { padding: 0; background: none; }
-  .phone { width: 100vw; height: 100dvh; border-radius: 0; border: none; padding: 0; }
-  .phone-screen { border-radius: 0; }
-  .phone-notch { display: none; }
-  .phone-status { padding-top: env(safe-area-inset-top, 8px); align-items: center; height: 40px; }
-  .phone-caption { display: none; }
+/* --- full-bleed routes (own back/submit chrome) --- */
+.app-shell.no-nav .app-tabbar, .app-shell.no-nav .app-topbar { display: none; }
+.app-shell.no-nav .app-main { padding: 0; }
+
+/* --- "More" sheet --- */
+.app-sheet-scrim { position: fixed; inset: 0; z-index: 50; background: rgba(3,4,3,.62); backdrop-filter: blur(3px); display: flex; align-items: flex-end; animation: fadeIn .2s ease both; }
+.app-sheet { width: 100%; background: var(--bg-panel); border-top: 1px solid var(--border-2); border-radius: 18px 18px 0 0; padding: 10px 16px calc(20px + env(safe-area-inset-bottom, 0px)); animation: fadeUp .25s cubic-bezier(.2,.7,.2,1) both; }
+.app-sheet-grab { width: 38px; height: 4px; border-radius: 3px; background: #2a2d26; margin: 4px auto 14px; }
+
+/* ---------- responsive utilities (screens use these, not their own queries) ---------- */
+.r-grid { display: grid; gap: 14px; grid-template-columns: 1fr; }          /* 1 col on phones */
+.r-cards { display: grid; gap: 14px; grid-template-columns: 1fr; }          /* card lists */
+.r-row { display: flex; flex-wrap: wrap; gap: 14px; }                       /* KPI rows etc. */
+/* grid/flex children default to min-width:auto, which lets wide content force
+   a track open and blow out the page. This is the fix for horizontal scroll. */
+.r-grid > *, .r-cards > *, .r-row > * { min-width: 0; }
+.r-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }        /* wide tables scroll in place */
+.r-scroll-x > * { min-width: var(--r-tablemin, 640px); }
+/* phone-first field screens stay readable when shown in the desktop shell */
+.field-screen { width: 100%; }
+
+/* ============================================================
+   >= 768px — the single breakpoint
+   ============================================================ */
+@media (min-width: 768px) {
+  .app-shell { flex-direction: row; }
+  .app-sidebar {
+    display: flex; flex-direction: column;
+    width: 244px; flex: none;
+    position: sticky; top: 0; height: 100vh;
+    padding: 22px 16px; border-right: 1px solid var(--border-2); background: var(--bg-panel);
+  }
+  .app-topbar, .app-tabbar, .app-fab { display: none; }
+  .app-main { max-width: 1240px; margin: 0 auto; padding: 30px 34px 70px; }
+  .app-shell.no-nav .app-sidebar { display: flex; }
+  .app-shell.no-nav .app-main { padding: 30px 34px 70px; }
+
+  .r-grid { grid-template-columns: var(--r-cols, 1fr 1fr); gap: 18px; }
+  .r-cards { grid-template-columns: repeat(auto-fill, minmax(var(--r-min, 340px), 1fr)); }
+  .field-screen { max-width: 620px; }
+}
+
+/* ---------- below the breakpoint: 44px minimum touch targets ----------
+   min-height beats any inline `height`, so compact controls grow on phones
+   without touching their desktop sizing. */
+@media (max-width: 767.98px) {
+  .btn, .btn-sm, .chip, .login-btn, .field, select.field, input.field { min-height: 44px; }
+  /* standalone text links (back / "see all") need a real tap area too */
+  .tap { min-height: 44px; display: inline-flex; align-items: center; }
 }
 
 /* chips */

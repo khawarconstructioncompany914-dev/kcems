@@ -43,7 +43,7 @@ export default function History() {
   )
 
   return (
-    <div style={{ paddingBottom: 150 }}>
+    <div className="field-screen">
       <div style={{ padding: '6px 20px 12px' }}>
         <div style={{ font: '700 20px/1 var(--f-display)', color: '#fff' }}>My history</div>
         <div style={{ display: 'flex', gap: 7, marginTop: 14, flexWrap: 'wrap' }}>

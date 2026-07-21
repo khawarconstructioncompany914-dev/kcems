@@ -52,13 +52,13 @@ export default function AddExpense() {
     await dispatch({ type: 'LOG_EXPENSE', payload: { supervisorId: me.id, siteId: me.siteId, amount: amt, category: cat, note: note.trim(), bill: true, billData } })
     setBusy(false)
     toast(`Sent to ${eng?.name.split(' ')[0]} for review`)
-    nav('/m/history')
+    nav('/history')
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 12, padding: '6px 20px 14px' }}>
-        <button onClick={() => nav('/m')} style={{ background: 'none', border: 'none', font: '400 24px/1 var(--f-body)', color: '#fff', cursor: 'pointer', padding: 0 }}>‹</button>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', maxWidth: 620, margin: '0 auto' }}>
+      <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 20px 14px' }}>
+        <button onClick={() => nav('/home')} style={{ background: 'none', border: 'none', font: '400 24px/1 var(--f-body)', color: '#fff', cursor: 'pointer', padding: 0, minWidth: 44, minHeight: 44, textAlign: 'left' }}>‹</button>
         <div style={{ font: '700 17px/1 var(--f-body)', color: '#fff' }}>Log an expense</div>
       </div>
 

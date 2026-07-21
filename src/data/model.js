@@ -8,7 +8,7 @@ export const ROLES = {
   admin:      { label: 'Admin',        short: 'AD', color: 'var(--violet)', soft: 'var(--violet-soft)', landing: '/dashboard', blurb: 'users · wiring · view all' },
   finance:    { label: 'Finance',      short: 'FN', color: 'var(--warn)',   soft: 'var(--warn-soft)',   landing: '/approvals', blurb: 'approvals · ledgers · exports' },
   engineer:   { label: 'Engineer',     short: 'EN', color: 'var(--info)',   soft: 'var(--info-soft)',   landing: '/review',    blurb: 'review queue · own supervisors' },
-  supervisor: { label: 'Supervisor',   short: 'SU', color: 'var(--accent)', soft: 'var(--accent-soft)', landing: '/m',         blurb: 'field app only · own cash' },
+  supervisor: { label: 'Supervisor',   short: 'SU', color: 'var(--accent)', soft: 'var(--accent-soft)', landing: '/home',      blurb: 'logs expenses · own cash' },
 }
 
 // office (desktop) roles vs the mobile field role

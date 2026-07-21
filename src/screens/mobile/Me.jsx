@@ -19,7 +19,7 @@ export default function Me() {
   ]
 
   return (
-    <div style={{ paddingBottom: 150 }}>
+    <div className="field-screen">
       <div style={{ padding: '6px 20px 4px' }}>
         <div style={{ font: '700 20px/1 var(--f-display)', color: '#fff' }}>Me</div>
       </div>

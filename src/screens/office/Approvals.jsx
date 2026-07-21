@@ -27,7 +27,7 @@ export default function Approvals() {
         right={<button className="btn btn-primary" onClick={() => setFunds(true)}>+ Add funds</button>}
       />
 
-      <div style={{ display: 'flex', gap: 14, marginBottom: 22, flexWrap: 'wrap' }}>
+      <div className="r-row" style={{ marginBottom: 22 }}>
         <Kpi label="Awaiting approval" value={queue.length} sub={formatMoney(queueTotal)} accent />
         <Kpi label="Owed back" value={formatMoney(owedTotal)} sub={`${owed.length} rejected · unsettled`} color="var(--danger)" />
         <Kpi label="Approved (all time)" value={all.filter((e) => e.status === 'approved').length} sub="across every site" />
@@ -42,7 +42,7 @@ export default function Approvals() {
       </div>
 
       {tab === 'queue' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: 14 }}>
+        <div className="r-cards" style={{ '--r-min': '420px' }}>
           {queue.length === 0
             ? <Empty title="Nothing to approve" sub="Engineers haven't passed anything up yet." />
             : queue.map((e) => <ExpenseCard key={e.id} e={e} mode="finance" />)}
@@ -50,7 +50,7 @@ export default function Approvals() {
       )}
 
       {tab === 'owed' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: 14 }}>
+        <div className="r-cards" style={{ '--r-min': '420px' }}>
           {owed.length === 0
             ? <Empty title="No outstanding balances" sub="No supervisor currently owes money back." />
             : owed.map((e) => (

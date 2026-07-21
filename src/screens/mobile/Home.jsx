@@ -16,7 +16,7 @@ export default function MobileHome() {
   const glyph = { approved: '✓', engineer_review: '◷', finance_review: '◷', rejected: '✕', returned: '↩', settled: '✓' }
 
   return (
-    <div style={{ paddingBottom: 150 }}>
+    <div className="field-screen">
       {/* hero cash */}
       <div style={{ margin: '6px 16px 0', background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 22, padding: '20px 20px 22px' }} className="fade-up">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -53,7 +53,7 @@ export default function MobileHome() {
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
           <div style={{ font: '700 13px/1 var(--f-body)', color: '#fff' }}>Recent</div>
-          <div style={{ font: '600 11px/1 var(--f-body)', color: 'var(--accent)', cursor: 'pointer' }} onClick={() => nav('/m/history')}>See all</div>
+          <button type="button" className="tap" style={{ font: '600 11px/1 var(--f-body)', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => nav('/history')}>See all</button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
           {recent.map((e) => (

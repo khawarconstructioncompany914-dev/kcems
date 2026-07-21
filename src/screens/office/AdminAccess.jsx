@@ -61,6 +61,8 @@ export default function AdminAccess() {
       {/* ---------------- USERS ---------------- */}
       {tab === 'users' && (
         <Card pad={0}>
+          <div className="r-scroll-x" style={{ '--r-tablemin': '760px' }}>
+          <div>
           <div style={{ display: 'flex', font: '500 10px/1 var(--f-mono)', color: 'var(--text-40)', padding: '16px 22px 12px', textTransform: 'uppercase', letterSpacing: '.05em', borderBottom: '1px solid var(--border-3)' }}>
             <span style={{ flex: 2.2 }}>Person</span>
             <span style={{ flex: 1.4 }}>Role</span>
@@ -95,12 +97,14 @@ export default function AdminAccess() {
               </div>
             )
           })}
+          </div>
+          </div>
         </Card>
       )}
 
       {/* ---------------- WIRING & PERMISSIONS ---------------- */}
       {tab === 'access' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, alignItems: 'start' }}>
+        <div className="r-grid" style={{ alignItems: 'start' }}>
           <Card pad={26}>
             <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff' }}>Reporting tree</div>
             <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 6 }}>An engineer only sees the supervisors wired under them. Click a supervisor to re-assign.</div>
@@ -134,7 +138,7 @@ export default function AdminAccess() {
           <Card pad={26}>
             <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff' }}>Who can do what</div>
             <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 6 }}>Enforced server-side on every endpoint. This screen is read-only.</div>
-            <div style={{ marginTop: 20, border: '1px solid var(--border-3)', borderRadius: 12, overflow: 'hidden' }}>
+            <div className="r-scroll-x" style={{ marginTop: 20, border: '1px solid var(--border-3)', borderRadius: 12, '--r-tablemin': '560px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1.7fr repeat(5, 1fr)' }}>
                 <div style={{ padding: '12px 14px', background: 'var(--input)', font: '600 10px/1 var(--f-mono)', color: 'var(--text-50)' }}>CAPABILITY</div>
                 {MATRIX.cols.map(([k, label, color]) => (

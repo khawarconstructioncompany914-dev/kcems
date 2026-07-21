@@ -31,7 +31,7 @@ export default function Dashboard() {
         right={<Link to="/reports" className="btn btn-ghost">Reports →</Link>}
       />
 
-      <div style={{ display: 'flex', gap: 14, marginBottom: 26, flexWrap: 'wrap' }}>
+      <div className="r-row" style={{ marginBottom: 26 }}>
         <Kpi label="Total budget" value={formatCompact(totals.budget)} sub={`${sites.length} sites`} accent />
         <Kpi label="Spent to date" value={formatCompact(totals.spent)} sub={`${Math.round((totals.spent / totals.budget) * 100)}% of budget`} />
         <Kpi label="Cash in field" value={formatCompact(cashDeployed)} sub={`${supervisors.length} supervisors`} />
@@ -39,12 +39,12 @@ export default function Dashboard() {
         <Kpi label="Owed back" value={formatMoney(owedAll)} sub="rejected · unsettled" color={owedAll ? 'var(--danger)' : '#fff'} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.55fr 1fr', gap: 18, alignItems: 'start' }}>
+      <div className="r-grid" style={{ '--r-cols': '1.55fr 1fr', alignItems: 'start' }}>
         {/* sites */}
         <Card pad={22}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
             <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff' }}>Sites</div>
-            <Link to="/sites" style={{ marginLeft: 'auto', font: '600 12px/1 var(--f-body)' }}>All sites →</Link>
+            <Link to="/sites" className="tap" style={{ marginLeft: 'auto', font: '600 12px/1 var(--f-body)' }}>All sites →</Link>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {sites.map((s) => {

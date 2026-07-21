@@ -27,7 +27,7 @@ export default function PersonLedger() {
 
   return (
     <div className="fade-up">
-      <Link to="/people" style={{ font: '600 12px/1 var(--f-body)', color: 'var(--text-50)' }}>‹ People</Link>
+      <Link to="/people" className="tap" style={{ font: '600 12px/1 var(--f-body)', color: 'var(--text-50)' }}>‹ People</Link>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 15, margin: '16px 0 24px', flexWrap: 'wrap' }}>
         <Monogram name={sup.name} color="var(--accent)" soft="var(--accent-soft)" size={54} radius={15} font={18} />
@@ -38,7 +38,7 @@ export default function PersonLedger() {
         {canFund && <button className="btn btn-primary" onClick={() => setFunds(true)}>+ Add funds</button>}
       </div>
 
-      <div style={{ display: 'flex', gap: 14, marginBottom: 22, flexWrap: 'wrap' }}>
+      <div className="r-row" style={{ marginBottom: 22 }}>
         <div className="card" style={{ padding: '18px 22px', flex: 1, minWidth: 150 }}>
           <div style={{ font: '600 10px/1 var(--f-mono)', color: 'var(--text-40)' }}>CASH IN HAND</div>
           <div className="num" style={{ font: '700 28px/1 var(--f-display)', color: 'var(--accent)', marginTop: 10 }}>{formatMoney(bal.cash)}</div>
@@ -59,6 +59,8 @@ export default function PersonLedger() {
 
       <Card pad={0}>
         <div style={{ padding: '16px 20px', font: '700 14px/1 var(--f-body)', color: '#fff' }}>Ledger</div>
+        <div className="r-scroll-x" style={{ '--r-tablemin': '520px' }}>
+        <div>
         <div style={{ display: 'flex', font: '500 10px/1 var(--f-mono)', color: 'var(--text-40)', padding: '0 20px 10px', textTransform: 'uppercase', letterSpacing: '.05em', borderBottom: '1px solid var(--border-3)' }}>
           <span style={{ flex: 2 }}>Date · item</span><span style={{ flex: 1 }}>Type</span><span style={{ flex: 1, textAlign: 'right' }}>Amount</span>
         </div>
@@ -83,6 +85,8 @@ export default function PersonLedger() {
             </div>
           </div>
         ))}
+        </div>
+        </div>
       </Card>
 
       {canFund && <AddFundsModal open={funds} onClose={() => setFunds(false)} supervisorId={id} />}
