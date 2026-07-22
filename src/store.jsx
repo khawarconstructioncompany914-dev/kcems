@@ -137,6 +137,27 @@ function reducer(state, action) {
         audit: log({ actorId: action.userId, action: 'user.change_password', entity: 'User', entityId: action.userId }),
       }
 
+    // owner/admin creates a construction site
+    case 'CREATE_SITE': {
+      const p = action.payload || {}
+      const s = {
+        id: uid('site'), status: 'active', budget: 0, city: '', phase: '', engineerId: null,
+        openingSpend: { materials: 0, labour: 0, fuel: 0, tea_food: 0, other: 0 },
+        label: (p.label || p.name || '').slice(0, 12), ...p,
+      }
+      return {
+        ...state,
+        sites: [...state.sites, s],
+        audit: log({ actorId: action.actorId, action: 'site.create', entity: 'Site', entityId: s.id, after: { name: s.name } }),
+      }
+    }
+    case 'UPDATE_SITE':
+      return {
+        ...state,
+        sites: state.sites.map((s) => (s.id === action.siteId ? { ...s, ...action.patch } : s)),
+        audit: log({ actorId: action.actorId, action: 'site.update', entity: 'Site', entityId: action.siteId, after: action.patch }),
+      }
+
     // re-wire a supervisor to a different engineer
     case 'REASSIGN_SUP':
       return {

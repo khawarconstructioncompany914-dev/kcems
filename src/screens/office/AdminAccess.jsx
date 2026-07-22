@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore, useSelectors } from '../../store.jsx'
-import { ROLES } from '../../data/model.js'
+import { ROLES, SITE_STATUS } from '../../data/model.js'
 import { PageHeader, Card } from '../../components/page.jsx'
 import { Monogram, Modal } from '../../components/bits.jsx'
 
@@ -38,6 +38,7 @@ export default function AdminAccess() {
   const [create, setCreate] = useState(false)
   const [edit, setEdit] = useState(null)
   const [moving, setMoving] = useState(null)
+  const [siteEdit, setSiteEdit] = useState(null)
 
   const users = state.users
   const actor = state.session.userId
@@ -52,7 +53,7 @@ export default function AdminAccess() {
       />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-        {[['users', `Users · ${users.length}`], ['access', 'Wiring & permissions']].map(([k, label]) => (
+        {[['users', `Users · ${users.length}`], ['sites', `Sites · ${state.sites.length}`], ['access', 'Wiring & permissions']].map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} className="btn btn-sm"
             style={{ background: tab === k ? 'var(--accent)' : 'var(--input)', color: tab === k ? 'var(--accent-ink)' : 'var(--text-70)', border: `1px solid ${tab === k ? 'transparent' : 'var(--border)'}` }}>{label}</button>
         ))}
@@ -99,6 +100,44 @@ export default function AdminAccess() {
           })}
           </div>
           </div>
+        </Card>
+      )}
+
+      {/* ---------------- SITES ---------------- */}
+      {tab === 'sites' && (
+        <Card pad={0}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 22px', borderBottom: '1px solid var(--border-3)', flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ font: '700 14px/1 var(--f-body)', color: '#fff' }}>Construction sites</div>
+              <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 5 }}>Add your real sites here, then assign each supervisor to one from the Users tab.</div>
+            </div>
+            <div className="spacer" />
+            <button className="btn btn-primary btn-sm" onClick={() => setSiteEdit({})}>+ Add site</button>
+          </div>
+          {state.sites.length === 0 && (
+            <div style={{ padding: '28px 22px', textAlign: 'center', font: '500 13px/1.5 var(--f-body)', color: 'var(--text-40)' }}>No sites yet — add your first one.</div>
+          )}
+          {state.sites.map((s) => {
+            const eng = userById(s.engineerId)
+            const sups = supervisors.filter((u) => u.siteId === s.id).length
+            const st = SITE_STATUS[s.status] || SITE_STATUS.active
+            return (
+              <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 22px', borderTop: '1px solid var(--border-3)', flexWrap: 'wrap' }}>
+                <span className="mono-badge" style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-line)', fontSize: 12 }}>
+                  {String(s.label || s.name).replace(/[^A-Z0-9]/gi, '').slice(0, 2).toUpperCase()}
+                </span>
+                <div style={{ flex: 1, minWidth: 150 }}>
+                  <div style={{ font: '700 13px/1.2 var(--f-body)', color: '#fff' }}>{s.name}</div>
+                  <div style={{ font: '500 11px/1.3 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>
+                    {[s.city, s.phase].filter(Boolean).join(' · ') || '—'} · {sups} supervisor{sups !== 1 ? 's' : ''}
+                  </div>
+                </div>
+                <div style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-50)', minWidth: 96 }}>{eng ? eng.name.split(' ')[0] : 'no engineer'}</div>
+                <span className={`pill ${st.pill}`} style={{ height: 22, fontSize: 10 }}>{st.label}</span>
+                <button className="btn btn-ghost btn-sm" onClick={() => setSiteEdit(s)}>Edit</button>
+              </div>
+            )
+          })}
         </Card>
       )}
 
@@ -169,6 +208,7 @@ export default function AdminAccess() {
       }} />
       <CreateUserModal open={create} onClose={() => setCreate(false)} />
       <EditUserModal key={edit?.id || 'none'} user={edit} onClose={() => setEdit(null)} />
+      <SiteModal key={siteEdit?.id || 'new-site'} site={siteEdit} onClose={() => setSiteEdit(null)} />
     </div>
   )
 }
@@ -189,6 +229,78 @@ function ReassignModal({ moving, onClose, onPick }) {
                 {e.id === moving.engineerId && <span style={{ font: '600 10px/1 var(--f-mono)', color: 'var(--text-40)' }}>CURRENT</span>}
               </button>
             ))}
+          </div>
+        </div>
+      )}
+    </Modal>
+  )
+}
+
+function SiteModal({ site, onClose }) {
+  const { state, dispatch, toast } = useStore()
+  const { engineers } = useSelectors()
+  const isNew = !site?.id
+  const [name, setName] = useState(site?.name || '')
+  const [label, setLabel] = useState(site?.label || '')
+  const [city, setCity] = useState(site?.city || '')
+  const [phase, setPhase] = useState(site?.phase || '')
+  const [engId, setEngId] = useState(site?.engineerId || '')
+  const [budget, setBudget] = useState(site?.budget ? String(site.budget) : '')
+  const [status, setStatus] = useState(site?.status || 'active')
+
+  const submit = () => {
+    if (!name.trim()) return
+    const payload = {
+      name: name.trim(),
+      label: (label || name).trim().slice(0, 14),
+      city: city.trim(),
+      phase: phase.trim(),
+      engineerId: engId || null,
+      budget: Math.round(Number(String(budget).replace(/[^\d]/g, '')) || 0),
+      status,
+    }
+    if (isNew) dispatch({ type: 'CREATE_SITE', payload, actorId: state.session.userId })
+    else dispatch({ type: 'UPDATE_SITE', siteId: site.id, patch: payload, actorId: state.session.userId })
+    toast(isNew ? `Site “${payload.name}” created` : `${payload.name} updated`)
+    onClose()
+  }
+
+  return (
+    <Modal open={!!site} onClose={onClose} width={440}>
+      {site && (
+        <div style={{ padding: 26 }}>
+          <div style={{ font: '700 16px/1 var(--f-body)', color: '#fff', marginBottom: 18 }}>{isNew ? 'Add a site' : 'Edit site'}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div><label className="field-label">Site name</label><input className="field" placeholder="e.g. DHA Phase 6" value={name} onChange={(e) => setName(e.target.value)} autoFocus /></div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ flex: 1 }}><label className="field-label">Short label</label><input className="field" placeholder="e.g. DHA 6" value={label} onChange={(e) => setLabel(e.target.value)} /></div>
+              <div style={{ flex: 1 }}><label className="field-label">City</label><input className="field" placeholder="e.g. Multan" value={city} onChange={(e) => setCity(e.target.value)} /></div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ flex: 1 }}><label className="field-label">Phase</label><input className="field" placeholder="e.g. Grey structure" value={phase} onChange={(e) => setPhase(e.target.value)} /></div>
+              <div style={{ flex: 1 }}><label className="field-label">Budget (PKR)</label><input className="field" inputMode="numeric" placeholder="e.g. 2400000" value={budget} onChange={(e) => setBudget(e.target.value)} /></div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Responsible engineer</label>
+                <select className="field" value={engId} onChange={(e) => setEngId(e.target.value)}>
+                  <option value="">— none —</option>
+                  {engineers.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                </select>
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Status</label>
+                <select className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
+                  <option value="active">Active</option>
+                  <option value="on_hold">On hold</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+            <button className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+            <button className="btn btn-primary" style={{ flex: 1.4 }} disabled={!name.trim()} onClick={submit}>{isNew ? 'Create site' : 'Save changes'}</button>
           </div>
         </div>
       )}

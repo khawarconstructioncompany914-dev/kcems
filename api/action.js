@@ -99,6 +99,27 @@ export default async function handler(req, res) {
         await q('update app_user set engineer_id = $1 where id = $2', [b.engineerId, b.supId])
         return ok(res)
       }
+
+      case 'CREATE_SITE': {
+        if (!OWNER_ADMIN.has(me.role)) return deny(res)
+        const p = b.payload || {}
+        if (!p.name) return json(res, 400, { error: 'missing_fields' })
+        await q(`insert into site (name,label,city,phase,engineer_id,budget,status)
+                 values ($1,$2,$3,$4,$5,$6,$7)`,
+          [p.name, p.label || p.name.slice(0, 12), p.city || null, p.phase || null, p.engineerId || null, Math.round(p.budget || 0), p.status || 'active'])
+        return ok(res)
+      }
+      case 'UPDATE_SITE': {
+        if (!OWNER_ADMIN.has(me.role)) return deny(res)
+        const patch = b.patch || {}
+        const map = { name: 'name', label: 'label', city: 'city', phase: 'phase', engineerId: 'engineer_id', budget: 'budget', status: 'status' }
+        const cols = [], vals = []; let i = 1
+        for (const k of Object.keys(map)) if (k in patch) { cols.push(`${map[k]} = $${i++}`); vals.push(k === 'budget' ? Math.round(patch[k] || 0) : patch[k]) }
+        if (!cols.length) return ok(res)
+        vals.push(b.siteId)
+        await q(`update site set ${cols.join(', ')} where id = $${i}`, vals)
+        return ok(res)
+      }
       case 'RESET_PASSWORD': {
         if (!OWNER_ADMIN.has(me.role)) return deny(res)
         await q('update app_user set password_hash = $1, must_change_password = true where id = $2', [hashPassword(b.password || 'kcems'), b.userId])
