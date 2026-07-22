@@ -129,6 +129,14 @@ function reducer(state, action) {
         audit: log({ actorId: action.actorId, action: 'user.reset_password', entity: 'User', entityId: action.userId }),
       }
 
+    // owner/admin sets a password directly, without forcing a change
+    case 'SET_PASSWORD':
+      return {
+        ...state,
+        users: state.users.map((u) => (u.id === action.userId ? { ...u, password: action.password, mustChangePassword: false } : u)),
+        audit: log({ actorId: action.actorId, action: 'user.set_password', entity: 'User', entityId: action.userId }),
+      }
+
     // a user sets their own password (clears the forced-change flag)
     case 'CHANGE_PASSWORD':
       return {

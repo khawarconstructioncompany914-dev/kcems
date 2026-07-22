@@ -85,13 +85,27 @@ export default async function handler(req, res) {
       }
       case 'UPDATE_USER': {
         if (!OWNER_ADMIN.has(me.role)) return deny(res)
-        const patch = b.patch || {}
-        const map = { engineerId: 'engineer_id', siteId: 'site_id', status: 'status', name: 'name', role: 'role' }
+        const patch = { ...(b.patch || {}) }
+        // usernames are normalised (lowercase, no spaces) and must stay unique
+        if ('username' in patch) {
+          patch.username = String(patch.username).trim().toLowerCase().replace(/\s+/g, '')
+          if (!patch.username) return json(res, 400, { error: 'bad_username' })
+          const taken = await q('select 1 from app_user where lower(username) = $1 and id <> $2', [patch.username, b.userId])
+          if (taken.rowCount) return json(res, 409, { error: 'username_taken' })
+        }
+        const map = { engineerId: 'engineer_id', siteId: 'site_id', status: 'status', name: 'name', role: 'role', username: 'username' }
         const cols = [], vals = []; let i = 1
         for (const k of Object.keys(map)) if (k in patch) { cols.push(`${map[k]} = $${i++}`); vals.push(patch[k]) }
         if (!cols.length) return ok(res)
         vals.push(b.userId)
         await q(`update app_user set ${cols.join(', ')} where id = $${i}`, vals)
+        return ok(res)
+      }
+      // set a password directly, WITHOUT forcing a change on next login
+      case 'SET_PASSWORD': {
+        if (!OWNER_ADMIN.has(me.role)) return deny(res)
+        if (!b.password || String(b.password).length < 4) return json(res, 400, { error: 'weak_password' })
+        await q('update app_user set password_hash = $1, must_change_password = false where id = $2', [hashPassword(b.password), b.userId])
         return ok(res)
       }
       case 'REASSIGN_SUP': {

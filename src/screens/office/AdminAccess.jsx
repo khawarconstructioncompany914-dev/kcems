@@ -390,15 +390,27 @@ function CreateUserModal({ open, onClose }) {
 
 function EditUserModal({ user, onClose }) {
   const { state, dispatch, toast } = useStore()
-  const { engineers } = useSelectors()
+  const { engineers, usernameTaken } = useSelectors()
   const [engId, setEngId] = useState(user?.engineerId)
   const [siteId, setSiteId] = useState(user?.siteId)
+  const [name, setName] = useState(user?.name || '')
+  const [username, setUsername] = useState(user?.username || '')
+  const [pw, setPw] = useState('')
+  const [err, setErr] = useState('')
 
-  const save = () => {
-    const patch = {}
+  const save = async () => {
+    const cleanUser = String(username).trim().toLowerCase().replace(/\s+/g, '')
+    if (!name.trim()) return setErr('Name cannot be empty.')
+    if (!cleanUser) return setErr('Username cannot be empty.')
+    if (usernameTaken(cleanUser, user.id)) return setErr('That username is already taken.')
+    if (pw && pw.length < 4) return setErr('Password must be at least 4 characters.')
+
+    const patch = { name: name.trim(), username: cleanUser }
     if (user.role === 'supervisor') { patch.engineerId = engId; patch.siteId = siteId }
-    dispatch({ type: 'UPDATE_USER', userId: user.id, patch, actorId: state.session.userId })
-    toast(`${user.name.split(' ')[0]} updated`)
+    const res = await dispatch({ type: 'UPDATE_USER', userId: user.id, patch, actorId: state.session.userId })
+    if (res && res.status === 409) return setErr('That username is already taken.')
+    if (pw) await dispatch({ type: 'SET_PASSWORD', userId: user.id, password: pw, actorId: state.session.userId })
+    toast(`${name.trim().split(' ')[0]} updated`)
     onClose()
   }
   const toggleStatus = () => {
@@ -420,28 +432,41 @@ function EditUserModal({ user, onClose }) {
             </div>
           </div>
 
-          {user.role === 'supervisor' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label className="field-label">Reports to (engineer)</label>
-                <select className="field" value={engId} onChange={(e) => setEngId(e.target.value)}>
-                  {engineers.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="field-label">Assigned site</label>
-                <select className="field" value={siteId} onChange={(e) => setSiteId(e.target.value)}>
-                  {state.sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-              </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div><label className="field-label">Full name</label><input className="field" value={name} onChange={(e) => { setName(e.target.value); setErr('') }} /></div>
+            <div>
+              <label className="field-label">Username</label>
+              <input className="field" value={username} autoCapitalize="none" spellCheck={false} onChange={(e) => { setUsername(e.target.value); setErr('') }} />
+              <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 6 }}>They can also sign in by typing their full name.</div>
             </div>
-          ) : (
-            <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--text-42)' }}>Office roles have no site/engineer wiring. You can enable or disable this login below.</div>
-          )}
+            <div>
+              <label className="field-label">New password (leave blank to keep)</label>
+              <input className="field" value={pw} autoComplete="new-password" onChange={(e) => { setPw(e.target.value); setErr('') }} placeholder="••••••••" />
+            </div>
+
+            {user.role === 'supervisor' && (
+              <>
+                <div>
+                  <label className="field-label">Reports to (engineer)</label>
+                  <select className="field" value={engId || ''} onChange={(e) => setEngId(e.target.value)}>
+                    {engineers.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="field-label">Assigned site</label>
+                  <select className="field" value={siteId || ''} onChange={(e) => setSiteId(e.target.value)}>
+                    {state.sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+              </>
+            )}
+          </div>
+
+          {err && <div style={{ marginTop: 14, font: '600 12px/1.4 var(--f-body)', color: 'var(--danger)', background: 'var(--danger-soft)', borderRadius: 10, padding: '9px 12px' }}>{err}</div>}
 
           <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
             <button className="btn btn-danger" onClick={toggleStatus} style={{ flex: 1 }}>{user.status === 'disabled' ? 'Re-enable' : 'Disable'}</button>
-            {user.role === 'supervisor' && <button className="btn btn-primary" style={{ flex: 1.3 }} onClick={save}>Save changes</button>}
+            <button className="btn btn-primary" style={{ flex: 1.3 }} onClick={save}>Save changes</button>
           </div>
         </div>
       )}
