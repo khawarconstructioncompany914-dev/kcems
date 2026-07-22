@@ -321,7 +321,11 @@ export function makeSelectors(state) {
 
   // username/password check for the local (demo) provider
   const authenticate = (username, password) => {
-    const u = state.users.find((x) => x.username?.toLowerCase() === String(username).trim().toLowerCase())
+    // accept the username OR the person's full name, ignoring case and spaces
+    const key = String(username).trim().toLowerCase().replace(/\s+/g, '')
+    const u = state.users.find((x) =>
+      x.username?.toLowerCase().replace(/\s+/g, '') === key ||
+      x.name?.toLowerCase().replace(/\s+/g, '') === key)
     if (!u) return { ok: false, reason: 'no_user' }
     if (u.status === 'disabled') return { ok: false, reason: 'disabled' }
     if (u.password !== password) return { ok: false, reason: 'bad_password' }

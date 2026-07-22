@@ -6,7 +6,14 @@ export default async function handler(req, res) {
   const { username, password } = await readBody(req)
   if (!username || !password) return json(res, 400, { error: 'missing_fields' })
 
-  const r = await q('select * from app_user where lower(username) = lower($1)', [String(username).trim()])
+  // Be forgiving: people naturally type their display name ("Messam Ali").
+  // Usernames never contain spaces, so strip them and compare case-insensitively.
+  const r = await q(
+    `select * from app_user
+      where lower(username) = lower(replace($1, ' ', ''))
+         or lower(replace(name, ' ', '')) = lower(replace($1, ' ', ''))
+      limit 1`,
+    [String(username).trim()])
   const u = r.rows[0]
   if (!u) return json(res, 401, { error: 'bad_credentials' })
   if (u.status === 'disabled') return json(res, 403, { error: 'disabled' })
