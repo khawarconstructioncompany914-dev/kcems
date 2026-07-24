@@ -27,7 +27,7 @@ export default function Login() {
     setBusy(true)
     const res = await login(username, password)
     setBusy(false)
-    if (!res.ok) return setErr(res.reason === 'disabled' ? 'This account has been disabled. Contact the owner.' : 'Wrong username or password.')
+    if (!res.ok) return setErr(res.reason === 'disabled' ? 'This account has been disabled. Contact the owner.' : 'That name and password did not match. Check the password — it is your name in small letters with @ at the end.')
     setErr('')
     go(res.user)
   }
@@ -65,8 +65,11 @@ export default function Login() {
           <b style={{ color: 'rgba(255,255,255,.72)', fontWeight: 600 }}>Supervisors:</b> use the same web address to sign in on your phone.
         </p>
 
-        <label className="login-label">USERNAME</label>
-        <input className="login-input" style={{ marginBottom: 20 }} value={username} onChange={(e) => { setUsername(e.target.value); setErr('') }} placeholder="e.g. faraz" autoCapitalize="none" spellCheck={false} autoComplete="username" autoFocus />
+        <label className="login-label">YOUR NAME</label>
+        <input className="login-input" style={{ marginBottom: 7 }} value={username} onChange={(e) => { setUsername(e.target.value); setErr('') }} placeholder="e.g. Muhammad Ikram" autoCapitalize="none" spellCheck={false} autoComplete="username" autoFocus />
+        <div style={{ font: '400 12px/1.45 var(--f-body)', color: 'rgba(255,255,255,.38)', marginBottom: 18 }}>
+          Type your full name or just your first name. Capitals, spaces and small spelling slips are fine.
+        </div>
 
         <label className="login-label">PASSWORD</label>
         <input className="login-input" style={{ marginBottom: err ? 16 : 26, letterSpacing: '.12em' }} type="password" value={password} onChange={(e) => { setPassword(e.target.value); setErr('') }} autoComplete="current-password" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="••••••••" />

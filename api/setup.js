@@ -1,13 +1,26 @@
 import { readFileSync } from 'fs'
+import { timingSafeEqual } from 'crypto'
 import { directClient, hashPassword, json } from './_lib.js'
 
 // POST /api/setup?token=...  — applies the schema + functions, then seeds the
 // demo dataset (once). Idempotent: DDL uses IF NOT EXISTS / OR REPLACE; the seed
-// only runs when app_user is empty. Guard: if SETUP_TOKEN is set it must match.
+// only runs when app_user is empty.
+//
+// This endpoint runs DDL against production, so it FAILS CLOSED: without a
+// SETUP_TOKEN configured in the environment it is disabled outright. Never
+// leave it reachable with no token — an unauthenticated caller could otherwise
+// replay the migrations against the live database.
+const tokenMatches = (given, expected) => {
+  const a = Buffer.from(String(given)), b = Buffer.from(String(expected))
+  return a.length === b.length && timingSafeEqual(a, b)
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { error: 'method_not_allowed' })
-  const token = (req.query && req.query.token) || ''
-  if (process.env.SETUP_TOKEN && token !== process.env.SETUP_TOKEN) return json(res, 403, { error: 'bad_token' })
+  const expected = process.env.SETUP_TOKEN
+  if (!expected) return json(res, 404, { error: 'not_found' })
+  const token = (req.query && req.query.token) || req.headers['x-setup-token'] || ''
+  if (!tokenMatches(token, expected)) return json(res, 403, { error: 'bad_token' })
 
   const base = new URL('../supabase/migrations/', import.meta.url)
   let sql1, sql2
