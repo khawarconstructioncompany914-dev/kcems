@@ -1,4 +1,4 @@
-import { currentUser, q, json, readBody, hashPassword, checkPassword, supaStorage } from './_lib.js'
+import { currentUser, q, json, readBody, hashPassword, checkPassword, normPassword, supaStorage } from './_lib.js'
 
 // Mirrors the client reducer, but authorized server-side (Build Spec §2)
 // and running the atomic state-machine RPCs (§3). Front-end refetches /api/data after.
@@ -104,7 +104,7 @@ export default async function handler(req, res) {
       // set a password directly, WITHOUT forcing a change on next login
       case 'SET_PASSWORD': {
         if (!OWNER_ADMIN.has(me.role)) return deny(res)
-        if (!b.password || String(b.password).length < 4) return json(res, 400, { error: 'weak_password' })
+        if (normPassword(b.password).length < 4) return json(res, 400, { error: 'weak_password' })
         await q('update app_user set password_hash = $1, must_change_password = false where id = $2', [hashPassword(b.password), b.userId])
         return ok(res)
       }
@@ -140,8 +140,8 @@ export default async function handler(req, res) {
         return ok(res)
       }
       case 'CHANGE_PASSWORD': {
-        if (b.currentPassword !== undefined && !checkPassword(b.currentPassword, me.password_hash)) return json(res, 400, { error: 'bad_current' })
-        if (!b.password || String(b.password).length < 4) return json(res, 400, { error: 'weak_password' })
+        if (b.currentPassword !== undefined && !checkPassword(normPassword(b.currentPassword), me.password_hash)) return json(res, 400, { error: 'bad_current' })
+        if (normPassword(b.password).length < 4) return json(res, 400, { error: 'weak_password' })
         await q('update app_user set password_hash = $1, must_change_password = false where id = $2', [hashPassword(b.password), me.id])
         return ok(res)
       }

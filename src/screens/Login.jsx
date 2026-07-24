@@ -69,7 +69,7 @@ export default function Login() {
         <input className="login-input" style={{ marginBottom: 20 }} value={username} onChange={(e) => { setUsername(e.target.value); setErr('') }} placeholder="e.g. faraz" autoCapitalize="none" spellCheck={false} autoComplete="username" autoFocus />
 
         <label className="login-label">PASSWORD</label>
-        <input className="login-input" style={{ marginBottom: err ? 16 : 26, letterSpacing: '.12em' }} type="password" value={password} onChange={(e) => { setPassword(e.target.value); setErr('') }} autoComplete="current-password" placeholder="••••••••" />
+        <input className="login-input" style={{ marginBottom: err ? 16 : 26, letterSpacing: '.12em' }} type="password" value={password} onChange={(e) => { setPassword(e.target.value); setErr('') }} autoComplete="current-password" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="••••••••" />
 
         {err && <div style={{ font: '600 12px/1.4 var(--f-body)', color: 'var(--danger)', background: 'var(--danger-soft)', border: '1px solid rgba(242,112,79,.25)', borderRadius: 10, padding: '10px 13px', marginBottom: 22 }}>{err}</div>}
 

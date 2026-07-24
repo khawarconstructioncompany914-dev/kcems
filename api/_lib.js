@@ -40,7 +40,10 @@ export const q = (text, params) => pool().query(text, params)
 
 // ---------- auth ----------
 export const JWT_SECRET = process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || ''
-export const hashPassword = (pw) => bcrypt.hashSync(pw, 10)
+// surrounding whitespace is never meaningful in a password here — strip it on
+// both set and check so copy-pasted values always match
+export const normPassword = (pw) => String(pw ?? '').replace(/^\s+|\s+$/g, '')
+export const hashPassword = (pw) => bcrypt.hashSync(normPassword(pw), 10)
 export const checkPassword = (pw, hash) => { try { return bcrypt.compareSync(pw, hash) } catch { return false } }
 export const signToken = (payload) => jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' })
 export function verifyToken(token) { try { return jwt.verify(token, JWT_SECRET) } catch { return null } }

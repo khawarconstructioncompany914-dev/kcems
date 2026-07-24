@@ -336,7 +336,9 @@ export function makeSelectors(state) {
       x.name?.toLowerCase().replace(/\s+/g, '') === key)
     if (!u) return { ok: false, reason: 'no_user' }
     if (u.status === 'disabled') return { ok: false, reason: 'disabled' }
-    if (u.password !== password) return { ok: false, reason: 'bad_password' }
+    // ignore surrounding whitespace (copy-paste / phone keyboards add it)
+    const trim = (s) => String(s ?? '').replace(/^\s+|\s+$/g, '')
+    if (trim(u.password) !== trim(password)) return { ok: false, reason: 'bad_password' }
     return { ok: true, user: u }
   }
   const usernameTaken = (username, exceptId) =>
