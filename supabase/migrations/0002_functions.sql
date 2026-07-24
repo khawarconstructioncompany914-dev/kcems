@@ -101,3 +101,26 @@ begin
   values (p_actor, 'funds.add', 'fund_txn', f.id, jsonb_build_object('amount',p_amount,'supervisor_id',p_supervisor));
   return f;
 end $$;
+
+-- supervisor fixes a returned item and re-submits -> engineer_review
+-- p_note / p_bill are optional corrections: pass null to leave the value as-is
+-- (an engineer usually returns an item because the note or the bill photo was
+-- unusable, so the supervisor needs a way to replace them on the way back in).
+create or replace function kcems_resubmit(
+  p_expense uuid, p_actor uuid, p_note text default null, p_bill text default null
+) returns expense language plpgsql as $$
+declare e expense;
+begin
+  update expense
+     set status         = 'engineer_review',
+         return_note    = null,
+         note           = coalesce(p_note, note),
+         bill_image_url = coalesce(p_bill, bill_image_url)
+   where id = p_expense and status = 'returned' returning * into e;
+  if e.id is null then raise exception 'expense not in returned state'; end if;
+  insert into audit_log (actor_id, action, entity, entity_id, before, after)
+  values (p_actor, 'expense.resubmit', 'expense', e.id,
+          jsonb_build_object('status','returned'),
+          jsonb_build_object('status','engineer_review'));
+  return e;
+end $$;

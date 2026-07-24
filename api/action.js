@@ -40,6 +40,28 @@ export default async function handler(req, res) {
         return ok(res)
       }
 
+      // supervisor re-submits an item the engineer sent back
+      case 'RESUBMIT': {
+        const e = await getExpense(b.id)
+        if (!e) return json(res, 404, { error: 'not_found' })
+        // only the person who logged it (or the owner) can put it back in the queue
+        if (me.role !== 'owner' && e.supervisor_id !== me.id) return deny(res)
+        let bill = null
+        if (b.billData) {
+          const sb = supaStorage()
+          if (sb) {
+            try {
+              const buf = Buffer.from(String(b.billData).split(',').pop(), 'base64')
+              const path = `${me.id}/${Date.now()}.jpg`
+              const up = await sb.storage.from('bills').upload(path, buf, { contentType: 'image/jpeg', upsert: false })
+              if (!up.error) bill = path
+            } catch { /* keep the existing photo */ }
+          }
+        }
+        await q('select kcems_resubmit($1,$2,$3,$4)', [b.id, actor, b.note || null, bill])
+        return ok(res)
+      }
+
       case 'PASS_UP':
       case 'RETURN': {
         const e = await getExpense(b.id)

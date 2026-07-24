@@ -1,6 +1,22 @@
-// GET /api/health — reports how Supabase is wired, without exposing any secret values.
-// Used once to build the backend against the real setup. Safe to keep (booleans only).
+import { currentUser, q, json } from './_lib.js'
+
+// GET /api/health — liveness probe.
+//
+// Anonymous callers get a bare {ok:true}: the detailed report describes how the
+// deployment is wired (which env vars exist, whether the schema is present) and
+// that is reconnaissance, not something to hand to the public. Owners and admins
+// get the full picture.
+//
+// The DB probe goes through the shared pool in _lib.js, so it exercises exactly
+// the connection path the real API uses (including the sslmode stripping the
+// Supabase pooler needs) instead of hand-rolling its own and reporting a
+// false negative.
 export default async function handler(req, res) {
+  const me = await currentUser(req).catch(() => null)
+  if (!me || (me.role !== 'owner' && me.role !== 'admin')) {
+    return json(res, 200, { ok: true })
+  }
+
   const has = (k) => Boolean(process.env[k])
   const env = {
     SUPABASE_URL: has('SUPABASE_URL'),
@@ -17,29 +33,17 @@ export default async function handler(req, res) {
     VITE_DATA_SOURCE: process.env.VITE_DATA_SOURCE || null,
   }
 
-  let db = { tried: false }
-  const cs = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL || process.env.DATABASE_URL
-  if (cs) {
-    db = { tried: true, reachable: false }
-    try {
-      const pg = await import('pg')
-      const client = new pg.default.Client({ connectionString: cs, ssl: { rejectUnauthorized: false } })
-      await client.connect()
-      const r = await client.query(`select
-        to_regclass('public.app_user')  as app_user,
-        to_regclass('public.expense')   as expense,
-        to_regclass('public.site')      as site`)
-      let userCount = null
-      if (r.rows[0].app_user) {
-        const c = await client.query('select count(*)::int as n from app_user')
-        userCount = c.rows[0].n
-      }
-      db = { tried: true, reachable: true, schema: r.rows[0], userCount }
-      await client.end()
-    } catch (e) {
-      db = { tried: true, reachable: false, error: String(e && e.message || e) }
-    }
+  let db
+  try {
+    const r = await q(`select
+      to_regclass('public.app_user')  as app_user,
+      to_regclass('public.expense')   as expense,
+      to_regclass('public.site')      as site`)
+    const c = r.rows[0].app_user ? await q('select count(*)::int as n from app_user') : null
+    db = { reachable: true, schema: r.rows[0], userCount: c ? c.rows[0].n : null }
+  } catch (e) {
+    db = { reachable: false, error: String((e && e.message) || e) }
   }
 
-  res.status(200).json({ ok: true, node: process.version, env, db, ts: new Date().toISOString() })
+  json(res, 200, { ok: true, node: process.version, env, db, ts: new Date().toISOString() })
 }
