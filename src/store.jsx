@@ -6,6 +6,7 @@
 // ============================================================
 import { createContext, useContext, useReducer, useMemo, useEffect, useRef, useState, useCallback } from 'react'
 import { buildSeed } from './data/seed.js'
+import { resolveLogin } from './data/match.js'
 
 const KEY = 'kcems.v1'
 const uid = (p = 'x') => `${p}_${Math.random().toString(36).slice(2, 9)}`
@@ -327,19 +328,11 @@ export function makeSelectors(state) {
     return state.sites.filter((x) => x.id === s?.siteId)
   }
 
-  // username/password check for the local (demo) provider
+  // username/password check for the local (demo) provider — same matching
+  // rules as the server (src/data/match.js) so the demo behaves like live
   const authenticate = (username, password) => {
-    // accept the username OR the person's full name, ignoring case and spaces
-    const key = String(username).trim().toLowerCase().replace(/\s+/g, '')
-    const u = state.users.find((x) =>
-      x.username?.toLowerCase().replace(/\s+/g, '') === key ||
-      x.name?.toLowerCase().replace(/\s+/g, '') === key)
-    if (!u) return { ok: false, reason: 'no_user' }
-    if (u.status === 'disabled') return { ok: false, reason: 'disabled' }
-    // ignore surrounding whitespace (copy-paste / phone keyboards add it)
     const trim = (s) => String(s ?? '').replace(/^\s+|\s+$/g, '')
-    if (trim(u.password) !== trim(password)) return { ok: false, reason: 'bad_password' }
-    return { ok: true, user: u }
+    return resolveLogin(state.users, username, (u) => trim(u.password) === trim(password))
   }
   const usernameTaken = (username, exceptId) =>
     state.users.some((u) => u.id !== exceptId && u.username?.toLowerCase() === String(username).trim().toLowerCase())
