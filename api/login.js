@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   // meaningful here, so ignore it (inner characters are untouched).
   const pw = String(password).replace(/^\s+|\s+$/g, '')
 
-  // Be forgiving: people naturally type their display name ("Messam Ali").
+  // Be forgiving: people naturally type their display name ("Meesam Ali").
   // Usernames never contain spaces, so strip them and compare case-insensitively.
   const r = await q(
     `select * from app_user
