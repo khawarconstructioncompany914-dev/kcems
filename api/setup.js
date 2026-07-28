@@ -62,7 +62,7 @@ async function seed(client) {
   const U = (id) => '00000000-0000-0000-0000-' + String(id).padStart(12, '0')
 
   const users = [
-    [U('01'), 'Messam Khawar', 'messam', '+92 300 8500011', 'messam@khawar.pk', 'owner', null, null],
+    [U('01'), 'Meesam Ali', 'messam', '+92 300 8500011', 'messam@khawar.pk', 'owner', null, null],
     [U('02'), 'Junaid Malik', 'junaid', '+92 301 8500033', 'junaid@khawar.pk', 'admin', null, null],
     [U('03'), 'Tariq Mehmood', 'tariq', '+92 301 8500022', 'tariq@khawar.pk', 'finance', null, null],
     [U('11'), 'Ali Khawaja', 'ali', '+92 321 4410001', 'ali@khawar.pk', 'engineer', null, null],

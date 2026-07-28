@@ -16,7 +16,7 @@ export function buildSeed() {
   // hash stored server-side — never plain text like this local demo.
   const U = (o) => ({ password: 'kcems', mustChangePassword: false, ...o })
   const users = [
-    U({ id: 'u_owner', name: 'Messam Khawar',  username: 'messam', phone: '+92 300 8500011', email: 'messam@khawar.pk', role: 'owner',   status: 'active' }),
+    U({ id: 'u_owner', name: 'Meesam Ali',  username: 'messam', phone: '+92 300 8500011', email: 'messam@khawar.pk', role: 'owner',   status: 'active' }),
     U({ id: 'u_admin', name: 'Junaid Malik',   username: 'junaid', phone: '+92 301 8500033', email: 'junaid@khawar.pk', role: 'admin',   status: 'active' }),
     U({ id: 'u_fin',   name: 'Tariq Mehmood',  username: 'tariq',  phone: '+92 301 8500022', email: 'tariq@khawar.pk',  role: 'finance', status: 'active' }),
 
