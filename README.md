@@ -14,7 +14,7 @@ npm run dev        # → http://localhost:5183
 ```
 
 Sign in with **username + password**. In dev, the seeded accounts all use password
-`kcems` and a quick-login row is shown (owner `messam`, admin `junaid`, finance
+`kcems` and a quick-login row is shown (owner `meesamali`, admin `junaid`, finance
 `tariq`, engineer `ali`, supervisor `faraz`). Accounts created in-app get a temp
 password and are forced to set their own on first login.
 
