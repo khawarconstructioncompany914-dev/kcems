@@ -7,6 +7,9 @@
 -- ============================================================
 
 -- supervisor logs an expense -> engineer_review
+-- p_bill is legacy as of 0003: photos now live in expense_photo (many per
+-- expense) and the API passes null here. The parameter stays so this
+-- signature never changes out from under a deployed build — see 0003.
 create or replace function kcems_log_expense(
   p_supervisor uuid, p_site uuid, p_amount bigint,
   p_category expense_cat_t, p_note text, p_bill text

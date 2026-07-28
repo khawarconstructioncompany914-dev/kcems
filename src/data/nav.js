@@ -19,6 +19,8 @@ export const NAV_ICONS = {
   funds:     'M3 7h18v12H3zM3 11h18M6.5 15.5h4',
   me:        'M16 10.5a4 4 0 10-8 0 4 4 0 008 0M5.5 20a6.5 6.5 0 0113 0',
   more:      'M5 12h.01M12 12h.01M19 12h.01',
+  bills:     'M4 3h16v18l-3-2-2 2-3-2-3 2-2-2-3 2zM8 8h8M8 12h5',
+  claims:    'M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2zM9 9h6M9 13h4',
 }
 
 // label = sidebar text, short = bottom-tab text (must stay tiny)
@@ -34,14 +36,16 @@ export const NAV_ITEMS = {
   history:   { to: '/history',   label: 'My history',    short: 'HISTORY' },
   funds:     { to: '/funds',     label: 'Funds',         short: 'FUNDS' },
   me:        { to: '/me',        label: 'Me',            short: 'ME' },
+  bills:     { to: '/bills',        label: 'Bills',       short: 'BILLS' },
+  claims:    { to: '/my-expenses',  label: 'My expenses', short: 'MINE' },
 }
 
 // role -> ordered nav keys (first 4 become the phone's primary tabs)
 export const ROLE_NAV = {
-  owner:      ['dashboard', 'approvals', 'people', 'sites', 'reports', 'admin'],
-  admin:      ['dashboard', 'people', 'sites', 'admin'],
-  finance:    ['approvals', 'people', 'sites', 'reports'],
-  engineer:   ['review', 'people', 'sites'],
+  owner:      ['dashboard', 'approvals', 'people', 'sites', 'bills', 'reports', 'admin'],
+  admin:      ['dashboard', 'people', 'sites', 'bills', 'admin'],
+  finance:    ['approvals', 'people', 'sites', 'bills', 'reports'],
+  engineer:   ['review', 'claims', 'people', 'sites'],
   supervisor: ['home', 'history', 'funds', 'me'],
 }
 

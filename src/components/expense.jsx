@@ -1,8 +1,9 @@
 // Expense row + review/approve action controls shared by the office queues.
-import { useState, useEffect } from 'react'
-import { useStore, useSelectors, LIVE } from '../store.jsx'
-import { formatMoney, fmtDate, CATEGORIES, ROLES } from '../data/model.js'
-import { Monogram, StatusPill, CatDot, Modal, BillPhoto } from './bits.jsx'
+import { useState } from 'react'
+import { useStore, useSelectors } from '../store.jsx'
+import { formatMoney, fmtDate, ROLES } from '../data/model.js'
+import { Monogram, StatusPill, CatDot, Modal } from './bits.jsx'
+import { PhotoGallery, photosOf } from './photos.jsx'
 
 // A single expense card with actions appropriate to `mode`:
 //  'engineer' -> pass up / return / reject      'finance' -> approve / reject
@@ -10,20 +11,10 @@ export function ExpenseCard({ e, mode }) {
   const { dispatch, toast } = useStore()
   const { me } = useSelectors()
   const [bill, setBill] = useState(false)
-  const [billUrl, setBillUrl] = useState(null)
   const [reject, setReject] = useState(false)
   const [ret, setRet] = useState(false)
-  const sup = ROLES[e.supervisor?.role] || {}
-
-  // fetch a signed URL for the real bill photo when the modal opens (live mode)
-  useEffect(() => {
-    if (!bill) return
-    setBillUrl(null)
-    if (LIVE && e.billImageUrl && e.billImageUrl !== 'bill') {
-      fetch('/api/bill?path=' + encodeURIComponent(e.billImageUrl), { credentials: 'same-origin' })
-        .then((r) => r.json()).then((d) => { if (d.url) setBillUrl(d.url) }).catch(() => {})
-    }
-  }, [bill, e.billImageUrl])
+  const photos = photosOf(e)
+  const isClaim = e.kind === 'reimbursement'
 
   const act = (fn) => fn()
 
@@ -38,7 +29,10 @@ export function ExpenseCard({ e, mode }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
             <span style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)' }}>{e.supervisor?.name}</span>
             <span style={{ color: 'var(--text-25)' }}>·</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)' }}><CatDot category={e.category} />{e.site?.label || e.site?.name}</span>
+            {/* a reimbursement claim has no site, so show what it is instead */}
+            {isClaim
+              ? <span className="pill pill-info" style={{ height: 20, fontSize: 9 }}>REIMBURSEMENT</span>
+              : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)' }}><CatDot category={e.category} />{e.site?.label || e.site?.name}</span>}
             <span style={{ color: 'var(--text-25)' }}>·</span>
             <span style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-40)' }}>{fmtDate(e.createdAt)}</span>
           </div>
@@ -55,7 +49,7 @@ export function ExpenseCard({ e, mode }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
         <button className="btn btn-ghost btn-sm" onClick={() => setBill(true)}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M3 17l5-6 4 4 3-4 6 7" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="2"/></svg>
-          Bill
+          {photos.length > 1 ? `Bills · ${photos.length}` : 'Bill'}
         </button>
         <div className="spacer" />
         {mode === 'engineer' && (
@@ -74,15 +68,14 @@ export function ExpenseCard({ e, mode }) {
       </div>
 
       {/* bill modal */}
-      <Modal open={bill} onClose={() => setBill(false)} width={380}>
+      <Modal open={bill} onClose={() => setBill(false)} width={520}>
         <div style={{ padding: 20 }}>
-          <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff', marginBottom: 4 }}>Bill photo</div>
-          <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginBottom: 16 }}>{e.note} · {formatMoney(e.amount)}</div>
-          <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid var(--border)', aspectRatio: '3/4', background: 'repeating-linear-gradient(135deg,#111310,#111310 12px,#0d0f0c 12px,#0d0f0c 24px)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-40)', font: '600 12px/1 var(--f-mono)' }}>
-            {billUrl
-              ? <img src={billUrl} alt="bill" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
-              : <div style={{ textAlign: 'center' }}><BillPhoto w={64} h={64} /><div style={{ marginTop: 10 }}>{LIVE && e.billImageUrl && e.billImageUrl !== 'bill' ? 'LOADING…' : 'NO PHOTO ON FILE'}</div></div>}
+          <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff', marginBottom: 4 }}>
+            {photos.length > 1 ? `Bill photos · ${photos.length}` : 'Bill photo'}
           </div>
+          <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginBottom: 16 }}>{e.note} · {formatMoney(e.amount)}</div>
+          {/* a responsive grid, so this reflows instead of being one fixed 3:4 box */}
+          <PhotoGallery photos={photos} minPx={96} />
           <button className="btn btn-ghost" style={{ width: '100%', marginTop: 16 }} onClick={() => setBill(false)}>Close</button>
         </div>
       </Modal>

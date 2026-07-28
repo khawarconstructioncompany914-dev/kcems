@@ -1,58 +1,63 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore, useSelectors } from '../../store.jsx'
-import { formatMoney, CATEGORIES } from '../../data/model.js'
+import { formatMoney, CATEGORIES, SITE_CATEGORIES } from '../../data/model.js'
+import { PhotoTray } from '../../components/photos.jsx'
 
-const CATS = ['materials', 'labour', 'fuel', 'tea_food']
-
-// downscale + JPEG-compress the bill so uploads stay small and fast
-async function compress(file, max = 1280, quality = 0.72) {
-  if (!file) return null
-  try {
-    const img = await createImageBitmap(file)
-    const scale = Math.min(1, max / Math.max(img.width, img.height))
-    const w = Math.round(img.width * scale), h = Math.round(img.height * scale)
-    const c = document.createElement('canvas'); c.width = w; c.height = h
-    c.getContext('2d').drawImage(img, 0, 0, w, h)
-    return c.toDataURL('image/jpeg', quality)
-  } catch { return null }
-}
+const MAX_PHOTOS = 8
 
 export default function AddExpense() {
   const nav = useNavigate()
   const { dispatch, toast } = useStore()
-  const { me, userById, siteById } = useSelectors()
+  const { me, userById } = useSelectors()
   const eng = userById(me.engineerId)
-
-  const camRef = useRef(null)   // opens the camera on mobile
-  const galRef = useRef(null)   // opens the photo library / file picker
 
   const [amount, setAmount] = useState('')
   const [cat, setCat] = useState('materials')
   const [note, setNote] = useState('')
-  const [photo, setPhoto] = useState(null) // { url, name, file }
+  const [photos, setPhotos] = useState([])
   const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState(null)   // the bill just sent, if any
 
   const amt = Math.max(0, Math.round(Number(amount.toString().replace(/[^\d]/g, '')) || 0))
-  const valid = amt > 0 && note.trim() && !!photo
+  const valid = amt > 0 && note.trim() && photos.length >= 1
 
-  const onPick = (e) => {
-    const f = e.target.files?.[0]
-    if (!f) return
-    if (photo?.url) URL.revokeObjectURL(photo.url)
-    setPhoto({ url: URL.createObjectURL(f), name: f.name, file: f })
-    e.target.value = '' // allow re-selecting the same file
-  }
-  const clearPhoto = () => { if (photo?.url) URL.revokeObjectURL(photo.url); setPhoto(null) }
+  const reset = () => { setAmount(''); setNote(''); setPhotos([]); setCat('materials'); setDone(null) }
 
   const submit = async () => {
     if (!valid || busy) return
     setBusy(true)
-    const billData = await compress(photo.file) // uploaded to the private "bills" bucket in live mode
-    await dispatch({ type: 'LOG_EXPENSE', payload: { supervisorId: me.id, siteId: me.siteId, amount: amt, category: cat, note: note.trim(), bill: true, billData } })
+    await dispatch({
+      type: 'LOG_EXPENSE',
+      payload: {
+        supervisorId: me.id, siteId: me.siteId, amount: amt, category: cat, note: note.trim(),
+        photos: photos.map((p) => ({ dataUrl: p.dataUrl, capturedAt: p.capturedAt })),
+      },
+    })
     setBusy(false)
-    toast(`Sent to ${eng?.name.split(' ')[0]} for review`)
-    nav('/history')
+    toast(`Sent to ${eng?.name.split(' ')[0] || 'engineer'} for review`)
+    setDone({ amount: amt, note: note.trim() })
+  }
+
+  // After a send we stay on the page rather than bouncing to /history: a
+  // supervisor clearing a day's pocketful of bills logs several in a row, and
+  // navigating away after each one made that a five-tap round trip per bill.
+  if (done) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', maxWidth: 620, margin: '0 auto', justifyContent: 'center', padding: '0 20px', textAlign: 'center' }}>
+        <div style={{ width: 62, height: 62, borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 30px/1 var(--f-body)', margin: '0 auto 18px' }}>✓</div>
+        <div style={{ font: '700 19px/1.3 var(--f-body)', color: '#fff' }}>Sent for review</div>
+        <div style={{ font: '500 13px/1.5 var(--f-body)', color: 'var(--text-50)', marginTop: 8 }}>
+          {formatMoney(done.amount)} · {done.note}
+        </div>
+        <button className="btn btn-primary" style={{ width: '100%', height: 52, fontSize: 15, marginTop: 26 }} onClick={reset}>
+          Log another bill →
+        </button>
+        <button className="btn btn-ghost" style={{ width: '100%', height: 46, marginTop: 10 }} onClick={() => nav('/history')}>
+          Done, back to history
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -61,10 +66,6 @@ export default function AddExpense() {
         <button onClick={() => nav('/home')} style={{ background: 'none', border: 'none', font: '400 24px/1 var(--f-body)', color: '#fff', cursor: 'pointer', padding: 0, minWidth: 44, minHeight: 44, textAlign: 'left' }}>‹</button>
         <div style={{ font: '700 17px/1 var(--f-body)', color: '#fff' }}>Log an expense</div>
       </div>
-
-      {/* hidden native inputs — capture="environment" makes phones open the camera */}
-      <input ref={camRef} type="file" accept="image/*" capture="environment" onChange={onPick} style={{ display: 'none' }} />
-      <input ref={galRef} type="file" accept="image/*" onChange={onPick} style={{ display: 'none' }} />
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px' }}>
         <div style={{ textAlign: 'center', padding: '8px 0 18px' }}>
@@ -80,7 +81,7 @@ export default function AddExpense() {
 
         <div style={{ font: '600 11px/1 var(--f-mono)', color: 'var(--text-50)', marginBottom: 9 }}>CATEGORY</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 16 }}>
-          {CATS.map((k) => (
+          {SITE_CATEGORIES.map((k) => (
             <button key={k} className={`chip ${cat === k ? 'on' : ''}`} onClick={() => setCat(k)}>{CATEGORIES[k].label}</button>
           ))}
         </div>
@@ -89,34 +90,20 @@ export default function AddExpense() {
         <input className="field" placeholder="e.g. River sand — 6 trolleys" value={note} onChange={(e) => setNote(e.target.value)} style={{ marginBottom: 16, height: 44 }} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
-          <span style={{ font: '600 11px/1 var(--f-mono)', color: 'var(--text-50)' }}>BILL PHOTO</span>
-          <span style={{ font: '600 10px/1 var(--f-mono)', color: 'var(--danger)' }}>REQUIRED</span>
+          <span style={{ font: '600 11px/1 var(--f-mono)', color: 'var(--text-50)' }}>BILL PHOTOS</span>
+          <span style={{ font: '600 10px/1 var(--f-mono)', color: photos.length ? 'var(--text-40)' : 'var(--danger)' }}>
+            {photos.length ? `${photos.length} OF ${MAX_PHOTOS}` : 'REQUIRED'}
+          </span>
         </div>
-        <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
-          {/* preview of the captured bill */}
-          {photo && (
-            <div style={{ width: 72, height: 72, borderRadius: 12, overflow: 'hidden', position: 'relative', border: '1px solid var(--accent-line)', flex: 'none' }}>
-              <img src={photo.url} alt="bill" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              <button onClick={clearPhoto} style={{ position: 'absolute', top: 3, right: 3, width: 20, height: 20, borderRadius: '50%', background: 'rgba(5,6,5,.8)', border: 'none', color: '#fff', font: '700 12px/1 var(--f-body)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
-            </div>
-          )}
-          {/* camera */}
-          <button onClick={() => camRef.current?.click()} style={{ width: 72, height: 72, borderRadius: 12, background: 'var(--input)', border: '1px dashed var(--accent-line)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, color: 'var(--accent)', cursor: 'pointer' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <span style={{ font: '600 9px/1 var(--f-mono)' }}>CAMERA</span>
-          </button>
-          {/* gallery */}
-          <button onClick={() => galRef.current?.click()} style={{ width: 72, height: 72, borderRadius: 12, background: 'var(--input)', border: '1px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, color: 'var(--text-40)', cursor: 'pointer' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-            <span style={{ font: '600 9px/1 var(--f-mono)' }}>GALLERY</span>
-          </button>
-        </div>
-        {!photo && <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 4 }}>Snap the bill (or pick from gallery) — required before you can send.</div>}
+        <PhotoTray
+          photos={photos} onChange={setPhotos} max={MAX_PHOTOS}
+          hint="Front and back, or several items — add as many as the bill needs."
+        />
       </div>
 
       <div style={{ flex: 'none', padding: '14px 20px 26px', background: 'linear-gradient(0deg, var(--bg-panel) 70%, transparent)' }}>
         <button className="btn btn-primary" style={{ width: '100%', height: 52, fontSize: 15, opacity: valid && !busy ? 1 : 0.5 }} disabled={!valid || busy} onClick={submit}>
-          {busy ? 'Sending…' : photo ? `Send to ${eng?.name.split(' ')[0] || 'engineer'} for review →` : 'Add a bill photo to send'}
+          {busy ? 'Sending…' : photos.length ? `Send to ${eng?.name.split(' ')[0] || 'engineer'} for review →` : 'Add a bill photo to send'}
         </button>
       </div>
     </div>

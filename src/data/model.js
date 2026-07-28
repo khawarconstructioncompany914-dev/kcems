@@ -20,7 +20,16 @@ export const CATEGORIES = {
   fuel:      { label: 'Fuel',       color: 'var(--warn)' },
   tea_food:  { label: 'Tea & food', color: 'var(--danger)' },
   other:     { label: 'Other',      color: 'var(--text-50)' },
+  // reimbursement-only categories (engineer travel/lodging claims). They never
+  // appear on a site breakdown — site views filter to kind='site_expense' —
+  // so travel sharing --info with labour can't collide inside one chart.
+  travel:    { label: 'Travel',     color: 'var(--info)' },
+  lodging:   { label: 'Lodging',    color: 'var(--violet)' },
 }
+
+// what a supervisor may log against a site vs what an engineer may claim back
+export const SITE_CATEGORIES = ['materials', 'labour', 'fuel', 'tea_food']
+export const CLAIM_CATEGORIES = ['travel', 'lodging', 'tea_food', 'other']
 
 // Expense state machine (Build Spec §3)
 export const STATUS = {

@@ -1,15 +1,35 @@
-import { currentUser, q, json, readBody, hashPassword, checkPassword, normPassword, supaStorage } from './_lib.js'
+import { currentUser, q, json, readBody, hashPassword, checkPassword, normPassword, uploadPhotos, MAX_PHOTOS } from './_lib.js'
 
 // Mirrors the client reducer, but authorized server-side (Build Spec §2)
 // and running the atomic state-machine RPCs (§3). Front-end refetches /api/data after.
 const OWNER_ADMIN = new Set(['owner', 'admin'])
 const FINANCE_OWNER = new Set(['owner', 'finance'])
 
+// what an engineer may claim back — site-only categories are excluded
+const CLAIM_CATS = new Set(['travel', 'lodging', 'tea_food', 'other'])
+
 const ok = (res) => json(res, 200, { ok: true })
 const deny = (res) => json(res, 403, { error: 'forbidden' })
 
 async function getExpense(id) { const r = await q('select * from expense where id = $1', [id]); return r.rows[0] }
 async function isMySupervisor(engId, supId) { const r = await q('select 1 from app_user where id = $1 and engineer_id = $2', [supId, engId]); return r.rowCount > 0 }
+
+// Accept both shapes. New clients send `photos: [{dataUrl, capturedAt}]`; a
+// phone still running the previous bundle from the service-worker cache sends
+// a single `billData` string, and it should keep working rather than start
+// failing the moment this deploys.
+const incomingPhotos = (src) => {
+  if (Array.isArray(src?.photos) && src.photos.length) return src.photos
+  if (src?.billData) return [{ dataUrl: src.billData, capturedAt: null }]
+  return []
+}
+
+async function saveExpensePhotos(expenseId, uploaded, actor) {
+  for (const p of uploaded) {
+    await q(`insert into expense_photo (expense_id, storage_path, captured_at, uploaded_by)
+             values ($1, $2, coalesce($3::timestamptz, now()), $4)`, [expenseId, p.path, p.capturedAt, actor])
+  }
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { error: 'method_not_allowed' })
@@ -23,20 +43,31 @@ export default async function handler(req, res) {
       case 'LOG_EXPENSE': {
         if (me.role !== 'supervisor') return deny(res)
         const p = b.payload || {}
-        let bill = p.bill ? 'bill' : null
-        if (p.billData) {
-          const sb = supaStorage()
-          if (sb) {
-            try {
-              const buf = Buffer.from(String(p.billData).split(',').pop(), 'base64')
-              const path = `${me.id}/${Date.now()}.jpg`
-              const up = await sb.storage.from('bills').upload(path, buf, { contentType: 'image/jpeg', upsert: false })
-              if (!up.error) bill = path
-            } catch { /* fall back to marker */ }
-          }
-        }
-        await q('select kcems_log_expense($1,$2,$3,$4,$5,$6)',
-          [me.id, p.siteId || me.site_id, Math.round(p.amount), p.category, p.note, bill])
+        const photos = incomingPhotos(p)
+        if (!photos.length) return json(res, 400, { error: 'photo_required' })
+        // The function returns the `expense` composite, so it can sit in FROM
+        // and expand to columns — one call, and we get the new id back.
+        const r = await q('select id from kcems_log_expense($1,$2,$3,$4,$5,$6)',
+          [me.id, p.siteId || me.site_id, Math.round(p.amount), p.category, p.note, null])
+        const id = r.rows[0].id
+        await saveExpensePhotos(id, await uploadPhotos(`${me.id}/${id}`, photos), actor)
+        return ok(res)
+      }
+
+      // engineer files a travel/lodging/food reimbursement claim
+      case 'LOG_CLAIM': {
+        if (me.role !== 'engineer') return deny(res)
+        const p = b.payload || {}
+        const amount = Math.round(p.amount)
+        if (!(amount > 0)) return json(res, 400, { error: 'bad_amount' })
+        if (!CLAIM_CATS.has(p.category)) return json(res, 400, { error: 'bad_category' })
+        if (!String(p.note || '').trim()) return json(res, 400, { error: 'missing_fields' })
+        const photos = incomingPhotos(p)
+        if (!photos.length) return json(res, 400, { error: 'photo_required' })
+        const r = await q('select id from kcems_log_reimbursement($1,$2,$3,$4)',
+          [me.id, amount, p.category, String(p.note).trim()])
+        const id = r.rows[0].id
+        await saveExpensePhotos(id, await uploadPhotos(`${me.id}/${id}`, photos), actor)
         return ok(res)
       }
 
@@ -46,19 +77,12 @@ export default async function handler(req, res) {
         if (!e) return json(res, 404, { error: 'not_found' })
         // only the person who logged it (or the owner) can put it back in the queue
         if (me.role !== 'owner' && e.supervisor_id !== me.id) return deny(res)
-        let bill = null
-        if (b.billData) {
-          const sb = supaStorage()
-          if (sb) {
-            try {
-              const buf = Buffer.from(String(b.billData).split(',').pop(), 'base64')
-              const path = `${me.id}/${Date.now()}.jpg`
-              const up = await sb.storage.from('bills').upload(path, buf, { contentType: 'image/jpeg', upsert: false })
-              if (!up.error) bill = path
-            } catch { /* keep the existing photo */ }
-          }
-        }
-        await q('select kcems_resubmit($1,$2,$3,$4)', [b.id, actor, b.note || null, bill])
+        // Photos APPEND here rather than replace: an engineer usually returns
+        // an item because one photo was unreadable, and wiping the ones that
+        // were already fine would make the reviewer's job harder, not easier.
+        await q('select kcems_resubmit($1,$2,$3,$4)', [b.id, actor, b.note || null, null])
+        const photos = incomingPhotos(b)
+        if (photos.length) await saveExpensePhotos(b.id, await uploadPhotos(`${me.id}/${b.id}`, photos), actor)
         return ok(res)
       }
 
@@ -90,7 +114,19 @@ export default async function handler(req, res) {
       }
       case 'ADD_FUNDS': {
         if (!FINANCE_OWNER.has(me.role)) return deny(res)
-        await q('select kcems_add_funds($1,$2,$3,$4,$5)', [b.supervisorId, actor, Math.round(b.amount), b.method || 'cash', b.note || ''])
+        // Handing over cash is the one step with no paper trail of its own, so
+        // proof of the transfer is required before the money is recorded. The
+        // SQL function can't see the photos, so the check has to live here.
+        const photos = incomingPhotos(b)
+        if (!photos.length) return json(res, 400, { error: 'proof_required' })
+        const r = await q('select id from kcems_add_funds($1,$2,$3,$4,$5)',
+          [b.supervisorId, actor, Math.round(b.amount), b.method || 'cash', b.note || ''])
+        const id = r.rows[0].id
+        const up = await uploadPhotos(`${b.supervisorId}/funds/${id}`, photos, 3)
+        for (const p of up) {
+          await q(`insert into fund_txn_photo (fund_txn_id, storage_path, captured_at, uploaded_by)
+                   values ($1, $2, coalesce($3::timestamptz, now()), $4)`, [id, p.path, p.capturedAt, actor])
+        }
         return ok(res)
       }
 

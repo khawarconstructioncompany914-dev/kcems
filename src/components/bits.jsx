@@ -1,5 +1,6 @@
 // Small shared building blocks used across screens.
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { STATUS, CATEGORIES, initials } from '../data/model.js'
 import { useStore } from '../store.jsx'
 
@@ -51,7 +52,14 @@ export function BillPhoto({ w = 72, h = 72, filled = true, label }) {
   )
 }
 
-// centered modal
+// Centered modal.
+//
+// Rendered through a portal to <body>, which is load-bearing rather than
+// tidiness: the card animates with `scaleIn`, and a transformed element
+// becomes the containing block for any `position: fixed` descendant. A modal
+// opened from inside another modal (the photo viewer launched from the bill
+// grid) would otherwise be clipped to its parent's box instead of covering
+// the screen. The portal lifts each one out to the top level.
 export function Modal({ open, onClose, width = 440, children }) {
   useEffect(() => {
     if (!open) return
@@ -60,12 +68,13 @@ export function Modal({ open, onClose, width = 440, children }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
   if (!open) return null
-  return (
+  return createPortal(
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(3,4,3,.66)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} className="fade-in">
       <div onClick={(e) => e.stopPropagation()} className="card" style={{ width, maxWidth: '100%', maxHeight: '92vh', overflow: 'auto', animation: 'scaleIn .22s cubic-bezier(.2,.7,.2,1) both', boxShadow: '0 50px 120px -50px #000' }}>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

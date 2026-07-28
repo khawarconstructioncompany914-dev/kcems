@@ -11,6 +11,17 @@ import { resolveLogin } from './data/match.js'
 const KEY = 'kcems.v1'
 const uid = (p = 'x') => `${p}_${Math.random().toString(36).slice(2, 9)}`
 
+// Demo-store photo shape. In live mode the API stores a storage path and the
+// viewer signs a URL for it; here the data URL itself is the "path", so the
+// same PhotoGrid renders both without knowing which mode it is in.
+const toPhotos = (photos) =>
+  (Array.isArray(photos) ? photos : []).map((p) => ({
+    id: uid('ph'),
+    path: typeof p === 'string' ? p : p.dataUrl,
+    url: typeof p === 'string' ? p : p.dataUrl,
+    capturedAt: (typeof p === 'object' && p?.capturedAt) || new Date().toISOString(),
+  }))
+
 function load() {
   try {
     const raw = localStorage.getItem(KEY)
@@ -45,7 +56,8 @@ function reducer(state, action) {
       const { supervisorId, siteId, amount, category, note } = action.payload
       const exp = {
         id: uid('e'), supervisorId, siteId, amount: Math.round(amount), category, note,
-        billImageUrl: action.payload.bill ? 'bill' : null,
+        billImageUrl: null, kind: 'site_expense',
+        photos: toPhotos(action.payload.photos),
         status: 'engineer_review', rejectReason: null, returnNote: null, settledAt: null,
         createdAt: now, decidedAt: null,
       }
@@ -53,6 +65,24 @@ function reducer(state, action) {
         ...state,
         expenses: [exp, ...state.expenses],
         audit: log({ actorId: supervisorId, action: 'expense.create', entity: 'Expense', entityId: exp.id, after: { status: 'engineer_review', amount } }),
+      }
+    }
+
+    // engineer files a travel/lodging/food reimbursement claim -> finance_review
+    // (no site, no cash-in-hand effect, skips engineer review — they are the claimant)
+    case 'LOG_CLAIM': {
+      const { claimantId, amount, category, note } = action.payload
+      const exp = {
+        id: uid('e'), supervisorId: claimantId, siteId: null, amount: Math.round(amount), category, note,
+        billImageUrl: null, kind: 'reimbursement',
+        photos: toPhotos(action.payload.photos),
+        status: 'finance_review', rejectReason: null, returnNote: null, settledAt: null,
+        createdAt: now, decidedAt: null,
+      }
+      return {
+        ...state,
+        expenses: [exp, ...state.expenses],
+        audit: log({ actorId: claimantId, action: 'expense.claim', entity: 'Expense', entityId: exp.id, after: { status: 'finance_review', amount, kind: 'reimbursement' } }),
       }
     }
 
@@ -77,9 +107,18 @@ function reducer(state, action) {
         { actorId: action.actorId, action: 'expense.reject', entity: 'Expense', entityId: action.id, after: { status: 'rejected', rejectReason: action.reason } })
 
     // supervisor re-submits a returned item -> engineer_review
-    case 'RESUBMIT':
-      return patchExpense(action.id, { status: 'engineer_review', returnNote: null },
-        { actorId: action.actorId, action: 'expense.resubmit', entity: 'Expense', entityId: action.id, after: { status: 'engineer_review' } })
+    // Photos APPEND, matching the server: the engineer usually sent it back
+    // because one photo was unreadable, so the good ones must survive.
+    case 'RESUBMIT': {
+      const prev = state.expenses.find((e) => e.id === action.id)
+      const added = toPhotos(action.photos)
+      return patchExpense(action.id, {
+        status: 'engineer_review',
+        returnNote: null,
+        note: action.note || prev?.note,
+        photos: [...(prev?.photos || []), ...added],
+      }, { actorId: action.actorId, action: 'expense.resubmit', entity: 'Expense', entityId: action.id, after: { status: 'engineer_review' } })
+    }
 
     // settle a rejected/owed item -> records a settlement FundTxn + clears owed
     case 'SETTLE': {
@@ -94,9 +133,9 @@ function reducer(state, action) {
       }
     }
 
-    // owner/finance adds funds
+    // owner/finance adds funds (proof photo required — see components/funds.jsx)
     case 'ADD_FUNDS': {
-      const txn = { id: uid('f'), supervisorId: action.supervisorId, type: 'funds_in', method: action.method || 'cash', amount: Math.round(action.amount), byUserId: action.actorId, note: action.note || '', createdAt: now }
+      const txn = { id: uid('f'), supervisorId: action.supervisorId, type: 'funds_in', method: action.method || 'cash', amount: Math.round(action.amount), byUserId: action.actorId, note: action.note || '', photos: toPhotos(action.photos), createdAt: now }
       return {
         ...state,
         funds: [txn, ...state.funds],
@@ -296,11 +335,22 @@ export function makeSelectors(state) {
   const owedBack = (supId) =>
     state.expenses.filter((e) => e.supervisorId === supId && e.status === 'rejected' && !e.settledAt).reduce((a, e) => a + e.amount, 0)
 
-  // site spend = opening + live approved, per category
+  // Money this person has submitted that nobody has decided on yet. Kept
+  // separate from cashInHand().spent on purpose: "spent" means APPROVED spend
+  // and drives the cash maths, so folding pending into it would misstate the
+  // balance. This is the "how much is sitting in the queue" number.
+  const pendingTotal = (supId) =>
+    state.expenses
+      .filter((e) => e.supervisorId === supId && (e.status === 'engineer_review' || e.status === 'finance_review'))
+      .reduce((a, e) => a + e.amount, 0)
+
+  // site spend = opening + live approved, per category.
+  // Reimbursement claims carry no site, but filter on kind as well so the
+  // number stays right even if a claim ever gets one (mirrors v_site_spend).
   const siteSpend = (siteId) => {
     const site = siteById(siteId)
     const byCat = { ...(site?.openingSpend || { materials: 0, labour: 0, fuel: 0, tea_food: 0, other: 0 }) }
-    state.expenses.filter((e) => e.siteId === siteId && e.status === 'approved').forEach((e) => {
+    state.expenses.filter((e) => e.siteId === siteId && e.status === 'approved' && e.kind !== 'reimbursement').forEach((e) => {
       byCat[e.category] = (byCat[e.category] || 0) + e.amount
     })
     const total = Object.values(byCat).reduce((a, v) => a + v, 0)
@@ -316,7 +366,10 @@ export function makeSelectors(state) {
     if (VIEW_ALL.has(user.role)) return state.expenses
     if (user.role === 'engineer') {
       const supIds = new Set(supsForEngineer(user.id).map((s) => s.id))
-      return state.expenses.filter((e) => supIds.has(e.supervisorId))
+      // their supervisors' expenses, plus their own reimbursement claims — so
+      // /my-expenses and finance's /approvals both see claims without either
+      // screen needing a special case
+      return state.expenses.filter((e) => supIds.has(e.supervisorId) || (e.supervisorId === user.id && e.kind === 'reimbursement'))
     }
     return state.expenses.filter((e) => e.supervisorId === user.id)
   }
@@ -345,7 +398,7 @@ export function makeSelectors(state) {
 
   return {
     state, me, userById, siteById, supervisors, engineers,
-    cashInHand, owedBack, siteSpend, supsForEngineer, scopedExpenses, scopedSites, expenseView,
+    cashInHand, owedBack, pendingTotal, siteSpend, supsForEngineer, scopedExpenses, scopedSites, expenseView,
     authenticate, usernameTaken,
   }
 }

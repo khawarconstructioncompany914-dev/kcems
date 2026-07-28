@@ -8,13 +8,14 @@ import { AddFundsModal } from '../../components/funds.jsx'
 
 export default function PersonLedger() {
   const { id } = useParams()
-  const { me, state, userById, siteById, cashInHand, owedBack } = useSelectors()
+  const { me, state, userById, siteById, cashInHand, owedBack, pendingTotal } = useSelectors()
   const [funds, setFunds] = useState(false)
   const sup = userById(id)
   if (!sup) return <div style={{ color: 'var(--text-50)' }}>Supervisor not found. <Link to="/people">Back</Link></div>
 
   const bal = cashInHand(id)
   const owed = owedBack(id)
+  const pending = pendingTotal(id)
   const eng = userById(sup.engineerId)
   const site = siteById(sup.siteId)
   const canFund = me.role === 'owner' || me.role === 'finance'
@@ -54,6 +55,10 @@ export default function PersonLedger() {
         <div className="card" style={{ padding: '18px 22px', flex: 1, minWidth: 150 }}>
           <div style={{ font: '600 10px/1 var(--f-mono)', color: 'var(--text-40)' }}>OWED BACK</div>
           <div className="num" style={{ font: '700 28px/1 var(--f-display)', color: owed ? 'var(--danger)' : 'var(--text-40)', marginTop: 10 }}>{formatMoney(owed)}</div>
+        </div>
+        <div className="card" style={{ padding: '18px 22px', flex: 1, minWidth: 150 }}>
+          <div style={{ font: '600 10px/1 var(--f-mono)', color: 'var(--text-40)' }}>SUBMITTED · PENDING</div>
+          <div className="num" style={{ font: '700 28px/1 var(--f-display)', color: pending ? 'var(--warn)' : 'var(--text-40)', marginTop: 10 }}>{formatMoney(pending)}</div>
         </div>
       </div>
 

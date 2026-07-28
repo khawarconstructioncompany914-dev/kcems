@@ -4,9 +4,10 @@ import { formatMoney, fmtDate, STATUS, relDay } from '../../data/model.js'
 
 export default function MobileHome() {
   const nav = useNavigate()
-  const { me, siteById, cashInHand, owedBack, state } = useSelectors()
+  const { me, siteById, cashInHand, owedBack, pendingTotal, state } = useSelectors()
   const bal = cashInHand(me.id)
   const owed = owedBack(me.id)
+  const pending = pendingTotal(me.id)
   const site = siteById(me.siteId)
   const owedItem = state.expenses.find((e) => e.supervisorId === me.id && e.status === 'rejected' && !e.settledAt)
 
@@ -33,6 +34,12 @@ export default function MobileHome() {
           <div style={{ flex: 1, background: 'rgba(11,12,11,.14)', borderRadius: 11, padding: '9px 11px' }}>
             <div style={{ font: '600 9px/1 var(--f-mono)', color: '#1C5A10' }}>SPENT</div>
             <div className="num" style={{ font: '700 15px/1 var(--f-display)', marginTop: 5 }}>{formatMoney(bal.spent)}</div>
+          </div>
+          {/* what they've sent up that nobody has decided on yet — deliberately
+              not folded into SPENT, which means approved spend and drives cash */}
+          <div style={{ flex: 1, background: 'rgba(11,12,11,.14)', borderRadius: 11, padding: '9px 11px' }}>
+            <div style={{ font: '600 9px/1 var(--f-mono)', color: '#1C5A10' }}>PENDING</div>
+            <div className="num" style={{ font: '700 15px/1 var(--f-display)', marginTop: 5 }}>{formatMoney(pending)}</div>
           </div>
         </div>
       </div>
