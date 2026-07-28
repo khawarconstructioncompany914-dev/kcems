@@ -23,10 +23,13 @@ export default async function handler(req, res) {
   if (!tokenMatches(token, expected)) return json(res, 403, { error: 'bad_token' })
 
   const base = new URL('../supabase/migrations/', import.meta.url)
-  let sql1, sql2
+  // Applied in order — 0003 depends on tables from 0001, and its
+  // kcems_log_reimbursement depends on the enum/nullable column it creates
+  // itself, which is why that function lives in 0003 and not 0002.
+  const FILES = ['0001_init.sql', '0002_functions.sql', '0003_photos_and_claims.sql']
+  let sources
   try {
-    sql1 = readFileSync(new URL('0001_init.sql', base), 'utf8')
-    sql2 = readFileSync(new URL('0002_functions.sql', base), 'utf8')
+    sources = FILES.map((f) => readFileSync(new URL(f, base), 'utf8'))
   } catch (e) {
     return json(res, 500, { error: 'cannot_read_sql', detail: String(e.message || e) })
   }
@@ -34,8 +37,9 @@ export default async function handler(req, res) {
   const client = directClient()
   try {
     await client.connect()
-    await client.query(sql1)
-    await client.query(sql2)
+    // one statement batch per file, so an enum value added in 0003 is
+    // committed before anything in a later batch could reference it
+    for (const sql of sources) await client.query(sql)
 
     const c = await client.query('select count(*)::int as n from app_user')
     if (c.rows[0].n > 0) {

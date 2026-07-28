@@ -3,8 +3,19 @@ import { useState } from 'react'
 import { useStore, useSelectors } from '../store.jsx'
 import { formatMoney } from '../data/model.js'
 import { Modal, Monogram } from './bits.jsx'
+import { PhotoTray } from './photos.jsx'
 
 const METHODS = ['cash', 'cheque', 'online']
+
+// Handing money over is the one step with no paper trail of its own, so the
+// transfer has to carry its own evidence. The prompt names the artefact the
+// person is actually holding rather than saying "proof" at them.
+const PROOF_HINT = {
+  cash:   'Photo of the cash',
+  cheque: 'Photo of the cheque',
+  online: 'Screenshot of the transfer',
+}
+const MAX_PROOF = 3
 
 export function AddFundsModal({ open, onClose, supervisorId, presetSupervisor = true }) {
   const { state, dispatch, toast } = useStore()
@@ -13,17 +24,25 @@ export function AddFundsModal({ open, onClose, supervisorId, presetSupervisor = 
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState('cash')
   const [note, setNote] = useState('')
+  const [photos, setPhotos] = useState([])
+  const [busy, setBusy] = useState(false)
 
   const sid = supervisorId || supId
   const sup = userById(sid)
   const amt = Math.max(0, Math.round(Number(amount.toString().replace(/[^\d]/g, '')) || 0))
   const bal = sup ? cashInHand(sid) : null
+  const valid = amt > 0 && sid && photos.length >= 1
 
-  const submit = () => {
-    if (!amt || !sid) return
-    dispatch({ type: 'ADD_FUNDS', supervisorId: sid, amount: amt, method, note, actorId: me.id })
+  const submit = async () => {
+    if (!valid || busy) return
+    setBusy(true)
+    await dispatch({
+      type: 'ADD_FUNDS', supervisorId: sid, amount: amt, method, note, actorId: me.id,
+      photos: photos.map((p) => ({ dataUrl: p.dataUrl, capturedAt: p.capturedAt })),
+    })
+    setBusy(false)
     toast(`Added ${formatMoney(amt)} to ${sup?.name?.split(' ')[0]}`, 'accent')
-    setAmount(''); setNote(''); onClose()
+    setAmount(''); setNote(''); setPhotos([]); onClose()
   }
 
   return (
@@ -66,6 +85,14 @@ export function AddFundsModal({ open, onClose, supervisorId, presetSupervisor = 
         <label className="field-label" style={{ marginTop: 14 }}>Note (optional)</label>
         <input className="field" placeholder="e.g. Top-up for finishing phase" value={note} onChange={(e) => setNote(e.target.value)} />
 
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 9 }}>
+          <span className="field-label" style={{ margin: 0 }}>Proof</span>
+          <span style={{ font: '600 10px/1 var(--f-mono)', color: photos.length ? 'var(--text-40)' : 'var(--danger)' }}>
+            {photos.length ? `${photos.length} OF ${MAX_PROOF}` : 'REQUIRED'}
+          </span>
+        </div>
+        <PhotoTray photos={photos} onChange={setPhotos} max={MAX_PROOF} hint={PROOF_HINT[method]} />
+
         {amt > 0 && bal && (
           <div style={{ font: '500 12px/1.5 var(--f-mono)', color: 'var(--text-50)', marginTop: 14, textAlign: 'center' }}>
             new cash in hand → <b style={{ color: 'var(--accent)' }}>{formatMoney(bal.cash + amt)}</b>
@@ -74,7 +101,9 @@ export function AddFundsModal({ open, onClose, supervisorId, presetSupervisor = 
 
         <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
           <button className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" style={{ flex: 1.4 }} disabled={!amt} onClick={submit}>Add {amt ? formatMoney(amt) : 'funds'}</button>
+          <button className="btn btn-primary" style={{ flex: 1.4 }} disabled={!valid || busy} onClick={submit}>
+            {busy ? 'Adding…' : !photos.length && amt > 0 ? 'Add proof photo' : `Add ${amt ? formatMoney(amt) : 'funds'}`}
+          </button>
         </div>
       </div>
     </Modal>

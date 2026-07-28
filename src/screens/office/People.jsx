@@ -7,13 +7,14 @@ import { Monogram, Progress } from '../../components/bits.jsx'
 import { AddFundsModal } from '../../components/funds.jsx'
 
 export default function People() {
-  const { me, supervisors, supsForEngineer, userById, siteById, cashInHand, owedBack } = useSelectors()
+  const { me, supervisors, supsForEngineer, userById, siteById, cashInHand, owedBack, pendingTotal } = useSelectors()
   const [funds, setFunds] = useState(false)
 
   const list = me.role === 'engineer' ? supsForEngineer(me.id) : supervisors
   const canFund = me.role === 'owner' || me.role === 'finance'
   const totalCash = list.reduce((a, s) => a + cashInHand(s.id).cash, 0)
   const totalOwed = list.reduce((a, s) => a + owedBack(s.id), 0)
+  const totalPending = list.reduce((a, s) => a + pendingTotal(s.id), 0)
 
   return (
     <div className="fade-up">
@@ -28,12 +29,14 @@ export default function People() {
         <Kpi label="Supervisors" value={list.length} accent />
         <Kpi label="Cash in field" value={formatCompact(totalCash)} sub="sum of cash-in-hand" />
         <Kpi label="Owed back" value={formatMoney(totalOwed)} color={totalOwed ? 'var(--danger)' : '#fff'} />
+        <Kpi label="Pending review" value={formatCompact(totalPending)} sub="submitted, not yet decided" color={totalPending ? 'var(--warn)' : '#fff'} />
       </div>
 
       <div className="r-cards" style={{ '--r-min': '340px' }}>
         {list.map((s) => {
           const bal = cashInHand(s.id)
           const owed = owedBack(s.id)
+          const pending = pendingTotal(s.id)
           const eng = userById(s.engineerId)
           const site = siteById(s.siteId)
           const pct = bal.funded ? Math.round((bal.spent / bal.funded) * 100) : 0
@@ -64,6 +67,13 @@ export default function People() {
                   <span>spent {formatCompact(bal.spent)}</span><span>funded {formatCompact(bal.funded)}</span>
                 </div>
                 <Progress pct={pct} height={6} />
+                {/* scanning this grid is exactly where "who has a pile of
+                    unapproved bills" matters, so surface it without a click */}
+                {pending > 0 && (
+                  <div style={{ font: '500 10px/1 var(--f-mono)', color: 'var(--warn)', marginTop: 8 }}>
+                    {formatCompact(pending)} pending review
+                  </div>
+                )}
               </div>
             </Link>
           )

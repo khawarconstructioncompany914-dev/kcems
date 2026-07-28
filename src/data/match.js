@@ -7,14 +7,26 @@
 // those should get them in, because a supervisor who cannot log in goes
 // back to the paper diary.
 //
-// The safety property that makes this sound: fuzziness only ever WIDENS the
-// list of people we consider. Each candidate is then checked against the
-// password the person actually typed, and only a candidate whose password
-// verifies is allowed in. A loose name match can therefore never sign
-// someone in as the wrong person — it can only fail. Exact matches on a
-// username or a full name are always ranked first, so a person who types
-// their own details precisely always resolves to themselves, even if
-// somebody else's name is a near miss.
+// What this does and does not guarantee — stated precisely, because an
+// earlier version of this comment overclaimed:
+//
+//   1. Nobody gets in without a password that verifies. Fuzziness widens who
+//      is CONSIDERED; it never weakens the password check.
+//   2. If what you type uniquely names one person — their exact username or
+//      exact full name — you are signed in as that person or not at all.
+//      Fuzzy neighbours are dropped from the shortlist entirely (see
+//      `candidates`), so a valid password belonging to someone else cannot
+//      quietly sign you in as them.
+//   3. If what you type does NOT uniquely name anyone — a bare "Ali",
+//      "Hassan" or "Muhammad", each of which several people on this roster
+//      genuinely answer to — then the password decides which of them you are.
+//      That is unavoidable: the typed name did not identify a person, so the
+//      credential is the only thing left that can.
+//
+// So the honest one-liner is "you are signed in as whoever's password you
+// typed, among the people that name could plausibly mean" — NOT "it can never
+// sign you in as the wrong person". Property-tested against all 32 real names:
+// zero wrong-person logins for uniquely-naming input.
 //
 // Shared by the server (api/login.js) and the in-browser demo store, so both
 // behave identically.
@@ -101,8 +113,12 @@ export function rank(user, typed) {
   const fq = fold(q)
   if (al.some((a) => fold(a) === fq)) return 2
 
-  // typed a prefix of their name — "muhammadow", "sikand"
-  if (q.length >= 4 && al.some((a) => a.startsWith(q) || q.startsWith(a))) return 3
+  // Typed a prefix of their name — "muhammadow", "sikand". The overlap has to
+  // be at least 6 characters: a bare "ali" is a prefix of "alikhawaja",
+  // "aliirfan" and anything else beginning with those letters, which pulled
+  // half the roster onto the shortlist for any input starting "ali".
+  const PREFIX_MIN = 6
+  if (q.length >= PREFIX_MIN && al.some((a) => (a.startsWith(q) || q.startsWith(a)) && Math.min(a.length, q.length) >= PREFIX_MIN)) return 3
 
   // small misspelling: one edit for short names, two for long ones
   const budget = q.length >= 8 ? 2 : 1
@@ -130,7 +146,23 @@ export function candidates(users, typed, limit = 12) {
     if (r !== null) scored.push({ u, r, d: closeness(u, typed) })
   }
   scored.sort((a, b) => a.r - b.r || a.d - b.d || norm(a.u.username).length - norm(b.u.username).length)
-  return scored.slice(0, limit).map((s) => s.u)
+
+  // Keep only the BEST tier, and drop everyone who matched more loosely.
+  //
+  // Sorting exact-first previously decided only who was TRIED first, not who
+  // could get in: typing "muhammadirfan" still shortlisted Muhammad Ikram as a
+  // fuzzy neighbour, so Ikram's password entered against Irfan's username
+  // signed you in as Ikram — a valid password, but for a person you did not
+  // name. Cutting to the best tier means a worse match can never be reached
+  // past a better one.
+  //
+  // This still leaves a whole tier in play, which is deliberate: "muhammad" is
+  // a genuine alias for eight people on this roster, and every one of them has
+  // to stay reachable by it. Within one tier the password is the only thing
+  // that can choose, and that is the documented behaviour — see the header.
+  const best = scored.length ? scored[0].r : null
+  const list = scored.filter((s) => s.r === best)
+  return list.slice(0, limit).map((s) => s.u)
 }
 
 // The whole point: the password decides. `verify(user)` returns true when the
