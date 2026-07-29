@@ -238,8 +238,17 @@ function ReassignModal({ moving, onClose, onPick }) {
 
 function SiteModal({ site, onClose }) {
   const { state, dispatch, toast } = useStore()
-  const { engineers } = useSelectors()
+  const { engineers, supervisors, siteById } = useSelectors()
   const isNew = !site?.id
+  // who is already on this site — the starting state of the checkboxes
+  const [supIds, setSupIds] = useState(() => new Set(
+    site?.id ? supervisors.filter((u) => u.siteId === site.id).map((u) => u.id) : [],
+  ))
+  const toggleSup = (id) => setSupIds((prev) => {
+    const next = new Set(prev)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    return next
+  })
   const [name, setName] = useState(site?.name || '')
   const [label, setLabel] = useState(site?.label || '')
   const [city, setCity] = useState(site?.city || '')
@@ -258,10 +267,14 @@ function SiteModal({ site, onClose }) {
       engineerId: engId || null,
       budget: Math.round(Number(String(budget).replace(/[^\d]/g, '')) || 0),
       status,
+      supervisorIds: [...supIds],
     }
     if (isNew) dispatch({ type: 'CREATE_SITE', payload, actorId: state.session.userId })
     else dispatch({ type: 'UPDATE_SITE', siteId: site.id, patch: payload, actorId: state.session.userId })
-    toast(isNew ? `Site “${payload.name}” created` : `${payload.name} updated`)
+    const n = supIds.size
+    toast(isNew
+      ? `Site “${payload.name}” created${n ? ` · ${n} supervisor${n > 1 ? 's' : ''} assigned` : ''}`
+      : `${payload.name} updated${n ? ` · ${n} supervisor${n > 1 ? 's' : ''} on site` : ''}`)
     onClose()
   }
 
@@ -295,6 +308,41 @@ function SiteModal({ site, onClose }) {
                   <option value="on_hold">On hold</option>
                   <option value="closed">Closed</option>
                 </select>
+              </div>
+            </div>
+
+            {/* Assigning the crew here is what makes a new site complete in one
+                pass — site, engineer, supervisors — instead of creating the
+                site and then editing every supervisor individually. */}
+            <div>
+              <label className="field-label">
+                Site supervisors {supIds.size > 0 && <span style={{ color: 'var(--accent)' }}>· {supIds.size} selected</span>}
+              </label>
+              {supervisors.length === 0
+                ? <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--warn)' }}>No supervisors exist yet — create them in the Users tab.</div>
+                : (
+                  <div className="surface" style={{ maxHeight: 176, overflowY: 'auto', borderRadius: 11, padding: 6 }}>
+                    {supervisors.map((s) => {
+                      const on = supIds.has(s.id)
+                      const their = s.siteId ? siteById(s.siteId) : null
+                      const elsewhere = s.siteId && s.siteId !== site?.id
+                      return (
+                        <label key={s.id} className="tap" style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px', borderRadius: 8, cursor: 'pointer', background: on ? 'var(--accent-soft)' : 'transparent' }}>
+                          <input type="checkbox" checked={on} onChange={() => toggleSup(s.id)} style={{ width: 15, height: 15, accentColor: 'var(--accent)', flex: 'none' }} />
+                          <span style={{ flex: 1, minWidth: 0, font: '600 12px/1.2 var(--f-body)', color: on ? '#fff' : 'var(--text-70)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+                          <span style={{ flex: 'none', font: '500 10px/1 var(--f-mono)', color: elsewhere ? 'var(--warn)' : 'var(--text-40)' }}>
+                            {elsewhere ? `on ${their?.label || their?.name}` : s.siteId ? 'here' : 'unassigned'}
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                )}
+              <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 6 }}>
+                {engId
+                  ? <>Checked supervisors move to this site and report to <b style={{ color: 'var(--text-70)' }}>{engineers.find((e) => e.id === engId)?.name}</b>.</>
+                  : 'Checked supervisors move to this site. Pick a responsible engineer above and they will be filed under them too.'}
+                {' '}Anyone in amber is currently on another site and will be moved.
               </div>
             </div>
           </div>

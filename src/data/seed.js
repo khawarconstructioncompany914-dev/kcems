@@ -18,11 +18,15 @@ export function buildSeed() {
   const users = [
     U({ id: 'u_owner', name: 'Meesam Ali',  username: 'meesamali', phone: '+92 300 8500011', email: 'meesamali@khawar.pk', role: 'owner',   status: 'active' }),
     U({ id: 'u_admin', name: 'Muzamil Ali Sher',   username: 'muzamilalisher', phone: '+92 301 8500033', email: 'muzamilalisher@khawar.pk', role: 'admin',   status: 'active' }),
-    U({ id: 'u_fin',   name: 'Tariq Mehmood',  username: 'tariq',  phone: '+92 301 8500022', email: 'tariq@khawar.pk',  role: 'finance', status: 'active' }),
+    U({ id: 'u_fin',   name: 'Tariq Ismail',  username: 'tariqismail',  phone: '+92 301 8500022', email: 'tariqismail@khawar.pk',  role: 'finance', status: 'active' }),
 
-    U({ id: 'u_ali',  name: 'Ali Khawaja',   username: 'ali',     phone: '+92 321 4410001', email: 'ali@khawar.pk',     role: 'engineer', status: 'active' }),
-    U({ id: 'u_touf', name: 'Toufeeq Abbas', username: 'toufeeq', phone: '+92 321 4410002', email: 'toufeeq@khawar.pk', role: 'engineer', status: 'active' }),
-    U({ id: 'u_zoh',  name: 'Zohaib Hassan', username: 'zohaib',  phone: '+92 321 4410003', email: 'zohaib@khawar.pk',  role: 'engineer', status: 'active' }),
+    // All five real head engineers, so the "responsible engineer" picker in the
+    // site modal shows the same list here as it does in production.
+    U({ id: 'u_ali',  name: 'Ali Khawaja',   username: 'alikhawaja',   phone: '+92 321 4410001', email: 'alikhawaja@khawar.pk',   role: 'engineer', status: 'active' }),
+    U({ id: 'u_touf', name: 'Toufeeq Abbas', username: 'toufeeqabbas', phone: '+92 321 4410002', email: 'toufeeqabbas@khawar.pk', role: 'engineer', status: 'active' }),
+    U({ id: 'u_zoh',  name: 'Zohaib Hassan', username: 'zohaibhassan', phone: '+92 321 4410003', email: 'zohaibhassan@khawar.pk', role: 'engineer', status: 'active' }),
+    U({ id: 'u_shab', name: 'Shabbir Hussain 2',    username: 'shabbirhussain2',    phone: '+92 321 4410004', email: 'shabbirhussain2@khawar.pk',    role: 'engineer', status: 'active' }),
+    U({ id: 'u_zahid', name: 'Muhammad Zahid Talib', username: 'muhammadzahidtalib', phone: '+92 321 4410005', email: 'muhammadzahidtalib@khawar.pk', role: 'engineer', status: 'active' }),
 
     U({ id: 's_faraz',    name: 'Faraz Ahmed',   username: 'faraz',    phone: '+92 300 1234567', role: 'supervisor', status: 'active', engineerId: 'u_ali',  siteId: 'dha6' }),
     U({ id: 's_saqib',    name: 'Saqib Riaz',    username: 'saqib',    phone: '+92 300 2234567', role: 'supervisor', status: 'active', engineerId: 'u_ali',  siteId: 'gulberg' }),

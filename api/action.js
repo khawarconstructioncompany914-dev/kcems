@@ -24,6 +24,23 @@ const incomingPhotos = (src) => {
   return []
 }
 
+// Put the named supervisors on this site and take off anyone who was on it but
+// is no longer listed. Being on a site also files a supervisor under that
+// site's responsible engineer, so creating a site wires the whole chain in one
+// step instead of editing 24 people one at a time.
+// Mirrors wireSupervisors() in src/store.jsx — keep the two in step.
+async function wireSupervisors(siteId, ids, engineerId) {
+  const list = (Array.isArray(ids) ? ids : []).filter(Boolean)
+  // anyone previously here and now unchecked comes off the site
+  await q(`update app_user set site_id = null
+            where role = 'supervisor' and site_id = $1 and not (id = any($2::uuid[]))`,
+    [siteId, list])
+  if (!list.length) return
+  await q(`update app_user set site_id = $1, engineer_id = coalesce($2, engineer_id)
+            where role = 'supervisor' and id = any($3::uuid[])`,
+    [siteId, engineerId || null, list])
+}
+
 async function saveExpensePhotos(expenseId, uploaded, actor) {
   for (const p of uploaded) {
     await q(`insert into expense_photo (expense_id, storage_path, captured_at, uploaded_by)
@@ -184,10 +201,12 @@ export default async function handler(req, res) {
         if (!OWNER_ADMIN.has(me.role)) return deny(res)
         const p = b.payload || {}
         if (!p.name) return json(res, 400, { error: 'missing_fields' })
-        await q(`insert into site (name,label,city,phase,engineer_id,budget,status)
-                 values ($1,$2,$3,$4,$5,$6,$7)`,
+        const r = await q(`insert into site (name,label,city,phase,engineer_id,budget,status)
+                 values ($1,$2,$3,$4,$5,$6,$7) returning id`,
           [p.name, p.label || p.name.slice(0, 12), p.city || null, p.phase || null, p.engineerId || null, Math.round(p.budget || 0), p.status || 'active'])
-        return ok(res)
+        const siteId = r.rows[0].id
+        if (p.supervisorIds) await wireSupervisors(siteId, p.supervisorIds, p.engineerId)
+        return json(res, 200, { ok: true, id: siteId })
       }
       case 'UPDATE_SITE': {
         if (!OWNER_ADMIN.has(me.role)) return deny(res)
@@ -195,9 +214,11 @@ export default async function handler(req, res) {
         const map = { name: 'name', label: 'label', city: 'city', phase: 'phase', engineerId: 'engineer_id', budget: 'budget', status: 'status' }
         const cols = [], vals = []; let i = 1
         for (const k of Object.keys(map)) if (k in patch) { cols.push(`${map[k]} = $${i++}`); vals.push(k === 'budget' ? Math.round(patch[k] || 0) : patch[k]) }
-        if (!cols.length) return ok(res)
-        vals.push(b.siteId)
-        await q(`update site set ${cols.join(', ')} where id = $${i}`, vals)
+        if (cols.length) {
+          vals.push(b.siteId)
+          await q(`update site set ${cols.join(', ')} where id = $${i}`, vals)
+        }
+        if (patch.supervisorIds) await wireSupervisors(b.siteId, patch.supervisorIds, patch.engineerId)
         return ok(res)
       }
       case 'RESET_PASSWORD': {

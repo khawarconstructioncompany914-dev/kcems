@@ -15,7 +15,7 @@ npm run dev        # → http://localhost:5183
 
 Sign in with **username + password**. In dev, the seeded accounts all use password
 `kcems` and a quick-login row is shown (owner `meesamali`, admin `muzamilalisher`, finance
-`tariq`, engineer `ali`, supervisor `faraz`). Accounts created in-app get a temp
+`tariqismail`, engineer `alikhawaja`, supervisor `faraz`). Accounts created in-app get a temp
 password and are forced to set their own on first login.
 
 To deploy for real (GitHub + Vercel + Supabase, all free) see **[DEPLOY.md](DEPLOY.md)**.

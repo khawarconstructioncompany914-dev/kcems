@@ -11,6 +11,21 @@ import { resolveLogin } from './data/match.js'
 const KEY = 'kcems.v1'
 const uid = (p = 'x') => `${p}_${Math.random().toString(36).slice(2, 9)}`
 
+// Put the named supervisors on this site and take off anyone who was on it but
+// is no longer in the list. Checking a supervisor also files them under the
+// site's responsible engineer — that is the whole point of doing it here, so a
+// new site comes out complete: a site, an engineer, and the crew beneath them.
+// Mirrors the SQL in api/action.js.
+function wireSupervisors(users, siteId, ids, engineerId) {
+  const keep = new Set(ids || [])
+  return users.map((u) => {
+    if (u.role !== 'supervisor') return u
+    if (keep.has(u.id)) return { ...u, siteId, engineerId: engineerId || u.engineerId }
+    if (u.siteId === siteId) return { ...u, siteId: null }   // unchecked → off this site
+    return u
+  })
+}
+
 // Demo-store photo shape. In live mode the API stores a storage path and the
 // viewer signs a URL for it; here the data URL itself is the "path", so the
 // same PhotoGrid renders both without knowing which mode it is in.
@@ -187,7 +202,7 @@ function reducer(state, action) {
 
     // owner/admin creates a construction site
     case 'CREATE_SITE': {
-      const p = action.payload || {}
+      const { supervisorIds, ...p } = action.payload || {}
       const s = {
         id: uid('site'), status: 'active', budget: 0, city: '', phase: '', engineerId: null,
         openingSpend: { materials: 0, labour: 0, fuel: 0, tea_food: 0, other: 0 },
@@ -196,15 +211,22 @@ function reducer(state, action) {
       return {
         ...state,
         sites: [...state.sites, s],
+        users: supervisorIds ? wireSupervisors(state.users, s.id, supervisorIds, s.engineerId) : state.users,
         audit: log({ actorId: action.actorId, action: 'site.create', entity: 'Site', entityId: s.id, after: { name: s.name } }),
       }
     }
-    case 'UPDATE_SITE':
+    case 'UPDATE_SITE': {
+      const { supervisorIds, ...patch } = action.patch || {}
+      const site = state.sites.find((s) => s.id === action.siteId)
       return {
         ...state,
-        sites: state.sites.map((s) => (s.id === action.siteId ? { ...s, ...action.patch } : s)),
-        audit: log({ actorId: action.actorId, action: 'site.update', entity: 'Site', entityId: action.siteId, after: action.patch }),
+        sites: state.sites.map((s) => (s.id === action.siteId ? { ...s, ...patch } : s)),
+        users: supervisorIds
+          ? wireSupervisors(state.users, action.siteId, supervisorIds, patch.engineerId ?? site?.engineerId)
+          : state.users,
+        audit: log({ actorId: action.actorId, action: 'site.update', entity: 'Site', entityId: action.siteId, after: patch }),
       }
+    }
 
     // re-wire a supervisor to a different engineer
     case 'REASSIGN_SUP':
