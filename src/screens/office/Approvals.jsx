@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore, useSelectors } from '../../store.jsx'
-import { formatMoney, fmtDate } from '../../data/model.js'
+import { formatMoney, fmtDate, roleEyebrow } from '../../data/model.js'
 import { PageHeader, Kpi } from '../../components/page.jsx'
 import { ExpenseCard } from '../../components/expense.jsx'
 import { Empty, Monogram } from '../../components/bits.jsx'
@@ -21,7 +21,7 @@ export default function Approvals() {
   return (
     <div className="fade-up">
       <PageHeader
-        eyebrow="Finance · approvals"
+        eyebrow={roleEyebrow(me.role, 'approvals')}
         title="Approve & settle"
         sub="Second-stage review. Approving deducts the amount from the supervisor's cash-in-hand, atomically. Rejecting turns it into owed-back."
         right={<button className="btn btn-primary" onClick={() => setFunds(true)}>+ Add funds</button>}

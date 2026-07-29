@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore, useSelectors } from '../../store.jsx'
-import { ROLES, SITE_STATUS } from '../../data/model.js'
+import { ROLES, SITE_STATUS, roleEyebrow } from '../../data/model.js'
 import { PageHeader, Card } from '../../components/page.jsx'
 import { Monogram, Modal } from '../../components/bits.jsx'
 
@@ -46,7 +46,7 @@ export default function AdminAccess() {
   return (
     <div className="fade-up">
       <PageHeader
-        eyebrow="Admin · users & access"
+        eyebrow={roleEyebrow(me.role, 'users & access')}
         title="Users & access"
         sub="Create logins, wire supervisors to engineers and sites, reset passwords, and review who can do what."
         right={<button className="btn btn-primary" onClick={() => setCreate(true)}>+ Create login</button>}

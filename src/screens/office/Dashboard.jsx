@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useSelectors } from '../../store.jsx'
-import { formatMoney, formatCompact, fmtDate, relDay, STATUS, SITE_STATUS } from '../../data/model.js'
+import { formatMoney, formatCompact, fmtDate, relDay, STATUS, SITE_STATUS, roleEyebrow } from '../../data/model.js'
 import { PageHeader, Kpi, Card } from '../../components/page.jsx'
 import { Monogram, StatusPill, Progress } from '../../components/bits.jsx'
 
@@ -25,7 +25,7 @@ export default function Dashboard() {
   return (
     <div className="fade-up">
       <PageHeader
-        eyebrow="Owner · overview"
+        eyebrow={roleEyebrow(me.role, 'overview')}
         title={`Good day, ${me.name.split(' ')[0]}`}
         sub="The whole organisation at a glance — every site, every rupee, the approval pipeline and cash in the field."
         right={<Link to="/reports" className="btn btn-ghost">Reports →</Link>}
