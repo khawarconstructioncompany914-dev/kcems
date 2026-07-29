@@ -38,14 +38,16 @@ Everything below uses **free** tiers: **GitHub** (code) + **Vercel** (app + API)
 2. Open **SQL Editor** and run, in order:
    - `supabase/migrations/0001_init.sql`
    - `supabase/migrations/0002_functions.sql`
-   This creates the tables, the balance/site views, the approval functions, and the
-   private **`bills`** storage bucket for receipt photos.
+   - `supabase/migrations/0003_photos_and_claims.sql`
+   This creates the tables, the balance/site views, the approval functions, the
+   multi-photo tables and engineer reimbursement claims, and the private
+   **`bills`** storage bucket for receipt photos.
 3. **Project Settings → API** — copy the `Project URL`, the `anon` key, and the
    `service_role` key. (Keep `service_role` secret — it goes into Vercel, step 3.)
 4. Create the first **Owner** login. In SQL Editor:
    ```sql
    insert into app_user (name, username, role, password_hash, must_change_password)
-   values ('Messam Khawar', 'messam', 'owner',
+   values ('Meesam Ali', 'meesamali', 'owner',
            crypt('CHANGE_ME_TEMP', gen_salt('bf')), true);
    ```
    (Owner then creates everyone else in-app under **Users & access**.)

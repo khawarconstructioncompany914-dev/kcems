@@ -21,7 +21,9 @@ export function Wordmark({ mark = 44, stacked = true }) {
       <LogoMark size={mark} />
       <div style={{ lineHeight: 1 }}>
         <div style={{ font: '900 18px/1 var(--f-display)', color: '#fff', letterSpacing: '.02em' }}>KCEMS</div>
-        {stacked && <div style={{ font: '400 10px/1.2 var(--f-mono)', color: 'var(--text-40)', marginTop: 4, letterSpacing: '.16em' }}>EXPENSE MGMT</div>}
+        {/* spelled out rather than "MGMT" — tightened tracking so the longer
+            word still fits the sidebar without wrapping */}
+        {stacked && <div style={{ font: '400 10px/1.2 var(--f-mono)', color: 'var(--text-40)', marginTop: 4, letterSpacing: '.11em', whiteSpace: 'nowrap' }}>EXPENSE MANAGEMENT</div>}
       </div>
     </div>
   )

@@ -50,7 +50,11 @@ export default function AppShell() {
         <Monogram name={me.name} color={roleMeta.color} soft={roleMeta.soft} size={34} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ font: '700 12px/1.1 var(--f-body)', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{me.name}</div>
-          <div style={{ font: '600 10px/1 var(--f-mono)', color: roleMeta.color, marginTop: 4 }}>{(roleMeta.label || '').toUpperCase()}</div>
+          {/* Uppercase mono at 10px with line-height 1 and no tracking was hard
+              to read. Colour was never the issue (11.6:1 against the surface) —
+              it needed size, leading and letter-spacing, which is what small
+              all-caps always needs. */}
+          <div style={{ font: '600 12px/1.35 var(--f-mono)', color: roleMeta.color, marginTop: 5, letterSpacing: '.06em' }}>{(roleMeta.label || '').toUpperCase()}</div>
         </div>
       </div>
       <div style={{ display: 'flex', gap: 7, marginTop: 11 }}>
