@@ -79,18 +79,18 @@ export default function AddExpense() {
           <div style={{ width: 120, height: 2, background: 'var(--accent)', margin: '12px auto 0', borderRadius: 2 }} />
         </div>
 
-        <div style={{ font: '600 11px/1 var(--f-mono)', color: 'var(--text-50)', marginBottom: 9 }}>CATEGORY</div>
+        <div style={{ font: '600 12px/1.4 var(--f-mono)', color: 'var(--text-50)', marginBottom: 9 }}>CATEGORY</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 16 }}>
           {SITE_CATEGORIES.map((k) => (
             <button key={k} className={`chip ${cat === k ? 'on' : ''}`} onClick={() => setCat(k)}>{CATEGORIES[k].label}</button>
           ))}
         </div>
 
-        <div style={{ font: '600 11px/1 var(--f-mono)', color: 'var(--text-50)', marginBottom: 9 }}>NOTE</div>
+        <div style={{ font: '600 12px/1.4 var(--f-mono)', color: 'var(--text-50)', marginBottom: 9 }}>NOTE</div>
         <input className="field" placeholder="e.g. River sand — 6 trolleys" value={note} onChange={(e) => setNote(e.target.value)} style={{ marginBottom: 16, height: 44 }} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
-          <span style={{ font: '600 11px/1 var(--f-mono)', color: 'var(--text-50)' }}>BILL PHOTOS</span>
+          <span style={{ font: '600 12px/1.4 var(--f-mono)', color: 'var(--text-50)' }}>BILL PHOTOS</span>
           <span style={{ font: '600 10px/1 var(--f-mono)', color: photos.length ? 'var(--text-40)' : 'var(--danger)' }}>
             {photos.length ? `${photos.length} OF ${MAX_PHOTOS}` : 'REQUIRED'}
           </span>

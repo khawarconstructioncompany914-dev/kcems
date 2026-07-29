@@ -52,7 +52,7 @@ export default function MobileHome() {
             <div style={{ font: '700 12px/1 var(--f-body)', color: 'var(--danger)' }}>You owe {formatMoney(owed)}</div>
             <div style={{ font: '500 10px/1.3 var(--f-body)', color: 'var(--text-50)', marginTop: 3 }}>{owedItem ? owedItem.rejectReason.split('—')[0].trim() : 'Rejected expense'}</div>
           </div>
-          <span style={{ font: '700 11px/1 var(--f-body)', color: 'var(--danger)' }}>Settle</span>
+          <span style={{ font: '700 12px/1.4 var(--f-body)', color: 'var(--danger)' }}>Settle</span>
         </div>
       )}
 
@@ -60,7 +60,7 @@ export default function MobileHome() {
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
           <div style={{ font: '700 13px/1 var(--f-body)', color: '#fff' }}>Recent</div>
-          <button type="button" className="tap" style={{ font: '600 11px/1 var(--f-body)', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => nav('/history')}>See all</button>
+          <button type="button" className="tap" style={{ font: '600 12px/1.4 var(--f-body)', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => nav('/history')}>See all</button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
           {recent.map((e) => (

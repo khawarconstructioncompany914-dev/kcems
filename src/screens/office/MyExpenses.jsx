@@ -114,7 +114,7 @@ export default function MyExpenses() {
                       <div style={{ marginTop: 6 }}><StatusPill status={e.status} small /></div>
                     </div>
                   </div>
-                  {e.rejectReason && <div style={{ font: '500 11px/1.5 var(--f-body)', color: 'var(--danger)', marginTop: 8 }}>✕ {e.rejectReason}</div>}
+                  {e.rejectReason && <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--danger)', marginTop: 8 }}>✕ {e.rejectReason}</div>}
                   {ph.length > 0 && (
                     <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => setOpenId(openId === e.id ? null : e.id)}>
                       {openId === e.id ? 'Hide receipt' : ph.length > 1 ? `Receipts · ${ph.length}` : 'Receipt'}

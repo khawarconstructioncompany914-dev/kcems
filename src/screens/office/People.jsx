@@ -46,7 +46,7 @@ export default function People() {
                 <Monogram name={s.name} color="var(--accent)" soft="var(--accent-soft)" size={42} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff' }}>{s.name}</div>
-                  <div style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 5 }}>{site?.label} · {eng ? eng.name.split(' ')[0] : '—'}</div>
+                  <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 5 }}>{site?.label} · {eng ? eng.name.split(' ')[0] : '—'}</div>
                 </div>
                 {owed > 0 && <span className="pill pill-rejected" style={{ height: 22, fontSize: 10 }}><span className="dot" />OWES</span>}
               </div>

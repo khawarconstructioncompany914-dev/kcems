@@ -27,14 +27,14 @@ export function ExpenseCard({ e, mode }) {
             <div style={{ font: '700 14px/1.2 var(--f-body)', color: '#fff' }}>{e.note}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-            <span style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)' }}>{e.supervisor?.name}</span>
+            <span style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)' }}>{e.supervisor?.name}</span>
             <span style={{ color: 'var(--text-25)' }}>·</span>
             {/* a reimbursement claim has no site, so show what it is instead */}
             {isClaim
               ? <span className="pill pill-info" style={{ height: 20, fontSize: 9 }}>REIMBURSEMENT</span>
-              : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)' }}><CatDot category={e.category} />{e.site?.label || e.site?.name}</span>}
+              : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)' }}><CatDot category={e.category} />{e.site?.label || e.site?.name}</span>}
             <span style={{ color: 'var(--text-25)' }}>·</span>
-            <span style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-40)' }}>{fmtDate(e.createdAt)}</span>
+            <span style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-40)' }}>{fmtDate(e.createdAt)}</span>
           </div>
         </div>
         <div style={{ textAlign: 'right', flex: 'none' }}>

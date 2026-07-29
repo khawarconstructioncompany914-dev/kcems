@@ -43,7 +43,7 @@ export default function SiteDetail() {
           </div>
 
           <div style={{ marginTop: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', font: '600 11px/1 var(--f-body)', color: 'var(--text-50)', marginBottom: 8 }}><span>Budget used</span><span style={{ color: 'var(--accent)' }}>{sp.pct}%</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', font: '600 12px/1.4 var(--f-body)', color: 'var(--text-50)', marginBottom: 8 }}><span>Budget used</span><span style={{ color: 'var(--accent)' }}>{sp.pct}%</span></div>
             <Progress pct={sp.pct} />
           </div>
 
@@ -51,7 +51,7 @@ export default function SiteDetail() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {cats.map(({ k, val }) => (
               <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ width: 70, font: '500 11px/1 var(--f-mono)', color: 'var(--text-50)' }}>{CATEGORIES[k].label}</span>
+                <span style={{ width: 70, font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-50)' }}>{CATEGORIES[k].label}</span>
                 <div style={{ flex: 1, height: 8, borderRadius: 5, background: 'var(--surface)', overflow: 'hidden' }}>
                   <div style={{ width: `${Math.round((val / maxCat) * 100)}%`, height: '100%', background: CATEGORIES[k].color, transition: 'width .5s' }} />
                 </div>

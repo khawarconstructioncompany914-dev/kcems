@@ -55,7 +55,7 @@ export default function Dashboard() {
                     <span className="mono-badge" style={{ width: 40, height: 40, borderRadius: 11, background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-line)', fontSize: 13 }}>{s.label.replace(/[^A-Z0-9]/gi, '').slice(0, 2).toUpperCase()}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ font: '700 14px/1 var(--f-body)', color: '#fff' }}>{s.name}</div>
-                      <div style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 5 }}>{s.city} · {s.phase}</div>
+                      <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 5 }}>{s.city} · {s.phase}</div>
                     </div>
                     <span className={`pill ${SITE_STATUS[s.status].pill}`} style={{ height: 22, fontSize: 10 }}><span className="dot" />{SITE_STATUS[s.status].label}</span>
                   </div>

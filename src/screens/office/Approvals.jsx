@@ -59,7 +59,7 @@ export default function Approvals() {
                   <Monogram name={e.supervisor?.name} color="var(--danger)" soft="var(--danger-soft)" size={40} />
                   <div style={{ flex: 1 }}>
                     <div style={{ font: '700 14px/1.2 var(--f-body)', color: '#fff' }}>{e.note}</div>
-                    <div style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 6 }}>{e.supervisor?.name} · {e.site?.label} · {fmtDate(e.createdAt)}</div>
+                    <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 6 }}>{e.supervisor?.name} · {e.site?.label} · {fmtDate(e.createdAt)}</div>
                   </div>
                   <div className="num" style={{ font: '700 17px/1 var(--f-display)', color: 'var(--danger)' }}>{formatMoney(e.amount)}</div>
                 </div>

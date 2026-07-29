@@ -98,7 +98,7 @@ export default function AdminAccess() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 22px', borderBottom: '1px solid var(--border-3)', flexWrap: 'wrap' }}>
             <div>
               <div style={{ font: '700 14px/1 var(--f-body)', color: '#fff' }}>Construction sites</div>
-              <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 5 }}>Add your real sites here, then assign each supervisor to one from the Users tab.</div>
+              <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 5 }}>Add your real sites here, then assign each supervisor to one from the Users tab.</div>
             </div>
             <div className="spacer" />
             <button className="btn btn-primary btn-sm" onClick={() => setSiteEdit({})}>+ Add site</button>
@@ -117,11 +117,11 @@ export default function AdminAccess() {
                 </span>
                 <div style={{ flex: 1, minWidth: 150 }}>
                   <div style={{ font: '700 13px/1.2 var(--f-body)', color: '#fff' }}>{s.name}</div>
-                  <div style={{ font: '500 11px/1.3 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>
+                  <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>
                     {[s.city, s.phase].filter(Boolean).join(' · ') || '—'} · {sups} supervisor{sups !== 1 ? 's' : ''}
                   </div>
                 </div>
-                <div style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-50)', minWidth: 96 }}>{eng ? eng.name.split(' ')[0] : 'no engineer'}</div>
+                <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-50)', minWidth: 96 }}>{eng ? eng.name.split(' ')[0] : 'no engineer'}</div>
                 <span className={`pill ${st.pill}`} style={{ height: 22, fontSize: 10 }}>{st.label}</span>
                 <button className="btn btn-ghost btn-sm" onClick={() => setSiteEdit(s)}>Edit</button>
               </div>
@@ -313,7 +313,7 @@ function SiteModal({ site, onClose }) {
                 Site supervisors {supIds.size > 0 && <span style={{ color: 'var(--accent)' }}>· {supIds.size} selected</span>}
               </label>
               {supervisors.length === 0
-                ? <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--warn)' }}>No supervisors exist yet — create them in the Users tab.</div>
+                ? <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--warn)' }}>No supervisors exist yet — create them in the Users tab.</div>
                 : (
                   <div className="surface" style={{ maxHeight: 176, overflowY: 'auto', borderRadius: 11, padding: 6 }}>
                     {supervisors.map((s) => {
@@ -332,7 +332,7 @@ function SiteModal({ site, onClose }) {
                     })}
                   </div>
                 )}
-              <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 6 }}>
+              <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 6 }}>
                 {engId
                   ? <>Checked supervisors move to this site and report to <b style={{ color: 'var(--text-70)' }}>{engineers.find((e) => e.id === engId)?.name}</b>.</>
                   : 'Checked supervisors move to this site. Pick a responsible engineer above and they will be filed under them too.'}
@@ -421,7 +421,7 @@ function CreateUserModal({ open, onClose }) {
               <input className="field" value={pw} onChange={(e) => setPw(e.target.value)} style={{ font: '600 14px/1 var(--f-mono)' }} />
               <button type="button" className="btn btn-ghost btn-sm" style={{ height: 46 }} onClick={() => setPw(genTemp())}>↻</button>
             </div>
-            <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 7 }}>Share this with them once. They set their own password on first login.</div>
+            <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 7 }}>Share this with them once. They set their own password on first login.</div>
           </div>
         </div>
         {err && <div style={{ marginTop: 14, font: '600 12px/1.4 var(--f-body)', color: 'var(--danger)', background: 'var(--danger-soft)', borderRadius: 10, padding: '9px 12px' }}>{err}</div>}
@@ -493,7 +493,7 @@ function EditUserModal({ user, onClose }) {
             <div>
               <label className="field-label">Username</label>
               <input className="field" value={username} autoCapitalize="none" spellCheck={false} onChange={(e) => { setUsername(e.target.value); setErr('') }} />
-              <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 6 }}>They can also sign in by typing their full name.</div>
+              <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 6 }}>They can also sign in by typing their full name.</div>
             </div>
             <div>
               <label className="field-label">New password (leave blank to keep)</label>
@@ -522,7 +522,7 @@ function EditUserModal({ user, onClose }) {
                     <option value="">— Not assigned —</option>
                     {state.sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
-                  {!state.sites.length && <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--warn)', marginTop: 6 }}>No sites exist yet — create one in the Sites tab first.</div>}
+                  {!state.sites.length && <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--warn)', marginTop: 6 }}>No sites exist yet — create one in the Sites tab first.</div>}
                 </div>
               </>
             )}
