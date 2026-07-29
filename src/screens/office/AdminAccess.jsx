@@ -357,13 +357,17 @@ function CreateUserModal({ open, onClose }) {
             <div style={{ display: 'flex', gap: 10 }}>
               <div style={{ flex: 1 }}>
                 <label className="field-label">Reports to</label>
-                <select className="field" value={engId} onChange={(e) => setEngId(e.target.value)}>
+                <select className="field" value={engId || ''} onChange={(e) => setEngId(e.target.value)}>
+                  <option value="">— Not assigned —</option>
                   {engineers.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
                 </select>
               </div>
               <div style={{ flex: 1 }}>
+                {/* same empty option as the edit modal: a new supervisor can
+                    legitimately exist before their site does */}
                 <label className="field-label">Site</label>
-                <select className="field" value={siteId} onChange={(e) => setSiteId(e.target.value)}>
+                <select className="field" value={siteId || ''} onChange={(e) => setSiteId(e.target.value)}>
+                  <option value="">— Not assigned —</option>
                   {state.sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
@@ -406,10 +410,18 @@ function EditUserModal({ user, onClose }) {
     if (pw && pw.length < 4) return setErr('Password must be at least 4 characters.')
 
     const patch = { name: name.trim(), username: cleanUser }
-    if (user.role === 'supervisor') { patch.engineerId = engId; patch.siteId = siteId }
+    // '' comes from the "— Not assigned —" option; the columns are uuid, so it
+    // has to reach the API as null rather than an empty string.
+    if (user.role === 'supervisor') { patch.engineerId = engId || null; patch.siteId = siteId || null }
     const res = await dispatch({ type: 'UPDATE_USER', userId: user.id, patch, actorId: state.session.userId })
     if (res && res.status === 409) return setErr('That username is already taken.')
-    if (pw) await dispatch({ type: 'SET_PASSWORD', userId: user.id, password: pw, actorId: state.session.userId })
+    // Anything else that failed used to fall straight through to the success
+    // toast, so a rejected write looked identical to a saved one.
+    if (res && res.status >= 400) return setErr(`Could not save: ${res.body?.error || `server returned ${res.status}`}`)
+    if (pw) {
+      const pwRes = await dispatch({ type: 'SET_PASSWORD', userId: user.id, password: pw, actorId: state.session.userId })
+      if (pwRes && pwRes.status >= 400) return setErr(`Details saved, but the password did not change: ${pwRes.body?.error || pwRes.status}`)
+    }
     toast(`${name.trim().split(' ')[0]} updated`)
     onClose()
   }
@@ -444,19 +456,29 @@ function EditUserModal({ user, onClose }) {
               <input className="field" value={pw} autoComplete="new-password" onChange={(e) => { setPw(e.target.value); setErr('') }} placeholder="••••••••" />
             </div>
 
+            {/* Both selects need an explicit empty option. Without one, a
+                supervisor with no site set value="" against a list where
+                nothing matches, and the browser falls back to showing the
+                FIRST site — so the dropdown claimed they were on DHA Phase 6
+                while the state was still null. Worse, picking that same site
+                fired no change event, so the assignment silently saved as
+                null and the admin was told it worked. */}
             {user.role === 'supervisor' && (
               <>
                 <div>
                   <label className="field-label">Reports to (engineer)</label>
                   <select className="field" value={engId || ''} onChange={(e) => setEngId(e.target.value)}>
+                    <option value="">— Not assigned —</option>
                     {engineers.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="field-label">Assigned site</label>
                   <select className="field" value={siteId || ''} onChange={(e) => setSiteId(e.target.value)}>
+                    <option value="">— Not assigned —</option>
                     {state.sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
+                  {!state.sites.length && <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--warn)', marginTop: 6 }}>No sites exist yet — create one in the Sites tab first.</div>}
                 </div>
               </>
             )}

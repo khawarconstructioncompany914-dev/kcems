@@ -152,8 +152,16 @@ export default async function handler(req, res) {
           if (taken.rowCount) return json(res, 409, { error: 'username_taken' })
         }
         const map = { engineerId: 'engineer_id', siteId: 'site_id', status: 'status', name: 'name', role: 'role', username: 'username' }
+        // engineer_id and site_id are uuid columns: an empty string is not a
+        // valid uuid and would abort the whole UPDATE. "no engineer" and "no
+        // site" are legitimate states, so normalise '' to null here too rather
+        // than trusting every caller to have done it.
+        const NULLABLE_UUID = new Set(['engineerId', 'siteId'])
         const cols = [], vals = []; let i = 1
-        for (const k of Object.keys(map)) if (k in patch) { cols.push(`${map[k]} = $${i++}`); vals.push(patch[k]) }
+        for (const k of Object.keys(map)) if (k in patch) {
+          cols.push(`${map[k]} = $${i++}`)
+          vals.push(NULLABLE_UUID.has(k) && !patch[k] ? null : patch[k])
+        }
         if (!cols.length) return ok(res)
         vals.push(b.userId)
         await q(`update app_user set ${cols.join(', ')} where id = $${i}`, vals)
