@@ -4,25 +4,6 @@ import { ROLES, SITE_STATUS, roleEyebrow } from '../../data/model.js'
 import { PageHeader, Card } from '../../components/page.jsx'
 import { Monogram, Modal } from '../../components/bits.jsx'
 
-// Build Spec §2 permission matrix (+ Admin)
-const MATRIX = {
-  cols: [['owner', 'OWNER', 'var(--accent)'], ['admin', 'ADMIN', 'var(--violet)'], ['finance', 'FIN', 'var(--warn)'], ['engineer', 'ENG', 'var(--info)'], ['supervisor', 'SUP', '#fff']],
-  rows: [
-    ['Log expense',            ['—', '—', '—', '—', '✓']],
-    ['Review / pass up',       ['✓', '—', '—', 'own', '—']],
-    ['Approve / reject',       ['✓', '—', '✓', '—', '—']],
-    ['Add funds / settle',     ['✓', '—', '✓', '—', '—']],
-    ['View sites & ledgers',   ['all', 'all', 'all', 'own', 'self']],
-    ['Manage users & wiring',  ['✓', '✓', '—', '—', '—']],
-    ['Export reports',         ['✓', '—', '✓', '—', '—']],
-  ],
-}
-function Cell({ v }) {
-  if (v === '✓') return <span style={{ color: 'var(--accent)', fontWeight: 700 }}>✓</span>
-  if (v === '—') return <span style={{ color: 'var(--text-25)' }}>—</span>
-  return <span style={{ color: 'var(--warn)', font: '700 11px/1 var(--f-body)' }}>{v}</span>
-}
-
 const genTemp = () => 'kc' + Math.floor(1000 + Math.random() * 9000)
 const CREATE_ROLES = ['supervisor', 'engineer', 'finance', 'admin']
 
@@ -143,7 +124,10 @@ export default function AdminAccess() {
 
       {/* ---------------- WIRING & PERMISSIONS ---------------- */}
       {tab === 'access' && (
-        <div className="r-grid" style={{ alignItems: 'start' }}>
+        <div>
+          {/* the read-only permission matrix that used to sit beside this was
+              removed — it documented the rules rather than doing anything, and
+              the reporting tree now has the full width */}
           <Card pad={26}>
             <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff' }}>Reporting tree</div>
             <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 6 }}>An engineer only sees the supervisors wired under them. Click a supervisor to re-assign.</div>
@@ -163,7 +147,11 @@ export default function AdminAccess() {
                       {sups.map((s) => (
                         <button key={s.id} onClick={() => setMoving(s)} title="Re-assign" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 11px', borderRadius: 9, background: 'var(--input)', border: '1px solid var(--border)', font: '600 12px/1 var(--f-body)', color: '#fff', cursor: 'pointer' }}>
                           <span className="mono-badge" style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--accent)', color: 'var(--accent-ink)', fontSize: 8 }}>{s.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>
-                          {s.name.split(' ')[0]} · {siteById(s.siteId)?.label}
+                          {/* a supervisor with no site would otherwise render a dangling "·" */}
+                          {s.name.split(' ')[0]}
+                          {s.siteId
+                            ? <> · {siteById(s.siteId)?.label || siteById(s.siteId)?.name}</>
+                            : <span style={{ color: 'var(--warn)' }}> · no site</span>}
                         </button>
                       ))}
                       {sups.length === 0 && <span style={{ font: '500 12px/1 var(--f-mono)', color: 'var(--text-40)' }}>none wired</span>}
@@ -174,31 +162,6 @@ export default function AdminAccess() {
             </div>
           </Card>
 
-          <Card pad={26}>
-            <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff' }}>Who can do what</div>
-            <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 6 }}>Enforced server-side on every endpoint. This screen is read-only.</div>
-            <div className="r-scroll-x" style={{ marginTop: 20, border: '1px solid var(--border-3)', borderRadius: 12, '--r-tablemin': '560px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1.7fr repeat(5, 1fr)' }}>
-                <div style={{ padding: '12px 14px', background: 'var(--input)', font: '600 10px/1 var(--f-mono)', color: 'var(--text-50)' }}>CAPABILITY</div>
-                {MATRIX.cols.map(([k, label, color]) => (
-                  <div key={k} style={{ padding: '12px 6px', background: 'var(--input)', textAlign: 'center', font: '700 10px/1 var(--f-mono)', color }}>{label}</div>
-                ))}
-                {MATRIX.rows.map(([cap, vals]) => (
-                  <div key={cap} style={{ display: 'contents' }}>
-                    <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border-3)', font: '600 12px/1.2 var(--f-body)', color: '#fff' }}>{cap}</div>
-                    {vals.map((v, j) => (
-                      <div key={j} style={{ padding: '12px 6px', borderTop: '1px solid var(--border-3)', textAlign: 'center' }}><Cell v={v} /></div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 16, marginTop: 16, font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)' }}>
-              <span style={{ color: 'var(--accent)' }}>✓ full</span>
-              <span style={{ color: 'var(--warn)' }}>own = scoped to tree</span>
-              <span>— none</span>
-            </div>
-          </Card>
         </div>
       )}
 
