@@ -29,13 +29,27 @@
   --violet: #B49BFF;   /* admin */
   --violet-soft: rgba(180, 155, 255, .16);
 
+  /* Text tokens are white at an alpha, so their contrast depends on the
+     lightest surface they sit on — #111311 (--surface / --input). Measured
+     there, the old ramp failed WCAG AA (4.5:1) for everything below --text-50:
+     .42 -> 4.10, .40 -> 3.83, .32 -> 2.88. Those tokens carry real content —
+     names, sites, dates, section headers — so they are now all at or above the
+     4.5:1 floor, which is .45 alpha on that surface.
+
+     .42 and .40 differed by 0.02, an imperceptible step pretending to be a
+     level in the scale. They collapse to one value. What is left is three
+     honest steps: dim / mid / bright.
+
+     --text-25 is deliberately unchanged: its only two uses are the "·"
+     separators between meta items, which are decoration rather than content
+     and are exempt. */
   --text:      #ffffff;
-  --text-70:   rgba(255,255,255,.66);
-  --text-50:   rgba(255,255,255,.5);
-  --text-42:   rgba(255,255,255,.42);
-  --text-40:   rgba(255,255,255,.40);
-  --text-32:   rgba(255,255,255,.32);
-  --text-25:   rgba(255,255,255,.25);
+  --text-70:   rgba(255,255,255,.66);   /* 8.5:1  bright  — secondary content  */
+  --text-50:   rgba(255,255,255,.55);   /* 6.1:1  mid     — tertiary content   */
+  --text-42:   rgba(255,255,255,.46);   /* 4.7:1  dim     — meta, labels       */
+  --text-40:   rgba(255,255,255,.46);   /* 4.7:1  dim     — was .40, see above */
+  --text-32:   rgba(255,255,255,.46);   /* 4.7:1  dim     — was .32, see above */
+  --text-25:   rgba(255,255,255,.25);   /* decorative separators only          */
 
   /* type — Khawar brand */
   --f-display: 'Archivo', system-ui, sans-serif;   /* numbers, KPI figures, headings */
@@ -309,7 +323,15 @@ select.field { appearance: none; cursor: pointer; }
 /* ---------- below the breakpoint: 44px minimum touch targets ----------
    min-height beats any inline `height`, so compact controls grow on phones
    without touching their desktop sizing. */
-@media (max-width: 767.98px) {
+/* Touch targets. Width alone was the wrong signal: this was gated on
+   max-width 767.98px, so a tablet — 768 portrait, 1024 landscape, and a finger
+   either way — fell through to desktop sizing and got 34px chips and 38px
+   buttons. `pointer: coarse` asks the real question (is this being touched?)
+   rather than guessing from how wide the screen is, so phones, tablets and
+   touch laptops all get a proper tap area while a mouse-driven desktop keeps
+   its compact controls. The width clause stays for browsers that report no
+   pointer capability at all. */
+@media (max-width: 767.98px), (pointer: coarse) {
   .btn, .btn-sm, .chip, .login-btn, .field, select.field, input.field { min-height: 44px; }
   /* standalone text links (back / "see all") need a real tap area too */
   .tap { min-height: 44px; display: inline-flex; align-items: center; }

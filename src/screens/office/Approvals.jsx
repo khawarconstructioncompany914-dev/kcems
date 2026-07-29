@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore, useSelectors } from '../../store.jsx'
-import { formatMoney, fmtDate } from '../../data/model.js'
+import { formatMoney, fmtDate, roleEyebrow } from '../../data/model.js'
 import { PageHeader, Kpi } from '../../components/page.jsx'
 import { ExpenseCard } from '../../components/expense.jsx'
 import { Empty, Monogram } from '../../components/bits.jsx'
@@ -21,7 +21,7 @@ export default function Approvals() {
   return (
     <div className="fade-up">
       <PageHeader
-        eyebrow="Finance · approvals"
+        eyebrow={roleEyebrow(me.role, 'approvals')}
         title="Approve & settle"
         sub="Second-stage review. Approving deducts the amount from the supervisor's cash-in-hand, atomically. Rejecting turns it into owed-back."
         right={<button className="btn btn-primary" onClick={() => setFunds(true)}>+ Add funds</button>}
@@ -59,7 +59,7 @@ export default function Approvals() {
                   <Monogram name={e.supervisor?.name} color="var(--danger)" soft="var(--danger-soft)" size={40} />
                   <div style={{ flex: 1 }}>
                     <div style={{ font: '700 14px/1.2 var(--f-body)', color: '#fff' }}>{e.note}</div>
-                    <div style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 6 }}>{e.supervisor?.name} · {e.site?.label} · {fmtDate(e.createdAt)}</div>
+                    <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 6 }}>{e.supervisor?.name} · {e.site?.label} · {fmtDate(e.createdAt)}</div>
                   </div>
                   <div className="num" style={{ font: '700 17px/1 var(--f-display)', color: 'var(--danger)' }}>{formatMoney(e.amount)}</div>
                 </div>

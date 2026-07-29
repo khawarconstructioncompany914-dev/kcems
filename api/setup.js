@@ -63,11 +63,13 @@ async function seed(client) {
 
   const users = [
     [U('01'), 'Meesam Ali', 'meesamali', '+92 300 8500011', 'meesamali@khawar.pk', 'owner', null, null],
-    [U('02'), 'Junaid Malik', 'junaid', '+92 301 8500033', 'junaid@khawar.pk', 'admin', null, null],
-    [U('03'), 'Tariq Mehmood', 'tariq', '+92 301 8500022', 'tariq@khawar.pk', 'finance', null, null],
-    [U('11'), 'Ali Khawaja', 'ali', '+92 321 4410001', 'ali@khawar.pk', 'engineer', null, null],
-    [U('12'), 'Toufeeq Abbas', 'toufeeq', '+92 321 4410002', 'toufeeq@khawar.pk', 'engineer', null, null],
-    [U('13'), 'Zohaib Hassan', 'zohaib', '+92 321 4410003', 'zohaib@khawar.pk', 'engineer', null, null],
+    [U('02'), 'Muzamil Ali Sher', 'muzamilalisher', '+92 301 8500033', 'muzamilalisher@khawar.pk', 'admin', null, null],
+    [U('03'), 'Tariq Ismail', 'tariqismail', '+92 301 8500022', 'tariqismail@khawar.pk', 'finance', null, null],
+    [U('11'), 'Ali Khawaja', 'alikhawaja', '+92 321 4410001', 'alikhawaja@khawar.pk', 'engineer', null, null],
+    [U('12'), 'Toufeeq Abbas', 'toufeeqabbas', '+92 321 4410002', 'toufeeqabbas@khawar.pk', 'engineer', null, null],
+    [U('13'), 'Zohaib Hassan', 'zohaibhassan', '+92 321 4410003', 'zohaibhassan@khawar.pk', 'engineer', null, null],
+    [U('14'), 'Shabbir Hussain 2', 'shabbirhussain2', '+92 321 4410004', 'shabbirhussain2@khawar.pk', 'engineer', null, null],
+    [U('15'), 'Muhammad Zahid Talib', 'muhammadzahidtalib', '+92 321 4410005', 'muhammadzahidtalib@khawar.pk', 'engineer', null, null],
     [U('21'), 'Faraz Ahmed', 'faraz', '+92 300 1234567', null, 'supervisor', U('11'), U('101')],
     [U('22'), 'Saqib Riaz', 'saqib', '+92 300 2234567', null, 'supervisor', U('11'), U('102')],
     [U('23'), 'Abdullah Khan', 'abdullah', '+92 300 3234567', null, 'supervisor', U('11'), U('103')],

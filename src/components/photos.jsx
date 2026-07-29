@@ -151,7 +151,7 @@ export function PhotoViewer({ photos = [], index = 0, open, onClose, onIndex }) 
       <div style={{ padding: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {many && <button className="btn btn-ghost btn-sm" onClick={() => go(-1)} aria-label="Previous photo">‹</button>}
-          <div style={{ flex: 1, textAlign: 'center', font: '600 11px/1 var(--f-mono)', color: 'var(--text-50)' }}>
+          <div style={{ flex: 1, textAlign: 'center', font: '600 12px/1.4 var(--f-mono)', color: 'var(--text-50)' }}>
             {many ? `${index + 1} / ${photos.length}` : 'Photo'}
           </div>
           {many && <button className="btn btn-ghost btn-sm" onClick={() => go(1)} aria-label="Next photo">›</button>}
@@ -163,7 +163,7 @@ export function PhotoViewer({ photos = [], index = 0, open, onClose, onIndex }) 
             : <span style={{ padding: 40, font: '600 12px/1 var(--f-mono)', color: 'var(--text-40)' }}>LOADING…</span>}
         </div>
 
-        <div style={{ marginTop: 10, textAlign: 'center', font: '500 11px/1.5 var(--f-mono)', color: 'var(--text-42)' }}>
+        <div style={{ marginTop: 10, textAlign: 'center', font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)' }}>
           {when ? `Taken ${when}` : 'Capture time not recorded'}
         </div>
         <button className="btn btn-ghost" style={{ width: '100%', marginTop: 14 }} onClick={onClose}>Close</button>
@@ -177,7 +177,7 @@ export function PhotoGallery({ photos = [], minPx = 72, empty = 'No photo on fil
   const [open, setOpen] = useState(false)
   const [i, setI] = useState(0)
   if (!photos.length) {
-    return <div style={{ padding: '22px 0', textAlign: 'center', font: '600 11px/1 var(--f-mono)', color: 'var(--text-40)' }}>{empty}</div>
+    return <div style={{ padding: '22px 0', textAlign: 'center', font: '600 12px/1.4 var(--f-mono)', color: 'var(--text-40)' }}>{empty}</div>
   }
   return (
     <>
@@ -240,7 +240,7 @@ export function PhotoTray({ photos = [], onChange, max = 8, hint, disabled }) {
           icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>} />
       </PhotoGrid>
 
-      <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 8 }}>
+      <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 8 }}>
         {busy ? 'Processing…' : full ? `Maximum ${max} photos.` : hint}
       </div>
     </div>

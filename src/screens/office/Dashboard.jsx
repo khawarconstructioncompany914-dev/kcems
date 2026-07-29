@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useSelectors } from '../../store.jsx'
-import { formatMoney, formatCompact, fmtDate, relDay, STATUS, SITE_STATUS } from '../../data/model.js'
+import { formatMoney, formatCompact, fmtDate, relDay, STATUS, SITE_STATUS, roleEyebrow } from '../../data/model.js'
 import { PageHeader, Kpi, Card } from '../../components/page.jsx'
 import { Monogram, StatusPill, Progress } from '../../components/bits.jsx'
 
@@ -25,7 +25,7 @@ export default function Dashboard() {
   return (
     <div className="fade-up">
       <PageHeader
-        eyebrow="Owner · overview"
+        eyebrow={roleEyebrow(me.role, 'overview')}
         title={`Good day, ${me.name.split(' ')[0]}`}
         sub="The whole organisation at a glance — every site, every rupee, the approval pipeline and cash in the field."
         right={<Link to="/reports" className="btn btn-ghost">Reports →</Link>}
@@ -55,7 +55,7 @@ export default function Dashboard() {
                     <span className="mono-badge" style={{ width: 40, height: 40, borderRadius: 11, background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-line)', fontSize: 13 }}>{s.label.replace(/[^A-Z0-9]/gi, '').slice(0, 2).toUpperCase()}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ font: '700 14px/1 var(--f-body)', color: '#fff' }}>{s.name}</div>
-                      <div style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 5 }}>{s.city} · {s.phase}</div>
+                      <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 5 }}>{s.city} · {s.phase}</div>
                     </div>
                     <span className={`pill ${SITE_STATUS[s.status].pill}`} style={{ height: 22, fontSize: 10 }}><span className="dot" />{SITE_STATUS[s.status].label}</span>
                   </div>

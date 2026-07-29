@@ -7,8 +7,8 @@ import { BridgeArcs } from '../components/BridgeArcs.jsx'
 
 const DEV = import.meta.env.DEV
 const DEMO = [
-  ['meesamali', 'Owner'], ['junaid', 'Admin'], ['tariq', 'Finance'],
-  ['ali', 'Engineer'], ['faraz', 'Supervisor'],
+  ['meesamali', 'Owner'], ['muzamilalisher', 'Admin'], ['tariqismail', 'Finance'],
+  ['alikhawaja', 'Engineer'], ['faraz', 'Supervisor'],
 ]
 
 export default function Login() {
@@ -44,7 +44,7 @@ export default function Login() {
           <h3 style={{ font: '900 clamp(26px,4.2vw,48px)/.95 var(--f-display)', color: '#fff', margin: 'clamp(20px,3vw,34px) 0 0', textTransform: 'uppercase', letterSpacing: '.02em' }}>
             We build<br />the <span style={{ color: 'var(--accent)' }}>routes</span>
           </h3>
-          <div style={{ font: '400 11px/1 var(--f-mono)', letterSpacing: '.24em', color: 'rgba(255,255,255,.45)', marginTop: 16 }}>KHAWAR CONSTRUCTION CO.</div>
+          <div style={{ font: '400 12px/1.4 var(--f-mono)', letterSpacing: '.24em', color: 'rgba(255,255,255,.45)', marginTop: 16 }}>KHAWAR CONSTRUCTION CO.</div>
         </div>
         <div style={{ position: 'absolute', bottom: 22, left: 0, right: 0, textAlign: 'center', font: '400 10px/1 var(--f-mono)', letterSpacing: '.3em', color: 'rgba(92,232,56,.4)' }}>EST. MULTAN · PAKISTAN</div>
       </div>

@@ -67,7 +67,7 @@ export function AddFundsModal({ open, onClose, supervisorId, presetSupervisor = 
             <Monogram name={sup.name} color="var(--accent)" soft="var(--accent-soft)" size={34} />
             <div style={{ flex: 1 }}>
               <div style={{ font: '700 13px/1 var(--f-body)', color: '#fff' }}>{sup.name}</div>
-              <div style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>current cash · {formatMoney(bal.cash)}</div>
+              <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>current cash · {formatMoney(bal.cash)}</div>
             </div>
           </div>
         )}

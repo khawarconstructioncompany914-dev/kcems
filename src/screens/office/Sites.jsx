@@ -26,7 +26,7 @@ export default function Sites() {
                 <span className="mono-badge" style={{ width: 48, height: 48, borderRadius: 13, background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-line)', fontSize: 15 }}>{s.label.replace(/[^A-Z0-9]/gi, '').slice(0, 2).toUpperCase()}</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ font: '700 17px/1.1 var(--f-display)', color: '#fff' }}>{s.name}</div>
-                  <div style={{ font: '500 11px/1.3 var(--f-mono)', color: 'var(--text-42)', marginTop: 6 }}>{s.city} · {s.phase} · {eng?.name.split(' ')[0]}</div>
+                  <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 6 }}>{s.city} · {s.phase} · {eng?.name.split(' ')[0]}</div>
                 </div>
                 <span className={`pill ${SITE_STATUS[s.status].pill}`} style={{ height: 24, fontSize: 10 }}><span className="dot" />{SITE_STATUS[s.status].label}</span>
               </div>
@@ -41,7 +41,7 @@ export default function Sites() {
               </div>
 
               <div style={{ marginTop: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', font: '600 11px/1 var(--f-body)', color: 'var(--text-50)', marginBottom: 8 }}><span>Budget used</span><span style={{ color: 'var(--accent)' }}>{sp.pct}%</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', font: '600 12px/1.4 var(--f-body)', color: 'var(--text-50)', marginBottom: 8 }}><span>Budget used</span><span style={{ color: 'var(--accent)' }}>{sp.pct}%</span></div>
                 <Progress pct={sp.pct} />
               </div>
             </Link>

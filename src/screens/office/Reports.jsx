@@ -89,7 +89,7 @@ export default function Reports() {
 
         <Card pad={20}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ font: '600 11px/1 var(--f-mono)', color: 'var(--text-50)' }}>PREVIEW · {rows.length} rows</div>
+            <div style={{ font: '600 12px/1.4 var(--f-mono)', color: 'var(--text-50)' }}>PREVIEW · {rows.length} rows</div>
             <div className="num" style={{ font: '700 20px/1 var(--f-display)', color: 'var(--accent)' }}>{formatMoney(total)}</div>
           </div>
           <div style={{ display: 'flex', font: '500 10px/1 var(--f-mono)', color: 'var(--text-35, var(--text-40))', margin: '16px 0 4px', textTransform: 'uppercase', letterSpacing: '.05em' }}>

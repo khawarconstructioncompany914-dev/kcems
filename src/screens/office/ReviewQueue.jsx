@@ -1,5 +1,5 @@
 import { useSelectors } from '../../store.jsx'
-import { formatMoney } from '../../data/model.js'
+import { formatMoney, roleEyebrow } from '../../data/model.js'
 import { PageHeader, Kpi } from '../../components/page.jsx'
 import { ExpenseCard } from '../../components/expense.jsx'
 import { Empty } from '../../components/bits.jsx'
@@ -15,7 +15,7 @@ export default function ReviewQueue() {
   return (
     <div className="fade-up">
       <PageHeader
-        eyebrow="Engineer · review queue"
+        eyebrow={roleEyebrow(me.role, 'review queue')}
         title="Review & pass up"
         sub="Expenses your supervisors logged, waiting for a first-stage check. Open the bill, then pass up to finance, return to fix, or reject."
       />

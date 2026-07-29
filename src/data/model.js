@@ -3,13 +3,20 @@
 // (Build Spec §1 enums, §5 tokens)
 // ============================================================
 
+// `word` is the one-word role name used in page eyebrows. `label` is the full
+// title ("Owner / CEO"), which is too long to sit in front of a page name.
 export const ROLES = {
-  owner:      { label: 'Owner / CEO',  short: 'OW', color: 'var(--accent)', soft: 'var(--accent-soft)', landing: '/dashboard', blurb: 'full org · all sites · funds' },
-  admin:      { label: 'Admin',        short: 'AD', color: 'var(--violet)', soft: 'var(--violet-soft)', landing: '/dashboard', blurb: 'users · wiring · view all' },
-  finance:    { label: 'Finance',      short: 'FN', color: 'var(--warn)',   soft: 'var(--warn-soft)',   landing: '/approvals', blurb: 'approvals · ledgers · exports' },
-  engineer:   { label: 'Engineer',     short: 'EN', color: 'var(--info)',   soft: 'var(--info-soft)',   landing: '/review',    blurb: 'review queue · own supervisors' },
-  supervisor: { label: 'Supervisor',   short: 'SU', color: 'var(--accent)', soft: 'var(--accent-soft)', landing: '/home',      blurb: 'logs expenses · own cash' },
+  owner:      { label: 'Owner / CEO',  word: 'Owner',      short: 'OW', color: 'var(--accent)', soft: 'var(--accent-soft)', landing: '/dashboard', blurb: 'full org · all sites · funds' },
+  admin:      { label: 'Admin',        word: 'Admin',      short: 'AD', color: 'var(--violet)', soft: 'var(--violet-soft)', landing: '/dashboard', blurb: 'users · wiring · view all' },
+  finance:    { label: 'Finance',      word: 'Finance',    short: 'FN', color: 'var(--warn)',   soft: 'var(--warn-soft)',   landing: '/approvals', blurb: 'approvals · ledgers · exports' },
+  engineer:   { label: 'Engineer',     word: 'Engineer',   short: 'EN', color: 'var(--info)',   soft: 'var(--info-soft)',   landing: '/review',    blurb: 'review queue · own supervisors' },
+  supervisor: { label: 'Supervisor',   word: 'Supervisor', short: 'SU', color: 'var(--accent)', soft: 'var(--accent-soft)', landing: '/home',      blurb: 'logs expenses · own cash' },
 }
+
+// "Admin · overview" for whoever is actually signed in. Every one of these
+// pages is reachable by more than one role, so hard-coding the role name in
+// the eyebrow told admins and finance they were looking at the owner's screen.
+export const roleEyebrow = (role, page) => `${ROLES[role]?.word || ''} · ${page}`
 
 // office (desktop) roles vs the mobile field role
 export const OFFICE_ROLES = ['owner', 'admin', 'finance', 'engineer']

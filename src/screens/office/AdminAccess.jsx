@@ -1,27 +1,8 @@
 import { useState } from 'react'
 import { useStore, useSelectors } from '../../store.jsx'
-import { ROLES, SITE_STATUS } from '../../data/model.js'
+import { ROLES, SITE_STATUS, roleEyebrow } from '../../data/model.js'
 import { PageHeader, Card } from '../../components/page.jsx'
 import { Monogram, Modal } from '../../components/bits.jsx'
-
-// Build Spec §2 permission matrix (+ Admin)
-const MATRIX = {
-  cols: [['owner', 'OWNER', 'var(--accent)'], ['admin', 'ADMIN', 'var(--violet)'], ['finance', 'FIN', 'var(--warn)'], ['engineer', 'ENG', 'var(--info)'], ['supervisor', 'SUP', '#fff']],
-  rows: [
-    ['Log expense',            ['—', '—', '—', '—', '✓']],
-    ['Review / pass up',       ['✓', '—', '—', 'own', '—']],
-    ['Approve / reject',       ['✓', '—', '✓', '—', '—']],
-    ['Add funds / settle',     ['✓', '—', '✓', '—', '—']],
-    ['View sites & ledgers',   ['all', 'all', 'all', 'own', 'self']],
-    ['Manage users & wiring',  ['✓', '✓', '—', '—', '—']],
-    ['Export reports',         ['✓', '—', '✓', '—', '—']],
-  ],
-}
-function Cell({ v }) {
-  if (v === '✓') return <span style={{ color: 'var(--accent)', fontWeight: 700 }}>✓</span>
-  if (v === '—') return <span style={{ color: 'var(--text-25)' }}>—</span>
-  return <span style={{ color: 'var(--warn)', font: '700 11px/1 var(--f-body)' }}>{v}</span>
-}
 
 const genTemp = () => 'kc' + Math.floor(1000 + Math.random() * 9000)
 const CREATE_ROLES = ['supervisor', 'engineer', 'finance', 'admin']
@@ -46,7 +27,7 @@ export default function AdminAccess() {
   return (
     <div className="fade-up">
       <PageHeader
-        eyebrow="Admin · users & access"
+        eyebrow={roleEyebrow(me.role, 'users & access')}
         title="Users & access"
         sub="Create logins, wire supervisors to engineers and sites, reset passwords, and review who can do what."
         right={<button className="btn btn-primary" onClick={() => setCreate(true)}>+ Create login</button>}
@@ -80,12 +61,20 @@ export default function AdminAccess() {
                 <div style={{ flex: 2.2, display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                   <Monogram name={u.name} color={ROLES[u.role].color} soft={ROLES[u.role].soft} size={36} />
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ font: '700 13px/1.2 var(--f-body)', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.name}</div>
-                    <div style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>@{u.username}{u.mustChangePassword ? ' · temp pw' : ''}</div>
+                    <div style={{ font: '700 14px/1.3 var(--f-body)', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.name}</div>
+                  {/* This line is the person's sign-in name. It used to read
+                      "@meesamali" in a monospace face at 4.06:1 — developer
+                      shorthand, in the least legible font at the smallest size,
+                      for an audience of site staff. Now it says what it is, in
+                      the body font. */}
+                  <div style={{ font: '500 13px/1.45 var(--f-body)', color: 'var(--text-70)', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <span style={{ color: 'var(--text-40)' }}>Login · </span>{u.username}
+                      {u.mustChangePassword && <span style={{ color: 'var(--warn)' }}> · temporary password</span>}
+                    </div>
                   </div>
                 </div>
                 <div style={{ flex: 1.4 }}><RolePill role={u.role} /></div>
-                <div style={{ flex: 2, font: '500 11px/1.4 var(--f-mono)', color: 'var(--text-50)' }}>
+                <div style={{ flex: 2, font: '500 12px/1.45 var(--f-mono)', color: 'var(--text-70)' }}>
                   {u.role === 'supervisor' ? <>{eng?.name.split(' ')[0] || '—'} · {site?.label || '—'}</> : <span style={{ color: 'var(--text-32)' }}>—</span>}
                 </div>
                 <div style={{ flex: 1 }}>
@@ -109,7 +98,7 @@ export default function AdminAccess() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 22px', borderBottom: '1px solid var(--border-3)', flexWrap: 'wrap' }}>
             <div>
               <div style={{ font: '700 14px/1 var(--f-body)', color: '#fff' }}>Construction sites</div>
-              <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 5 }}>Add your real sites here, then assign each supervisor to one from the Users tab.</div>
+              <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 5 }}>Add your real sites here, then assign each supervisor to one from the Users tab.</div>
             </div>
             <div className="spacer" />
             <button className="btn btn-primary btn-sm" onClick={() => setSiteEdit({})}>+ Add site</button>
@@ -128,11 +117,11 @@ export default function AdminAccess() {
                 </span>
                 <div style={{ flex: 1, minWidth: 150 }}>
                   <div style={{ font: '700 13px/1.2 var(--f-body)', color: '#fff' }}>{s.name}</div>
-                  <div style={{ font: '500 11px/1.3 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>
+                  <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>
                     {[s.city, s.phase].filter(Boolean).join(' · ') || '—'} · {sups} supervisor{sups !== 1 ? 's' : ''}
                   </div>
                 </div>
-                <div style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-50)', minWidth: 96 }}>{eng ? eng.name.split(' ')[0] : 'no engineer'}</div>
+                <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-50)', minWidth: 96 }}>{eng ? eng.name.split(' ')[0] : 'no engineer'}</div>
                 <span className={`pill ${st.pill}`} style={{ height: 22, fontSize: 10 }}>{st.label}</span>
                 <button className="btn btn-ghost btn-sm" onClick={() => setSiteEdit(s)}>Edit</button>
               </div>
@@ -143,62 +132,67 @@ export default function AdminAccess() {
 
       {/* ---------------- WIRING & PERMISSIONS ---------------- */}
       {tab === 'access' && (
-        <div className="r-grid" style={{ alignItems: 'start' }}>
+        <div>
+          {/* the read-only permission matrix that used to sit beside this was
+              removed — it documented the rules rather than doing anything, and
+              the reporting tree now has the full width */}
           <Card pad={26}>
             <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff' }}>Reporting tree</div>
-            <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 6 }}>An engineer only sees the supervisors wired under them. Click a supervisor to re-assign.</div>
-            <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div style={{ font: '500 12.5px/1.5 var(--f-body)', color: 'var(--text-70)', marginTop: 6, maxWidth: 620 }}>
+              Who reports to whom. An engineer only sees expenses from the supervisors listed under them.
+              Click any supervisor to move them to a different engineer.
+            </div>
+
+            <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {engineers.map((eng) => {
                 const sups = supsForEngineer(eng.id)
                 return (
-                  <div key={eng.id} style={{ borderLeft: '2px solid var(--border)', paddingLeft: 18 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginLeft: -27 }}>
-                      <Monogram name={eng.name} color="var(--info)" soft="var(--info-soft)" size={34} />
-                      <div>
-                        <div style={{ font: '700 13px/1 var(--f-body)', color: '#fff' }}>{eng.name}</div>
-                        <div style={{ font: '500 10px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>ENGINEER · {sups.length} supervisor{sups.length !== 1 ? 's' : ''}</div>
+                  <div key={eng.id} className="surface" style={{ borderRadius: 14, padding: 16, border: '1px solid var(--border-3)' }}>
+                    {/* engineer header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                      <Monogram name={eng.name} color="var(--info)" soft="var(--info-soft)" size={36} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ font: '700 14px/1.3 var(--f-body)', color: '#fff' }}>{eng.name}</div>
+                        <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-70)' }}>Head engineer</div>
                       </div>
+                      <span className="pill" style={{ height: 24, fontSize: 11, background: sups.length ? 'var(--info-soft)' : 'var(--input)', color: sups.length ? 'var(--info)' : 'var(--text-50)', border: 'none', flex: 'none' }}>
+                        {sups.length} supervisor{sups.length !== 1 ? 's' : ''}
+                      </span>
                     </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 11 }}>
-                      {sups.map((s) => (
-                        <button key={s.id} onClick={() => setMoving(s)} title="Re-assign" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 11px', borderRadius: 9, background: 'var(--input)', border: '1px solid var(--border)', font: '600 12px/1 var(--f-body)', color: '#fff', cursor: 'pointer' }}>
-                          <span className="mono-badge" style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--accent)', color: 'var(--accent-ink)', fontSize: 8 }}>{s.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>
-                          {s.name.split(' ')[0]} · {siteById(s.siteId)?.label}
-                        </button>
-                      ))}
-                      {sups.length === 0 && <span style={{ font: '500 12px/1 var(--f-mono)', color: 'var(--text-40)' }}>none wired</span>}
-                    </div>
+
+                    {sups.length === 0
+                      ? <div style={{ font: '500 12.5px/1.4 var(--f-body)', color: 'var(--text-50)', marginTop: 12, paddingLeft: 47 }}>Nobody reports to {eng.name.split(' ')[0]} yet.</div>
+                      : (
+                        // A grid rather than wrapped chips: with 24 supervisors the
+                        // chips became an unreadable blob, and each person needs two
+                        // lines anyway — full name, then where they are.
+                        <div style={{ marginTop: 12, paddingLeft: 47, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(212px, 1fr))', gap: 8 }}>
+                          {sups.map((s) => {
+                            const site = s.siteId ? siteById(s.siteId) : null
+                            return (
+                              <button key={s.id} onClick={() => setMoving(s)} title={`Move ${s.name} to another engineer`}
+                                style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 11px', borderRadius: 10, background: 'var(--input)', border: '1px solid var(--border)', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+                                <Monogram name={s.name} color="var(--accent)" soft="var(--accent-soft)" size={26} radius={8} />
+                                <span style={{ flex: 1, minWidth: 0 }}>
+                                  {/* full name, not just the first — eight people on
+                                      this roster are called Muhammad-something */}
+                                  <span style={{ display: 'block', font: '600 12.5px/1.35 var(--f-body)', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+                                  <span style={{ display: 'block', font: '500 11.5px/1.35 var(--f-body)', color: site ? 'var(--text-70)' : 'var(--warn)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {site ? (site.label || site.name) : 'No site assigned'}
+                                  </span>
+                                </span>
+                                <span aria-hidden style={{ flex: 'none', font: '600 13px/1 var(--f-body)', color: 'var(--text-40)' }}>⇄</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
                   </div>
                 )
               })}
             </div>
           </Card>
 
-          <Card pad={26}>
-            <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff' }}>Who can do what</div>
-            <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 6 }}>Enforced server-side on every endpoint. This screen is read-only.</div>
-            <div className="r-scroll-x" style={{ marginTop: 20, border: '1px solid var(--border-3)', borderRadius: 12, '--r-tablemin': '560px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1.7fr repeat(5, 1fr)' }}>
-                <div style={{ padding: '12px 14px', background: 'var(--input)', font: '600 10px/1 var(--f-mono)', color: 'var(--text-50)' }}>CAPABILITY</div>
-                {MATRIX.cols.map(([k, label, color]) => (
-                  <div key={k} style={{ padding: '12px 6px', background: 'var(--input)', textAlign: 'center', font: '700 10px/1 var(--f-mono)', color }}>{label}</div>
-                ))}
-                {MATRIX.rows.map(([cap, vals]) => (
-                  <div key={cap} style={{ display: 'contents' }}>
-                    <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border-3)', font: '600 12px/1.2 var(--f-body)', color: '#fff' }}>{cap}</div>
-                    {vals.map((v, j) => (
-                      <div key={j} style={{ padding: '12px 6px', borderTop: '1px solid var(--border-3)', textAlign: 'center' }}><Cell v={v} /></div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 16, marginTop: 16, font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)' }}>
-              <span style={{ color: 'var(--accent)' }}>✓ full</span>
-              <span style={{ color: 'var(--warn)' }}>own = scoped to tree</span>
-              <span>— none</span>
-            </div>
-          </Card>
         </div>
       )}
 
@@ -238,8 +232,17 @@ function ReassignModal({ moving, onClose, onPick }) {
 
 function SiteModal({ site, onClose }) {
   const { state, dispatch, toast } = useStore()
-  const { engineers } = useSelectors()
+  const { engineers, supervisors, siteById } = useSelectors()
   const isNew = !site?.id
+  // who is already on this site — the starting state of the checkboxes
+  const [supIds, setSupIds] = useState(() => new Set(
+    site?.id ? supervisors.filter((u) => u.siteId === site.id).map((u) => u.id) : [],
+  ))
+  const toggleSup = (id) => setSupIds((prev) => {
+    const next = new Set(prev)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    return next
+  })
   const [name, setName] = useState(site?.name || '')
   const [label, setLabel] = useState(site?.label || '')
   const [city, setCity] = useState(site?.city || '')
@@ -258,10 +261,14 @@ function SiteModal({ site, onClose }) {
       engineerId: engId || null,
       budget: Math.round(Number(String(budget).replace(/[^\d]/g, '')) || 0),
       status,
+      supervisorIds: [...supIds],
     }
     if (isNew) dispatch({ type: 'CREATE_SITE', payload, actorId: state.session.userId })
     else dispatch({ type: 'UPDATE_SITE', siteId: site.id, patch: payload, actorId: state.session.userId })
-    toast(isNew ? `Site “${payload.name}” created` : `${payload.name} updated`)
+    const n = supIds.size
+    toast(isNew
+      ? `Site “${payload.name}” created${n ? ` · ${n} supervisor${n > 1 ? 's' : ''} assigned` : ''}`
+      : `${payload.name} updated${n ? ` · ${n} supervisor${n > 1 ? 's' : ''} on site` : ''}`)
     onClose()
   }
 
@@ -295,6 +302,41 @@ function SiteModal({ site, onClose }) {
                   <option value="on_hold">On hold</option>
                   <option value="closed">Closed</option>
                 </select>
+              </div>
+            </div>
+
+            {/* Assigning the crew here is what makes a new site complete in one
+                pass — site, engineer, supervisors — instead of creating the
+                site and then editing every supervisor individually. */}
+            <div>
+              <label className="field-label">
+                Site supervisors {supIds.size > 0 && <span style={{ color: 'var(--accent)' }}>· {supIds.size} selected</span>}
+              </label>
+              {supervisors.length === 0
+                ? <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--warn)' }}>No supervisors exist yet — create them in the Users tab.</div>
+                : (
+                  <div className="surface" style={{ maxHeight: 176, overflowY: 'auto', borderRadius: 11, padding: 6 }}>
+                    {supervisors.map((s) => {
+                      const on = supIds.has(s.id)
+                      const their = s.siteId ? siteById(s.siteId) : null
+                      const elsewhere = s.siteId && s.siteId !== site?.id
+                      return (
+                        <label key={s.id} className="tap" style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px', borderRadius: 8, cursor: 'pointer', background: on ? 'var(--accent-soft)' : 'transparent' }}>
+                          <input type="checkbox" checked={on} onChange={() => toggleSup(s.id)} style={{ width: 15, height: 15, accentColor: 'var(--accent)', flex: 'none' }} />
+                          <span style={{ flex: 1, minWidth: 0, font: '600 12px/1.2 var(--f-body)', color: on ? '#fff' : 'var(--text-70)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+                          <span style={{ flex: 'none', font: '500 10px/1 var(--f-mono)', color: elsewhere ? 'var(--warn)' : 'var(--text-40)' }}>
+                            {elsewhere ? `on ${their?.label || their?.name}` : s.siteId ? 'here' : 'unassigned'}
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                )}
+              <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 6 }}>
+                {engId
+                  ? <>Checked supervisors move to this site and report to <b style={{ color: 'var(--text-70)' }}>{engineers.find((e) => e.id === engId)?.name}</b>.</>
+                  : 'Checked supervisors move to this site. Pick a responsible engineer above and they will be filed under them too.'}
+                {' '}Anyone in amber is currently on another site and will be moved.
               </div>
             </div>
           </div>
@@ -357,13 +399,17 @@ function CreateUserModal({ open, onClose }) {
             <div style={{ display: 'flex', gap: 10 }}>
               <div style={{ flex: 1 }}>
                 <label className="field-label">Reports to</label>
-                <select className="field" value={engId} onChange={(e) => setEngId(e.target.value)}>
+                <select className="field" value={engId || ''} onChange={(e) => setEngId(e.target.value)}>
+                  <option value="">— Not assigned —</option>
                   {engineers.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
                 </select>
               </div>
               <div style={{ flex: 1 }}>
+                {/* same empty option as the edit modal: a new supervisor can
+                    legitimately exist before their site does */}
                 <label className="field-label">Site</label>
-                <select className="field" value={siteId} onChange={(e) => setSiteId(e.target.value)}>
+                <select className="field" value={siteId || ''} onChange={(e) => setSiteId(e.target.value)}>
+                  <option value="">— Not assigned —</option>
                   {state.sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
@@ -375,7 +421,7 @@ function CreateUserModal({ open, onClose }) {
               <input className="field" value={pw} onChange={(e) => setPw(e.target.value)} style={{ font: '600 14px/1 var(--f-mono)' }} />
               <button type="button" className="btn btn-ghost btn-sm" style={{ height: 46 }} onClick={() => setPw(genTemp())}>↻</button>
             </div>
-            <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 7 }}>Share this with them once. They set their own password on first login.</div>
+            <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 7 }}>Share this with them once. They set their own password on first login.</div>
           </div>
         </div>
         {err && <div style={{ marginTop: 14, font: '600 12px/1.4 var(--f-body)', color: 'var(--danger)', background: 'var(--danger-soft)', borderRadius: 10, padding: '9px 12px' }}>{err}</div>}
@@ -406,10 +452,18 @@ function EditUserModal({ user, onClose }) {
     if (pw && pw.length < 4) return setErr('Password must be at least 4 characters.')
 
     const patch = { name: name.trim(), username: cleanUser }
-    if (user.role === 'supervisor') { patch.engineerId = engId; patch.siteId = siteId }
+    // '' comes from the "— Not assigned —" option; the columns are uuid, so it
+    // has to reach the API as null rather than an empty string.
+    if (user.role === 'supervisor') { patch.engineerId = engId || null; patch.siteId = siteId || null }
     const res = await dispatch({ type: 'UPDATE_USER', userId: user.id, patch, actorId: state.session.userId })
     if (res && res.status === 409) return setErr('That username is already taken.')
-    if (pw) await dispatch({ type: 'SET_PASSWORD', userId: user.id, password: pw, actorId: state.session.userId })
+    // Anything else that failed used to fall straight through to the success
+    // toast, so a rejected write looked identical to a saved one.
+    if (res && res.status >= 400) return setErr(`Could not save: ${res.body?.error || `server returned ${res.status}`}`)
+    if (pw) {
+      const pwRes = await dispatch({ type: 'SET_PASSWORD', userId: user.id, password: pw, actorId: state.session.userId })
+      if (pwRes && pwRes.status >= 400) return setErr(`Details saved, but the password did not change: ${pwRes.body?.error || pwRes.status}`)
+    }
     toast(`${name.trim().split(' ')[0]} updated`)
     onClose()
   }
@@ -428,7 +482,9 @@ function EditUserModal({ user, onClose }) {
             <Monogram name={user.name} color={ROLES[user.role].color} soft={ROLES[user.role].soft} size={40} />
             <div>
               <div style={{ font: '700 16px/1 var(--f-body)', color: '#fff' }}>{user.name}</div>
-              <div style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>@{user.username} · {ROLES[user.role].label}</div>
+              <div style={{ font: '500 12.5px/1.45 var(--f-body)', color: 'var(--text-70)', marginTop: 4 }}>
+                <span style={{ color: 'var(--text-40)' }}>Login · </span>{user.username} · {ROLES[user.role].label}
+              </div>
             </div>
           </div>
 
@@ -437,26 +493,36 @@ function EditUserModal({ user, onClose }) {
             <div>
               <label className="field-label">Username</label>
               <input className="field" value={username} autoCapitalize="none" spellCheck={false} onChange={(e) => { setUsername(e.target.value); setErr('') }} />
-              <div style={{ font: '500 11px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 6 }}>They can also sign in by typing their full name.</div>
+              <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 6 }}>They can also sign in by typing their full name.</div>
             </div>
             <div>
               <label className="field-label">New password (leave blank to keep)</label>
               <input className="field" value={pw} autoComplete="new-password" onChange={(e) => { setPw(e.target.value); setErr('') }} placeholder="••••••••" />
             </div>
 
+            {/* Both selects need an explicit empty option. Without one, a
+                supervisor with no site set value="" against a list where
+                nothing matches, and the browser falls back to showing the
+                FIRST site — so the dropdown claimed they were on DHA Phase 6
+                while the state was still null. Worse, picking that same site
+                fired no change event, so the assignment silently saved as
+                null and the admin was told it worked. */}
             {user.role === 'supervisor' && (
               <>
                 <div>
                   <label className="field-label">Reports to (engineer)</label>
                   <select className="field" value={engId || ''} onChange={(e) => setEngId(e.target.value)}>
+                    <option value="">— Not assigned —</option>
                     {engineers.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="field-label">Assigned site</label>
                   <select className="field" value={siteId || ''} onChange={(e) => setSiteId(e.target.value)}>
+                    <option value="">— Not assigned —</option>
                     {state.sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
+                  {!state.sites.length && <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--warn)', marginTop: 6 }}>No sites exist yet — create one in the Sites tab first.</div>}
                 </div>
               </>
             )}
