@@ -138,32 +138,55 @@ export default function AdminAccess() {
               the reporting tree now has the full width */}
           <Card pad={26}>
             <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff' }}>Reporting tree</div>
-            <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 6 }}>An engineer only sees the supervisors wired under them. Click a supervisor to re-assign.</div>
-            <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div style={{ font: '500 12.5px/1.5 var(--f-body)', color: 'var(--text-70)', marginTop: 6, maxWidth: 620 }}>
+              Who reports to whom. An engineer only sees expenses from the supervisors listed under them.
+              Click any supervisor to move them to a different engineer.
+            </div>
+
+            <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {engineers.map((eng) => {
                 const sups = supsForEngineer(eng.id)
                 return (
-                  <div key={eng.id} style={{ borderLeft: '2px solid var(--border)', paddingLeft: 18 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginLeft: -27 }}>
-                      <Monogram name={eng.name} color="var(--info)" soft="var(--info-soft)" size={34} />
-                      <div>
-                        <div style={{ font: '700 13px/1 var(--f-body)', color: '#fff' }}>{eng.name}</div>
-                        <div style={{ font: '500 10px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>ENGINEER · {sups.length} supervisor{sups.length !== 1 ? 's' : ''}</div>
+                  <div key={eng.id} className="surface" style={{ borderRadius: 14, padding: 16, border: '1px solid var(--border-3)' }}>
+                    {/* engineer header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                      <Monogram name={eng.name} color="var(--info)" soft="var(--info-soft)" size={36} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ font: '700 14px/1.3 var(--f-body)', color: '#fff' }}>{eng.name}</div>
+                        <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-70)' }}>Head engineer</div>
                       </div>
+                      <span className="pill" style={{ height: 24, fontSize: 11, background: sups.length ? 'var(--info-soft)' : 'var(--input)', color: sups.length ? 'var(--info)' : 'var(--text-50)', border: 'none', flex: 'none' }}>
+                        {sups.length} supervisor{sups.length !== 1 ? 's' : ''}
+                      </span>
                     </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 11 }}>
-                      {sups.map((s) => (
-                        <button key={s.id} onClick={() => setMoving(s)} title="Re-assign" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 11px', borderRadius: 9, background: 'var(--input)', border: '1px solid var(--border)', font: '600 12px/1 var(--f-body)', color: '#fff', cursor: 'pointer' }}>
-                          <span className="mono-badge" style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--accent)', color: 'var(--accent-ink)', fontSize: 8 }}>{s.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>
-                          {/* a supervisor with no site would otherwise render a dangling "·" */}
-                          {s.name.split(' ')[0]}
-                          {s.siteId
-                            ? <> · {siteById(s.siteId)?.label || siteById(s.siteId)?.name}</>
-                            : <span style={{ color: 'var(--warn)' }}> · no site</span>}
-                        </button>
-                      ))}
-                      {sups.length === 0 && <span style={{ font: '500 12px/1 var(--f-mono)', color: 'var(--text-40)' }}>none wired</span>}
-                    </div>
+
+                    {sups.length === 0
+                      ? <div style={{ font: '500 12.5px/1.4 var(--f-body)', color: 'var(--text-50)', marginTop: 12, paddingLeft: 47 }}>Nobody reports to {eng.name.split(' ')[0]} yet.</div>
+                      : (
+                        // A grid rather than wrapped chips: with 24 supervisors the
+                        // chips became an unreadable blob, and each person needs two
+                        // lines anyway — full name, then where they are.
+                        <div style={{ marginTop: 12, paddingLeft: 47, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(212px, 1fr))', gap: 8 }}>
+                          {sups.map((s) => {
+                            const site = s.siteId ? siteById(s.siteId) : null
+                            return (
+                              <button key={s.id} onClick={() => setMoving(s)} title={`Move ${s.name} to another engineer`}
+                                style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 11px', borderRadius: 10, background: 'var(--input)', border: '1px solid var(--border)', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+                                <Monogram name={s.name} color="var(--accent)" soft="var(--accent-soft)" size={26} radius={8} />
+                                <span style={{ flex: 1, minWidth: 0 }}>
+                                  {/* full name, not just the first — eight people on
+                                      this roster are called Muhammad-something */}
+                                  <span style={{ display: 'block', font: '600 12.5px/1.35 var(--f-body)', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+                                  <span style={{ display: 'block', font: '500 11.5px/1.35 var(--f-body)', color: site ? 'var(--text-70)' : 'var(--warn)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {site ? (site.label || site.name) : 'No site assigned'}
+                                  </span>
+                                </span>
+                                <span aria-hidden style={{ flex: 'none', font: '600 13px/1 var(--f-body)', color: 'var(--text-40)' }}>⇄</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
                   </div>
                 )
               })}
