@@ -61,12 +61,15 @@ export default function AdminAccess() {
                 <div style={{ flex: 2.2, display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                   <Monogram name={u.name} color={ROLES[u.role].color} soft={ROLES[u.role].soft} size={36} />
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ font: '700 13px/1.2 var(--f-body)', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.name}</div>
-                    <div style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>@{u.username}{u.mustChangePassword ? ' · temp pw' : ''}</div>
+                    <div style={{ font: '700 14px/1.3 var(--f-body)', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.name}</div>
+                    {/* was 11px/1 at --text-42, which measured 4.06:1 — under the
+                        4.5:1 floor for body text. Bigger, with leading, a little
+                        tracking for the mono face, and a brighter token. */}
+                    <div style={{ font: '500 12px/1.45 var(--f-mono)', color: 'var(--text-70)', marginTop: 3, letterSpacing: '.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>@{u.username}{u.mustChangePassword ? ' · temp pw' : ''}</div>
                   </div>
                 </div>
                 <div style={{ flex: 1.4 }}><RolePill role={u.role} /></div>
-                <div style={{ flex: 2, font: '500 11px/1.4 var(--f-mono)', color: 'var(--text-50)' }}>
+                <div style={{ flex: 2, font: '500 12px/1.45 var(--f-mono)', color: 'var(--text-70)' }}>
                   {u.role === 'supervisor' ? <>{eng?.name.split(' ')[0] || '—'} · {site?.label || '—'}</> : <span style={{ color: 'var(--text-32)' }}>—</span>}
                 </div>
                 <div style={{ flex: 1 }}>
