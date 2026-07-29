@@ -7,7 +7,7 @@ import { BridgeArcs } from '../components/BridgeArcs.jsx'
 
 const DEV = import.meta.env.DEV
 const DEMO = [
-  ['meesamali', 'Owner'], ['junaid', 'Admin'], ['tariq', 'Finance'],
+  ['meesamali', 'Owner'], ['muzamilalisher', 'Admin'], ['tariq', 'Finance'],
   ['ali', 'Engineer'], ['faraz', 'Supervisor'],
 ]
 

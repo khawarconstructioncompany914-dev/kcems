@@ -17,7 +17,7 @@ export function buildSeed() {
   const U = (o) => ({ password: 'kcems', mustChangePassword: false, ...o })
   const users = [
     U({ id: 'u_owner', name: 'Meesam Ali',  username: 'meesamali', phone: '+92 300 8500011', email: 'meesamali@khawar.pk', role: 'owner',   status: 'active' }),
-    U({ id: 'u_admin', name: 'Junaid Malik',   username: 'junaid', phone: '+92 301 8500033', email: 'junaid@khawar.pk', role: 'admin',   status: 'active' }),
+    U({ id: 'u_admin', name: 'Muzamil Ali Sher',   username: 'muzamilalisher', phone: '+92 301 8500033', email: 'muzamilalisher@khawar.pk', role: 'admin',   status: 'active' }),
     U({ id: 'u_fin',   name: 'Tariq Mehmood',  username: 'tariq',  phone: '+92 301 8500022', email: 'tariq@khawar.pk',  role: 'finance', status: 'active' }),
 
     U({ id: 'u_ali',  name: 'Ali Khawaja',   username: 'ali',     phone: '+92 321 4410001', email: 'ali@khawar.pk',     role: 'engineer', status: 'active' }),
