@@ -62,10 +62,15 @@ export default function AdminAccess() {
                   <Monogram name={u.name} color={ROLES[u.role].color} soft={ROLES[u.role].soft} size={36} />
                   <div style={{ minWidth: 0 }}>
                     <div style={{ font: '700 14px/1.3 var(--f-body)', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.name}</div>
-                    {/* was 11px/1 at --text-42, which measured 4.06:1 — under the
-                        4.5:1 floor for body text. Bigger, with leading, a little
-                        tracking for the mono face, and a brighter token. */}
-                    <div style={{ font: '500 12px/1.45 var(--f-mono)', color: 'var(--text-70)', marginTop: 3, letterSpacing: '.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>@{u.username}{u.mustChangePassword ? ' · temp pw' : ''}</div>
+                  {/* This line is the person's sign-in name. It used to read
+                      "@meesamali" in a monospace face at 4.06:1 — developer
+                      shorthand, in the least legible font at the smallest size,
+                      for an audience of site staff. Now it says what it is, in
+                      the body font. */}
+                  <div style={{ font: '500 13px/1.45 var(--f-body)', color: 'var(--text-70)', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <span style={{ color: 'var(--text-40)' }}>Login · </span>{u.username}
+                      {u.mustChangePassword && <span style={{ color: 'var(--warn)' }}> · temporary password</span>}
+                    </div>
                   </div>
                 </div>
                 <div style={{ flex: 1.4 }}><RolePill role={u.role} /></div>
@@ -454,7 +459,9 @@ function EditUserModal({ user, onClose }) {
             <Monogram name={user.name} color={ROLES[user.role].color} soft={ROLES[user.role].soft} size={40} />
             <div>
               <div style={{ font: '700 16px/1 var(--f-body)', color: '#fff' }}>{user.name}</div>
-              <div style={{ font: '500 11px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>@{user.username} · {ROLES[user.role].label}</div>
+              <div style={{ font: '500 12.5px/1.45 var(--f-body)', color: 'var(--text-70)', marginTop: 4 }}>
+                <span style={{ color: 'var(--text-40)' }}>Login · </span>{user.username} · {ROLES[user.role].label}
+              </div>
             </div>
           </div>
 
