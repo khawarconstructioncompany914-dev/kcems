@@ -5,7 +5,7 @@ import { PageHeader } from '../../components/page.jsx'
 import { Progress } from '../../components/bits.jsx'
 
 export default function Sites() {
-  const { me, scopedSites, siteSpend, userById } = useSelectors()
+  const { me, scopedSites, siteSpend, userById, siteSchedule, supervisors } = useSelectors()
   const sites = scopedSites(me)
 
   return (
@@ -20,6 +20,9 @@ export default function Sites() {
         {sites.map((s) => {
           const sp = siteSpend(s.id)
           const eng = userById(s.engineerId)
+          const sched = siteSchedule(s)
+          const built = s.progress?.pct ?? 0
+          const crew = supervisors.filter((u) => u.siteId === s.id)
           return (
             <Link key={s.id} to={`/sites/${s.id}`} className="card" style={{ padding: 22, textDecoration: 'none', display: 'block' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13 }}>
@@ -43,6 +46,24 @@ export default function Sites() {
               <div style={{ marginTop: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', font: '600 12px/1.4 var(--f-body)', color: 'var(--text-50)', marginBottom: 8 }}><span>Budget used</span><span style={{ color: 'var(--accent)' }}>{sp.pct}%</span></div>
                 <Progress pct={sp.pct} />
+              </div>
+
+              {/* Construction progress next to budget, because the pair is the
+                  actual question: how much is built for how much is spent. */}
+              <div style={{ marginTop: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', font: '600 12px/1.4 var(--f-body)', color: 'var(--text-50)', marginBottom: 8 }}>
+                  <span>Built{sched && (sched.overdue || sched.behind) && <span style={{ color: 'var(--danger)' }}> · {sched.overdue ? 'overdue' : 'behind'}</span>}</span>
+                  <span style={{ color: s.progress ? 'var(--info)' : 'var(--text-40)' }}>{s.progress ? `${built}%` : 'not logged'}</span>
+                </div>
+                <Progress pct={built} color="var(--info)" />
+              </div>
+
+              {/* who is on this site — the site-first view of the wiring */}
+              <div style={{ marginTop: 14, font: '500 12px/1.5 var(--f-body)', color: 'var(--text-70)' }}>
+                <span style={{ color: 'var(--text-40)' }}>Crew · </span>
+                {crew.length
+                  ? crew.map((c) => c.name).join(', ')
+                  : <span style={{ color: 'var(--warn)' }}>no site engineers assigned</span>}
               </div>
             </Link>
           )

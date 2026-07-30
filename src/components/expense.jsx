@@ -82,15 +82,15 @@ export function ExpenseCard({ e, mode }) {
 
       {/* reject modal */}
       <ReasonModal open={reject} onClose={() => setReject(false)} title="Reject expense" tone="danger" cta="Reject · mark owed"
-        hint="A rejected expense becomes money the supervisor owes back. Reason is required."
+        hint="A rejected expense becomes money the site engineer owes back. Reason is required."
         placeholder="e.g. Wrong site — belongs to Gulberg"
         onSubmit={(reason) => { dispatch({ type: 'REJECT', id: e.id, actorId: me.id, reason }); toast(`Rejected · owed ${formatMoney(e.amount)}`, 'danger') }} />
 
       {/* return modal */}
       <ReasonModal open={ret} onClose={() => setRet(false)} title="Return to fix" tone="info" cta="Send back"
-        hint="Sends the item back to the supervisor's phone with a note to fix &amp; re-submit."
+        hint="Sends the item back to the site engineer's phone with a note to fix &amp; re-submit."
         placeholder="e.g. Attach a clearer photo of the bill"
-        onSubmit={(note) => { dispatch({ type: 'RETURN', id: e.id, actorId: me.id, note }); toast('Returned to supervisor', 'info') }} />
+        onSubmit={(note) => { dispatch({ type: 'RETURN', id: e.id, actorId: me.id, note }); toast('Returned to site engineer', 'info') }} />
     </div>
   )
 }

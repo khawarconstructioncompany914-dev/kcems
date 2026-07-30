@@ -35,7 +35,7 @@ export default function AddExpense() {
       },
     })
     setBusy(false)
-    toast(`Sent to ${eng?.name.split(' ')[0] || 'engineer'} for review`)
+    toast(`Sent to ${eng?.name.split(' ')[0] || 'head engineer'} for review`)
     setDone({ amount: amt, note: note.trim() })
   }
 
@@ -103,7 +103,7 @@ export default function AddExpense() {
 
       <div style={{ flex: 'none', padding: '14px 20px 26px', background: 'linear-gradient(0deg, var(--bg-panel) 70%, transparent)' }}>
         <button className="btn btn-primary" style={{ width: '100%', height: 52, fontSize: 15, opacity: valid && !busy ? 1 : 0.5 }} disabled={!valid || busy} onClick={submit}>
-          {busy ? 'Sending…' : photos.length ? `Send to ${eng?.name.split(' ')[0] || 'engineer'} for review →` : 'Add a bill photo to send'}
+          {busy ? 'Sending…' : photos.length ? `Send to ${eng?.name.split(' ')[0] || 'head engineer'} for review →` : 'Add a bill photo to send'}
         </button>
       </div>
     </div>

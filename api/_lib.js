@@ -165,7 +165,18 @@ export const mapUser = (u) => ({
 export const mapSite = (s) => ({
   id: s.id, name: s.name, label: s.label, city: s.city, phase: s.phase, engineerId: s.engineer_id,
   budget: s.budget, status: s.status,
+  startDate: s.start_date, targetFinishDate: s.target_finish_date,
+  progress: null,   // latest site_progress row, attached by data.js
   openingSpend: { materials: s.opening_materials, labour: s.opening_labour, fuel: s.opening_fuel, tea_food: s.opening_tea_food, other: s.opening_other },
+})
+
+// `lat`/`lng` are omitted unless the caller is allowed to see them — see
+// data.js. Everyone can see THAT a colleague was present; where they were
+// standing is owner/admin only.
+export const mapAttendance = (a) => ({
+  id: a.id, userId: a.user_id, date: a.date, kind: a.kind, status: a.status,
+  markedAt: a.marked_at, note: a.note,
+  reviewedBy: a.reviewed_by, reviewedAt: a.reviewed_at,
 })
 // `photos` is populated by data.js from expense_photo / fund_txn_photo — it is
 // not derived from a column here, so a mapper used without that join still

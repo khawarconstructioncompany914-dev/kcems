@@ -5,12 +5,24 @@
 
 // `word` is the one-word role name used in page eyebrows. `label` is the full
 // title ("Owner / CEO"), which is too long to sit in front of a page name.
+// The keys are the database role_t values and never change — 'engineer' and
+// 'supervisor' are what every SQL function, RLS policy and role check speaks.
+// `label` / `word` are purely what a human reads, which is why renaming
+// Engineer -> Head Engineer and Supervisor -> Site Engineer is a copy change
+// here rather than a migration.
 export const ROLES = {
-  owner:      { label: 'Owner / CEO',  word: 'Owner',      short: 'OW', color: 'var(--accent)', soft: 'var(--accent-soft)', landing: '/dashboard', blurb: 'full org · all sites · funds' },
-  admin:      { label: 'Admin',        word: 'Admin',      short: 'AD', color: 'var(--violet)', soft: 'var(--violet-soft)', landing: '/dashboard', blurb: 'users · wiring · view all' },
-  finance:    { label: 'Finance',      word: 'Finance',    short: 'FN', color: 'var(--warn)',   soft: 'var(--warn-soft)',   landing: '/approvals', blurb: 'approvals · ledgers · exports' },
-  engineer:   { label: 'Engineer',     word: 'Engineer',   short: 'EN', color: 'var(--info)',   soft: 'var(--info-soft)',   landing: '/review',    blurb: 'review queue · own supervisors' },
-  supervisor: { label: 'Supervisor',   word: 'Supervisor', short: 'SU', color: 'var(--accent)', soft: 'var(--accent-soft)', landing: '/home',      blurb: 'logs expenses · own cash' },
+  owner:      { label: 'Owner / CEO',   word: 'Owner',         short: 'OW', color: 'var(--accent)', soft: 'var(--accent-soft)', landing: '/dashboard', blurb: 'full org · all sites · funds' },
+  admin:      { label: 'Admin',         word: 'Admin',         short: 'AD', color: 'var(--violet)', soft: 'var(--violet-soft)', landing: '/dashboard', blurb: 'users · wiring · view all' },
+  finance:    { label: 'Finance',       word: 'Finance',       short: 'FN', color: 'var(--warn)',   soft: 'var(--warn-soft)',   landing: '/approvals', blurb: 'approvals · ledgers · exports' },
+  engineer:   { label: 'Head Engineer', word: 'Head Engineer', short: 'HE', color: 'var(--info)',   soft: 'var(--info-soft)',   landing: '/review',    blurb: 'review queue · own site engineers' },
+  supervisor: { label: 'Site Engineer', word: 'Site Engineer', short: 'SE', color: 'var(--accent)', soft: 'var(--accent-soft)', landing: '/home',      blurb: 'logs expenses · own cash' },
+}
+
+// Plural forms, so copy can say "Site Engineers" without hand-assembling it at
+// each call site and drifting the next time these are renamed.
+export const rolePlural = (role) => {
+  const w = ROLES[role]?.word || ''
+  return w ? `${w}s` : ''
 }
 
 // "Admin · overview" for whoever is actually signed in. Every one of these
@@ -40,7 +52,7 @@ export const CLAIM_CATEGORIES = ['travel', 'lodging', 'tea_food', 'other']
 
 // Expense state machine (Build Spec §3)
 export const STATUS = {
-  engineer_review: { label: 'In review · engineer', short: 'IN REVIEW', pill: 'pill-review',   color: 'var(--warn)' },
+  engineer_review: { label: 'In review · head engineer', short: 'IN REVIEW', pill: 'pill-review',   color: 'var(--warn)' },
   finance_review:  { label: 'In review · finance',  short: 'FINANCE',   pill: 'pill-review',   color: 'var(--warn)' },
   approved:        { label: 'Approved',             short: 'APPROVED',  pill: 'pill-approved', color: 'var(--accent)' },
   rejected:        { label: 'Rejected',             short: 'REJECTED',  pill: 'pill-rejected', color: 'var(--danger)' },

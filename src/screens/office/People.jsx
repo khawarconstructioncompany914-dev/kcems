@@ -19,14 +19,14 @@ export default function People() {
   return (
     <div className="fade-up">
       <PageHeader
-        eyebrow={me.role === 'engineer' ? 'Engineer · your team' : 'People · supervisors'}
-        title="Supervisors & cash"
-        sub="Every supervisor's live cash-in-hand, funded total and any money owed back. Open a ledger for the full transaction history."
+        eyebrow={me.role === 'engineer' ? 'Head Engineer · your team' : 'People · site engineers'}
+        title="Site Engineers & cash"
+        sub="Every site engineer's live cash-in-hand, funded total and any money owed back. Open a ledger for the full transaction history."
         right={canFund && <button className="btn btn-primary" onClick={() => setFunds(true)}>+ Add funds</button>}
       />
 
       <div className="r-row" style={{ marginBottom: 24 }}>
-        <Kpi label="Supervisors" value={list.length} accent />
+        <Kpi label="Site Engineers" value={list.length} accent />
         <Kpi label="Cash in field" value={formatCompact(totalCash)} sub="sum of cash-in-hand" />
         <Kpi label="Owed back" value={formatMoney(totalOwed)} color={totalOwed ? 'var(--danger)' : '#fff'} />
         <Kpi label="Pending review" value={formatCompact(totalPending)} sub="submitted, not yet decided" color={totalPending ? 'var(--warn)' : '#fff'} />

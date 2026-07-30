@@ -29,7 +29,7 @@ export default function AdminAccess() {
       <PageHeader
         eyebrow={roleEyebrow(me.role, 'users & access')}
         title="Users & access"
-        sub="Create logins, wire supervisors to engineers and sites, reset passwords, and review who can do what."
+        sub="Create logins, wire site engineers to head engineers and sites, reset passwords, and review who can do what."
         right={<button className="btn btn-primary" onClick={() => setCreate(true)}>+ Create login</button>}
       />
 
@@ -98,7 +98,7 @@ export default function AdminAccess() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 22px', borderBottom: '1px solid var(--border-3)', flexWrap: 'wrap' }}>
             <div>
               <div style={{ font: '700 14px/1 var(--f-body)', color: '#fff' }}>Construction sites</div>
-              <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 5 }}>Add your real sites here, then assign each supervisor to one from the Users tab.</div>
+              <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 5 }}>Add your real sites here, then assign each site engineer to one from the Users tab.</div>
             </div>
             <div className="spacer" />
             <button className="btn btn-primary btn-sm" onClick={() => setSiteEdit({})}>+ Add site</button>
@@ -108,22 +108,30 @@ export default function AdminAccess() {
           )}
           {state.sites.map((s) => {
             const eng = userById(s.engineerId)
-            const sups = supervisors.filter((u) => u.siteId === s.id).length
+            const crew = supervisors.filter((u) => u.siteId === s.id)
             const st = SITE_STATUS[s.status] || SITE_STATUS.active
             return (
-              <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 22px', borderTop: '1px solid var(--border-3)', flexWrap: 'wrap' }}>
-                <span className="mono-badge" style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-line)', fontSize: 12 }}>
+              <div key={s.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 22px', borderTop: '1px solid var(--border-3)', flexWrap: 'wrap' }}>
+                <span className="mono-badge" style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-line)', fontSize: 12, flex: 'none' }}>
                   {String(s.label || s.name).replace(/[^A-Z0-9]/gi, '').slice(0, 2).toUpperCase()}
                 </span>
-                <div style={{ flex: 1, minWidth: 150 }}>
+                <div style={{ flex: 1, minWidth: 200 }}>
                   <div style={{ font: '700 13px/1.2 var(--f-body)', color: '#fff' }}>{s.name}</div>
-                  <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>
-                    {[s.city, s.phase].filter(Boolean).join(' · ') || '—'} · {sups} supervisor{sups !== 1 ? 's' : ''}
+                  <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-70)', marginTop: 4 }}>
+                    {[s.city, s.phase].filter(Boolean).join(' · ') || '—'}
+                  </div>
+                  {/* The reporting tree answers this engineer-first. Naming the
+                      crew here answers it site-first, which is how someone
+                      standing on a site asks the question. */}
+                  <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--text-70)', marginTop: 6 }}>
+                    <span style={{ color: 'var(--text-40)' }}>Head engineer · </span>
+                    {eng ? eng.name : <span style={{ color: 'var(--warn)' }}>none</span>}
+                    <span style={{ color: 'var(--text-40)' }}>{'  ·  Site engineers · '}</span>
+                    {crew.length ? crew.map((c) => c.name).join(', ') : <span style={{ color: 'var(--warn)' }}>none assigned</span>}
                   </div>
                 </div>
-                <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-50)', minWidth: 96 }}>{eng ? eng.name.split(' ')[0] : 'no engineer'}</div>
-                <span className={`pill ${st.pill}`} style={{ height: 22, fontSize: 10 }}>{st.label}</span>
-                <button className="btn btn-ghost btn-sm" onClick={() => setSiteEdit(s)}>Edit</button>
+                <span className={`pill ${st.pill}`} style={{ height: 22, fontSize: 10, flex: 'none' }}>{st.label}</span>
+                <button className="btn btn-ghost btn-sm" style={{ flex: 'none' }} onClick={() => setSiteEdit(s)}>Edit</button>
               </div>
             )
           })}
@@ -139,8 +147,8 @@ export default function AdminAccess() {
           <Card pad={26}>
             <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff' }}>Reporting tree</div>
             <div style={{ font: '500 12.5px/1.5 var(--f-body)', color: 'var(--text-70)', marginTop: 6, maxWidth: 620 }}>
-              Who reports to whom. An engineer only sees expenses from the supervisors listed under them.
-              Click any supervisor to move them to a different engineer.
+              Who reports to whom. A head engineer only sees expenses from the site engineers listed under them.
+              Click any site engineer to move them to a different head engineer.
             </div>
 
             <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -153,10 +161,10 @@ export default function AdminAccess() {
                       <Monogram name={eng.name} color="var(--info)" soft="var(--info-soft)" size={36} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ font: '700 14px/1.3 var(--f-body)', color: '#fff' }}>{eng.name}</div>
-                        <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-70)' }}>Head engineer</div>
+                        <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-70)' }}>Head Engineer</div>
                       </div>
                       <span className="pill" style={{ height: 24, fontSize: 11, background: sups.length ? 'var(--info-soft)' : 'var(--input)', color: sups.length ? 'var(--info)' : 'var(--text-50)', border: 'none', flex: 'none' }}>
-                        {sups.length} supervisor{sups.length !== 1 ? 's' : ''}
+                        {sups.length} site engineer{sups.length !== 1 ? 's' : ''}
                       </span>
                     </div>
 
@@ -170,7 +178,7 @@ export default function AdminAccess() {
                           {sups.map((s) => {
                             const site = s.siteId ? siteById(s.siteId) : null
                             return (
-                              <button key={s.id} onClick={() => setMoving(s)} title={`Move ${s.name} to another engineer`}
+                              <button key={s.id} onClick={() => setMoving(s)} title={`Move ${s.name} to another head engineer`}
                                 style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 11px', borderRadius: 10, background: 'var(--input)', border: '1px solid var(--border)', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
                                 <Monogram name={s.name} color="var(--accent)" soft="var(--accent-soft)" size={26} radius={8} />
                                 <span style={{ flex: 1, minWidth: 0 }}>
@@ -214,7 +222,7 @@ function ReassignModal({ moving, onClose, onPick }) {
       {moving && (
         <div style={{ padding: 22 }}>
           <div style={{ font: '700 16px/1 var(--f-body)', color: '#fff' }}>Re-assign {moving.name}</div>
-          <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--text-42)', marginTop: 8 }}>Move this supervisor to a different engineer's tree. Their cash and history stay with them.</div>
+          <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--text-42)', marginTop: 8 }}>Move this site engineer to a different head engineer's tree. Their cash and history stay with them.</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
             {engineers.map((e) => (
               <button key={e.id} onClick={() => onPick(e.id)} disabled={e.id === moving.engineerId} className="surface" style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 12, borderRadius: 11, cursor: e.id === moving.engineerId ? 'default' : 'pointer', opacity: e.id === moving.engineerId ? 0.5 : 1, textAlign: 'left' }}>
@@ -250,6 +258,9 @@ function SiteModal({ site, onClose }) {
   const [engId, setEngId] = useState(site?.engineerId || '')
   const [budget, setBudget] = useState(site?.budget ? String(site.budget) : '')
   const [status, setStatus] = useState(site?.status || 'active')
+  // date inputs want plain YYYY-MM-DD; the API may hand back a full timestamp
+  const [startDate, setStartDate] = useState(String(site?.startDate || '').slice(0, 10))
+  const [targetDate, setTargetDate] = useState(String(site?.targetFinishDate || '').slice(0, 10))
 
   const submit = () => {
     if (!name.trim()) return
@@ -261,14 +272,16 @@ function SiteModal({ site, onClose }) {
       engineerId: engId || null,
       budget: Math.round(Number(String(budget).replace(/[^\d]/g, '')) || 0),
       status,
+      startDate: startDate || null,
+      targetFinishDate: targetDate || null,
       supervisorIds: [...supIds],
     }
     if (isNew) dispatch({ type: 'CREATE_SITE', payload, actorId: state.session.userId })
     else dispatch({ type: 'UPDATE_SITE', siteId: site.id, patch: payload, actorId: state.session.userId })
     const n = supIds.size
     toast(isNew
-      ? `Site “${payload.name}” created${n ? ` · ${n} supervisor${n > 1 ? 's' : ''} assigned` : ''}`
-      : `${payload.name} updated${n ? ` · ${n} supervisor${n > 1 ? 's' : ''} on site` : ''}`)
+      ? `Site “${payload.name}” created${n ? ` · ${n} site engineer${n > 1 ? 's' : ''} assigned` : ''}`
+      : `${payload.name} updated${n ? ` · ${n} site engineer${n > 1 ? 's' : ''} on site` : ''}`)
     onClose()
   }
 
@@ -287,9 +300,22 @@ function SiteModal({ site, onClose }) {
               <div style={{ flex: 1 }}><label className="field-label">Phase</label><input className="field" placeholder="e.g. Grey structure" value={phase} onChange={(e) => setPhase(e.target.value)} /></div>
               <div style={{ flex: 1 }}><label className="field-label">Budget (PKR)</label><input className="field" inputMode="numeric" placeholder="e.g. 2400000" value={budget} onChange={(e) => setBudget(e.target.value)} /></div>
             </div>
+            {/* Both dates, so progress can be read against a deadline rather
+                than as a bare percentage. Without them the site detail page
+                still shows the bar, just with no on-track judgement. */}
             <div style={{ display: 'flex', gap: 10 }}>
               <div style={{ flex: 1 }}>
-                <label className="field-label">Responsible engineer</label>
+                <label className="field-label">Start date</label>
+                <input className="field" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Target finish</label>
+                <input className="field" type="date" value={targetDate} min={startDate || undefined} onChange={(e) => setTargetDate(e.target.value)} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Responsible head engineer</label>
                 <select className="field" value={engId} onChange={(e) => setEngId(e.target.value)}>
                   <option value="">— none —</option>
                   {engineers.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
@@ -310,10 +336,10 @@ function SiteModal({ site, onClose }) {
                 site and then editing every supervisor individually. */}
             <div>
               <label className="field-label">
-                Site supervisors {supIds.size > 0 && <span style={{ color: 'var(--accent)' }}>· {supIds.size} selected</span>}
+                Site engineers {supIds.size > 0 && <span style={{ color: 'var(--accent)' }}>· {supIds.size} selected</span>}
               </label>
               {supervisors.length === 0
-                ? <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--warn)' }}>No supervisors exist yet — create them in the Users tab.</div>
+                ? <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--warn)' }}>No site engineers exist yet — create them in the Users tab.</div>
                 : (
                   <div className="surface" style={{ maxHeight: 176, overflowY: 'auto', borderRadius: 11, padding: 6 }}>
                     {supervisors.map((s) => {
@@ -334,8 +360,8 @@ function SiteModal({ site, onClose }) {
                 )}
               <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-40)', marginTop: 6 }}>
                 {engId
-                  ? <>Checked supervisors move to this site and report to <b style={{ color: 'var(--text-70)' }}>{engineers.find((e) => e.id === engId)?.name}</b>.</>
-                  : 'Checked supervisors move to this site. Pick a responsible engineer above and they will be filed under them too.'}
+                  ? <>Checked site engineers move to this site and report to <b style={{ color: 'var(--text-70)' }}>{engineers.find((e) => e.id === engId)?.name}</b>.</>
+                  : 'Checked site engineers move to this site. Pick a responsible head engineer above and they will be filed under them too.'}
                 {' '}Anyone in amber is currently on another site and will be moved.
               </div>
             </div>
@@ -510,7 +536,7 @@ function EditUserModal({ user, onClose }) {
             {user.role === 'supervisor' && (
               <>
                 <div>
-                  <label className="field-label">Reports to (engineer)</label>
+                  <label className="field-label">Reports to (head engineer)</label>
                   <select className="field" value={engId || ''} onChange={(e) => setEngId(e.target.value)}>
                     <option value="">— Not assigned —</option>
                     {engineers.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}

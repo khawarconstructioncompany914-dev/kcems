@@ -97,11 +97,67 @@ export function buildSeed() {
     E({ id: 'e_h4', supervisorId: 's_mubeen',   siteId: 'emaar_o',  amount: 12_400, category: 'fuel',      note: 'Transport — material haul', status: 'approved', createdAt: daysAgo(4), decidedAt: daysAgo(3) }),
   ]
 
+  // ---------- Site dates + progress ----------
+  // Dates are spread so the demo shows both an on-track and a behind-schedule
+  // site rather than every bar telling the same story.
+  // Local calendar date, not toISOString(): UTC is a day behind for most of the
+  // working day in Pakistan, which would seed every mark onto the wrong date
+  // and leave "today" permanently empty.
+  const localKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const dayKey = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return localKey(d) }
+  const SCHEDULE = {
+    dha6:     { start: -220, finish: 60,  pct: 82 },   // ahead of ~79% expected → ON TRACK
+    gulberg:  { start: -150, finish: 30,  pct: 41 },   // ~83% expected → BEHIND SCHEDULE
+    emaar_c:  { start: -300, finish: 15,  pct: 93 },
+    bahria:   { start: -90,  finish: 180, pct: 24 },
+    emaar_o:  { start: -60,  finish: 240, pct: 12 },
+    parkview: { start: -40,  finish: 300, pct: 5 },
+  }
+  sites.forEach((s) => {
+    const sc = SCHEDULE[s.id]
+    if (!sc) return
+    s.startDate = dayKey(sc.start)
+    s.targetFinishDate = dayKey(sc.finish)
+    s.progress = { pct: sc.pct, note: null, loggedBy: s.engineerId, loggedAt: daysAgo(3) }
+  })
+  const progress = sites.filter((s) => s.progress).map((s, i) => ({
+    id: `pg_${s.id}`, siteId: s.id, pct: s.progress.pct, note: i === 0 ? 'Slab poured on block B' : null,
+    loggedBy: s.engineerId, loggedAt: daysAgo(3),
+  }))
+
+  // ---------- Attendance ----------
+  // A fortnight of marks for the field staff, plus one leave request left
+  // pending so the admin's approval strip has something in it.
+  const attendance = []
+  const field = users.filter((u) => u.role === 'supervisor' || u.role === 'engineer')
+  field.forEach((u, ui) => {
+    for (let d = 0; d < 14; d++) {
+      const day = new Date(); day.setDate(day.getDate() - d)
+      if (day.getDay() === 0) continue                    // Sundays off
+      if ((ui + d) % 11 === 0) continue                   // the odd unmarked day
+      const date = localKey(day)
+      attendance.push({
+        id: `at_${u.id}_${d}`, userId: u.id, date, kind: 'present', status: 'approved',
+        markedAt: day.toISOString(), note: null,
+        lat: 31.5204 + (ui * 0.004), lng: 74.3587 + (ui * 0.004),
+        reviewedBy: null, reviewedAt: null,
+      })
+    }
+  })
+  const leaveDay = new Date(); leaveDay.setDate(leaveDay.getDate() + 1)
+  attendance.push({
+    id: 'at_leave_pending', userId: 's_saqib', date: localKey(leaveDay),
+    kind: 'leave', status: 'pending', markedAt: new Date().toISOString(),
+    note: 'Family wedding — one day', lat: null, lng: null, reviewedBy: null, reviewedAt: null,
+  })
+
   return {
     users,
     sites,
     funds,
     expenses,
+    progress,
+    attendance,
     audit: [],
     session: null, // logged-out
   }

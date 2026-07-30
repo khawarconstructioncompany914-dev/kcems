@@ -1,6 +1,6 @@
-// Engineer's own reimbursement claims — travel, lodging, food.
+// Head Engineer's own reimbursement claims — travel, lodging, food.
 //
-// Deliberately NOT a cash-in-hand screen. An engineer is never funded a float,
+// Deliberately NOT a cash-in-hand screen. A head engineer is never funded a float,
 // so there is no balance to show: this is a claims log. Money spent, receipt
 // attached, finance decides. Claims skip engineer review (the engineer is the
 // claimant) and land straight in finance's existing Approvals queue.
@@ -52,7 +52,7 @@ export default function MyExpenses() {
   return (
     <div className="fade-up">
       <PageHeader
-        eyebrow="Engineer · reimbursements"
+        eyebrow="Head Engineer · reimbursements"
         title="My expenses"
         sub="Claim back travel, lodging and food you paid for yourself. Attach the receipt — it goes straight to finance for approval, not through a site review."
       />

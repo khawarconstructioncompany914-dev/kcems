@@ -11,7 +11,7 @@ export default function PersonLedger() {
   const { me, state, userById, siteById, cashInHand, owedBack, pendingTotal } = useSelectors()
   const [funds, setFunds] = useState(false)
   const sup = userById(id)
-  if (!sup) return <div style={{ color: 'var(--text-50)' }}>Supervisor not found. <Link to="/people">Back</Link></div>
+  if (!sup) return <div style={{ color: 'var(--text-50)' }}>Site Engineer not found. <Link to="/people">Back</Link></div>
 
   const bal = cashInHand(id)
   const owed = owedBack(id)
@@ -34,7 +34,7 @@ export default function PersonLedger() {
         <Monogram name={sup.name} color="var(--accent)" soft="var(--accent-soft)" size={54} radius={15} font={18} />
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ font: '700 24px/1 var(--f-display)', color: '#fff', letterSpacing: '-.02em' }}>{sup.name}</div>
-          <div style={{ font: '500 12px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 8 }}>SUPERVISOR · {site?.name} · reports to {eng?.name}</div>
+          <div style={{ font: '500 12px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 8 }}>SITE ENGINEER · {site?.name} · reports to {eng?.name}</div>
         </div>
         {canFund && <button className="btn btn-primary" onClick={() => setFunds(true)}>+ Add funds</button>}
       </div>
