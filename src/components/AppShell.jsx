@@ -63,8 +63,8 @@ export default function AppShell() {
             <option value="owner">Owner view</option>
             <option value="admin">Admin view</option>
             <option value="finance">Finance view</option>
-            <option value="engineer">Engineer view</option>
-            <option value="supervisor">Supervisor view</option>
+            <option value="engineer">Head Engineer view</option>
+            <option value="supervisor">Site Engineer view</option>
           </select>
         )}
         <button className="btn btn-ghost" style={{ height: 38, flex: DEV ? 'none' : 1, padding: '0 12px', gap: 8 }} onClick={logout} title="Sign out">

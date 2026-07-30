@@ -65,7 +65,7 @@ export default function SiteDetail() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <Card pad={22}>
             <div style={{ font: '700 14px/1 var(--f-body)', color: '#fff', marginBottom: 14 }}>On this site</div>
-            {sups.length === 0 && <div style={{ font: '500 12px/1 var(--f-body)', color: 'var(--text-40)' }}>No supervisor assigned.</div>}
+            {sups.length === 0 && <div style={{ font: '500 12px/1 var(--f-body)', color: 'var(--text-40)' }}>No site engineer assigned.</div>}
             {sups.map((s) => {
               const bal = cashInHand(s.id)
               return (

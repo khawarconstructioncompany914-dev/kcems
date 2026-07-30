@@ -34,8 +34,8 @@ export default function Dashboard() {
       <div className="r-row" style={{ marginBottom: 26 }}>
         <Kpi label="Total budget" value={formatCompact(totals.budget)} sub={`${sites.length} sites`} accent />
         <Kpi label="Spent to date" value={formatCompact(totals.spent)} sub={`${Math.round((totals.spent / totals.budget) * 100)}% of budget`} />
-        <Kpi label="Cash in field" value={formatCompact(cashDeployed)} sub={`${supervisors.length} supervisors`} />
-        <Kpi label="Awaiting approval" value={pending} sub={`${inReview} in engineer review`} color={pending ? 'var(--warn)' : '#fff'} />
+        <Kpi label="Cash in field" value={formatCompact(cashDeployed)} sub={`${supervisors.length} site engineers`} />
+        <Kpi label="Awaiting approval" value={pending} sub={`${inReview} in head engineer review`} color={pending ? 'var(--warn)' : '#fff'} />
         <Kpi label="Owed back" value={formatMoney(owedAll)} sub="rejected · unsettled" color={owedAll ? 'var(--danger)' : '#fff'} />
       </div>
 

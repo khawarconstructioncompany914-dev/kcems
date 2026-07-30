@@ -23,7 +23,7 @@ export default function Approvals() {
       <PageHeader
         eyebrow={roleEyebrow(me.role, 'approvals')}
         title="Approve & settle"
-        sub="Second-stage review. Approving deducts the amount from the supervisor's cash-in-hand, atomically. Rejecting turns it into owed-back."
+        sub="Second-stage review. Approving deducts the amount from the site engineer's cash-in-hand, atomically. Rejecting turns it into owed-back."
         right={<button className="btn btn-primary" onClick={() => setFunds(true)}>+ Add funds</button>}
       />
 
@@ -44,7 +44,7 @@ export default function Approvals() {
       {tab === 'queue' && (
         <div className="r-cards" style={{ '--r-min': '420px' }}>
           {queue.length === 0
-            ? <Empty title="Nothing to approve" sub="Engineers haven't passed anything up yet." />
+            ? <Empty title="Nothing to approve" sub="Head engineers haven't passed anything up yet." />
             : queue.map((e) => <ExpenseCard key={e.id} e={e} mode="finance" />)}
         </div>
       )}
@@ -52,7 +52,7 @@ export default function Approvals() {
       {tab === 'owed' && (
         <div className="r-cards" style={{ '--r-min': '420px' }}>
           {owed.length === 0
-            ? <Empty title="No outstanding balances" sub="No supervisor currently owes money back." />
+            ? <Empty title="No outstanding balances" sub="No site engineer currently owes money back." />
             : owed.map((e) => (
               <div key={e.id} className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13 }}>

@@ -55,7 +55,7 @@ export function AddFundsModal({ open, onClose, supervisorId, presetSupervisor = 
 
         {!supervisorId && (
           <div style={{ marginBottom: 14 }}>
-            <label className="field-label">Supervisor</label>
+            <label className="field-label">Site Engineer</label>
             <select className="field" value={supId} onChange={(e) => setSupId(e.target.value)}>
               {supervisors.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>

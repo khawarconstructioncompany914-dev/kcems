@@ -8,7 +8,7 @@ import { BridgeArcs } from '../components/BridgeArcs.jsx'
 const DEV = import.meta.env.DEV
 const DEMO = [
   ['meesamali', 'Owner'], ['muzamilalisher', 'Admin'], ['tariqismail', 'Finance'],
-  ['alikhawaja', 'Engineer'], ['faraz', 'Supervisor'],
+  ['alikhawaja', 'Head Engineer'], ['faraz', 'Site Engineer'],
 ]
 
 export default function Login() {
@@ -62,7 +62,7 @@ export default function Login() {
         <h1 style={{ font: '900 clamp(24px,3.4vw,33px)/1.02 var(--f-display)', letterSpacing: '-.015em', color: '#fff', margin: '0 0 12px' }}>Sign in to Khawar Construction</h1>
         <p style={{ font: '400 14px/1.55 var(--f-body)', color: 'rgba(255,255,255,.5)', margin: '0 0 28px', maxWidth: '40ch' }}>
           <b style={{ color: 'rgba(255,255,255,.72)', fontWeight: 600 }}>Office staff:</b> sign in using the desktop.<br />
-          <b style={{ color: 'rgba(255,255,255,.72)', fontWeight: 600 }}>Supervisors:</b> use the same web address to sign in on your phone.
+          <b style={{ color: 'rgba(255,255,255,.72)', fontWeight: 600 }}>Site Engineers:</b> use the same web address to sign in on your phone.
         </p>
 
         <label className="login-label">YOUR NAME</label>

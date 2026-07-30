@@ -35,7 +35,7 @@ export default function Reports() {
   const total = rows.reduce((a, e) => a + e.amount, 0)
 
   const exportCsv = () => {
-    const head = ['Date', 'Item', 'Category', 'Site', 'Supervisor', 'Status', 'Amount_PKR']
+    const head = ['Date', 'Item', 'Category', 'Site', 'Site Engineer', 'Status', 'Amount_PKR']
     const body = rows.map((e) => [fmtDate(e.createdAt), e.note, CATEGORIES[e.category].label, e.site?.name, e.supervisor?.name, STATUS[e.status].short, e.amount])
     const csv = [head, ...body].map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -71,7 +71,7 @@ export default function Reports() {
                 <option value="all">All statuses</option>
                 <option value="approved">Approved</option>
                 <option value="finance_review">Finance review</option>
-                <option value="engineer_review">Engineer review</option>
+                <option value="engineer_review">Head engineer review</option>
                 <option value="rejected">Rejected</option>
               </select>
             </div>

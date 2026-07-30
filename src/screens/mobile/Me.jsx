@@ -15,7 +15,7 @@ export default function Me() {
     ['Phone', me.phone],
     ['Site', site?.name],
     ['Reports to', eng?.name],
-    ['Role', 'Supervisor · field app'],
+    ['Role', 'Site Engineer · field app'],
   ]
 
   return (
@@ -27,7 +27,7 @@ export default function Me() {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 20px 12px' }}>
         <Monogram name={me.name} color="var(--accent)" soft="var(--accent-soft)" size={72} radius={22} font={26} />
         <div style={{ font: '700 19px/1 var(--f-display)', color: '#fff', marginTop: 14 }}>{me.name}</div>
-        <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--accent)', marginTop: 7 }}>SUPERVISOR</div>
+        <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--accent)', marginTop: 7 }}>SITE ENGINEER</div>
       </div>
 
       <div style={{ padding: '8px 16px 0' }}>
