@@ -8,6 +8,10 @@ const FINANCE_OWNER = new Set(['owner', 'finance'])
 // what an engineer may claim back — site-only categories are excluded
 const CLAIM_CATS = new Set(['travel', 'lodging', 'tea_food', 'other'])
 
+// Progress is never self-reported by the people being measured: a site
+// engineer (supervisor) cannot log it, only their head engineer or the office.
+const PROGRESS_ROLES = new Set(['engineer', 'owner', 'admin'])
+
 const ok = (res) => json(res, 200, { ok: true })
 const deny = (res) => json(res, 403, { error: 'forbidden' })
 
@@ -147,6 +151,47 @@ export default async function handler(req, res) {
         return ok(res)
       }
 
+      // head engineer / owner / admin records how far along a site is
+      case 'LOG_PROGRESS': {
+        const p = b.payload || {}
+        if (!PROGRESS_ROLES.has(me.role)) return deny(res)
+        // a head engineer may only log against sites they are responsible for;
+        // owner and admin see everything so they are not scoped
+        if (me.role === 'engineer') {
+          const own = await q('select 1 from site where id = $1 and engineer_id = $2', [p.siteId, me.id])
+          if (!own.rowCount) return deny(res)
+        }
+        const pct = Math.round(Number(p.pct))
+        if (!Number.isFinite(pct) || pct < 0 || pct > 100) return json(res, 400, { error: 'bad_pct' })
+        await q('select kcems_log_progress($1,$2::smallint,$3,$4)', [p.siteId, pct, p.note || null, actor])
+        return ok(res)
+      }
+
+      // anyone marks their own attendance, for today only
+      case 'MARK_ATTENDANCE': {
+        const kind = b.kind === 'leave' ? 'leave' : 'present'
+        // The date is decided here, never taken from the client — otherwise
+        // someone could backdate their own attendance.
+        // Coordinates are only meaningful for a present mark; the SQL function
+        // discards them for leave.
+        const lat = kind === 'present' && Number.isFinite(Number(b.lat)) ? Number(b.lat) : null
+        const lng = kind === 'present' && Number.isFinite(Number(b.lng)) ? Number(b.lng) : null
+        try {
+          await q('select kcems_mark_attendance($1, current_date, $2::attendance_kind_t, $3, $4, $5)',
+            [me.id, kind, lat, lng, b.note || null])
+        } catch (e) {
+          if (/already marked/i.test(String(e.message || e))) return json(res, 409, { error: 'already_marked' })
+          throw e
+        }
+        return ok(res)
+      }
+
+      case 'REVIEW_LEAVE': {
+        if (!OWNER_ADMIN.has(me.role)) return deny(res)
+        await q('select kcems_review_leave($1,$2,$3)', [b.attendanceId, Boolean(b.approve), actor])
+        return ok(res)
+      }
+
       case 'CREATE_USER': {
         if (!OWNER_ADMIN.has(me.role)) return deny(res)
         const p = b.payload || {}
@@ -201,9 +246,10 @@ export default async function handler(req, res) {
         if (!OWNER_ADMIN.has(me.role)) return deny(res)
         const p = b.payload || {}
         if (!p.name) return json(res, 400, { error: 'missing_fields' })
-        const r = await q(`insert into site (name,label,city,phase,engineer_id,budget,status)
-                 values ($1,$2,$3,$4,$5,$6,$7) returning id`,
-          [p.name, p.label || p.name.slice(0, 12), p.city || null, p.phase || null, p.engineerId || null, Math.round(p.budget || 0), p.status || 'active'])
+        const r = await q(`insert into site (name,label,city,phase,engineer_id,budget,status,start_date,target_finish_date)
+                 values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id`,
+          [p.name, p.label || p.name.slice(0, 12), p.city || null, p.phase || null, p.engineerId || null, Math.round(p.budget || 0), p.status || 'active',
+           p.startDate || null, p.targetFinishDate || null])
         const siteId = r.rows[0].id
         if (p.supervisorIds) await wireSupervisors(siteId, p.supervisorIds, p.engineerId)
         return json(res, 200, { ok: true, id: siteId })
@@ -211,9 +257,14 @@ export default async function handler(req, res) {
       case 'UPDATE_SITE': {
         if (!OWNER_ADMIN.has(me.role)) return deny(res)
         const patch = b.patch || {}
-        const map = { name: 'name', label: 'label', city: 'city', phase: 'phase', engineerId: 'engineer_id', budget: 'budget', status: 'status' }
+        const map = { name: 'name', label: 'label', city: 'city', phase: 'phase', engineerId: 'engineer_id', budget: 'budget', status: 'status', startDate: 'start_date', targetFinishDate: 'target_finish_date' }
+        // date columns take null for "not set"; an empty string is not a date
+        const NULLABLE = new Set(['startDate', 'targetFinishDate', 'engineerId'])
         const cols = [], vals = []; let i = 1
-        for (const k of Object.keys(map)) if (k in patch) { cols.push(`${map[k]} = $${i++}`); vals.push(k === 'budget' ? Math.round(patch[k] || 0) : patch[k]) }
+        for (const k of Object.keys(map)) if (k in patch) {
+          cols.push(`${map[k]} = $${i++}`)
+          vals.push(k === 'budget' ? Math.round(patch[k] || 0) : (NULLABLE.has(k) && !patch[k] ? null : patch[k]))
+        }
         if (cols.length) {
           vals.push(b.siteId)
           await q(`update site set ${cols.join(', ')} where id = $${i}`, vals)

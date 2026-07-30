@@ -11,6 +11,12 @@ import { resolveLogin } from './data/match.js'
 const KEY = 'kcems.v1'
 const uid = (p = 'x') => `${p}_${Math.random().toString(36).slice(2, 9)}`
 
+// Local calendar date as YYYY-MM-DD. Deliberately not toISOString(), which is
+// UTC and would roll the day over at 5am in Pakistan — someone marking early
+// would land on the previous date.
+export const todayKey = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
 // Put the named supervisors on this site and take off anyone who was on it but
 // is no longer in the list. Checking a supervisor also files them under the
 // site's responsible engineer — that is the whole point of doing it here, so a
@@ -228,6 +234,54 @@ function reducer(state, action) {
       }
     }
 
+    // head engineer / owner / admin logs how far along a site is.
+    // Append-only, mirroring site_progress: the current figure is the newest
+    // row, so history is never overwritten.
+    case 'LOG_PROGRESS': {
+      const p = action.payload || {}
+      const entry = { id: uid('pg'), siteId: p.siteId, pct: Math.round(p.pct), note: p.note || null, loggedBy: action.actorId, loggedAt: now }
+      return {
+        ...state,
+        progress: [entry, ...(state.progress || [])],
+        sites: state.sites.map((s) => (s.id === p.siteId
+          ? { ...s, progress: { pct: entry.pct, note: entry.note, loggedBy: entry.loggedBy, loggedAt: now } }
+          : s)),
+        audit: log({ actorId: action.actorId, action: 'site.progress', entity: 'Site', entityId: p.siteId, after: { pct: entry.pct } }),
+      }
+    }
+
+    // a person marks their own day. One row per person per date — the live
+    // side enforces that with a unique constraint, so the demo refuses a
+    // second mark too rather than letting the two behave differently.
+    case 'MARK_ATTENDANCE': {
+      const today = todayKey()
+      if ((state.attendance || []).some((a) => a.userId === action.userId && a.date === today)) return state
+      const kind = action.kind === 'leave' ? 'leave' : 'present'
+      const row = {
+        id: uid('at'), userId: action.userId, date: today, kind,
+        status: kind === 'present' ? 'approved' : 'pending',
+        markedAt: now, note: action.note || null,
+        lat: kind === 'present' ? (action.lat ?? null) : null,
+        lng: kind === 'present' ? (action.lng ?? null) : null,
+        reviewedBy: null, reviewedAt: null,
+      }
+      return {
+        ...state,
+        attendance: [row, ...(state.attendance || [])],
+        audit: log({ actorId: action.userId, action: 'attendance.mark', entity: 'Attendance', entityId: row.id, after: { kind, status: row.status } }),
+      }
+    }
+
+    // owner/admin decides a pending leave request
+    case 'REVIEW_LEAVE':
+      return {
+        ...state,
+        attendance: (state.attendance || []).map((a) => (a.id === action.attendanceId && a.kind === 'leave' && a.status === 'pending'
+          ? { ...a, status: action.approve ? 'approved' : 'rejected', reviewedBy: action.actorId, reviewedAt: now }
+          : a)),
+        audit: log({ actorId: action.actorId, action: 'attendance.review', entity: 'Attendance', entityId: action.attendanceId, after: { status: action.approve ? 'approved' : 'rejected' } }),
+      }
+
     // re-wire a supervisor to a different engineer
     case 'REASSIGN_SUP':
       return {
@@ -287,14 +341,14 @@ function LocalStoreProvider({ children }) {
 }
 
 // ---- live (Supabase via the /api layer) ----
-const EMPTY = { users: [], sites: [], expenses: [], funds: [], audit: [], session: null }
+const EMPTY = { users: [], sites: [], expenses: [], funds: [], attendance: [], audit: [], session: null }
 function LiveStoreProvider({ children }) {
   const [state, setState] = useState(EMPTY)
   const [loading, setLoading] = useState(true)
   const { toasts, toast } = useToasts()
   const hydrate = useCallback(async () => {
     const { status, body } = await API.get('/api/data')
-    if (status === 200) setState({ users: body.users || [], sites: body.sites || [], expenses: body.expenses || [], funds: body.funds || [], audit: [], session: body.session || null })
+    if (status === 200) setState({ users: body.users || [], sites: body.sites || [], expenses: body.expenses || [], funds: body.funds || [], attendance: body.attendance || [], audit: [], session: body.session || null })
     else setState((s) => ({ ...s, session: null }))
     setLoading(false)
   }, [])
@@ -403,6 +457,33 @@ export function makeSelectors(state) {
     return state.sites.filter((x) => x.id === s?.siteId)
   }
 
+  // ---------- attendance ----------
+  const attendance = state.attendance || []
+  const attendanceFor = (userId, month) => attendance.filter((a) =>
+    a.userId === userId && (!month || String(a.date).startsWith(month)))
+  const attendanceOn = (userId, date) => attendance.find((a) => a.userId === userId && a.date === date) || null
+  const myAttendanceToday = () => (me ? attendanceOn(me.id, todayKey()) : null)
+  // only leave needs deciding — a present mark is a statement, not a request
+  const pendingLeave = () => attendance.filter((a) => a.kind === 'leave' && a.status === 'pending')
+  const pendingLeaveCount = () => pendingLeave().length
+
+  // ---------- site progress ----------
+  // Expected progress assumes even, linear work between the two dates. That is
+  // a rough model and the UI says so — it is a prompt to look, not a verdict.
+  const siteSchedule = (site) => {
+    if (!site?.startDate || !site?.targetFinishDate) return null
+    const start = new Date(site.startDate).getTime()
+    const end = new Date(site.targetFinishDate).getTime()
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null
+    const pctExpected = Math.max(0, Math.min(100, Math.round(((Date.now() - start) / (end - start)) * 100)))
+    const actual = site.progress?.pct ?? 0
+    const daysLeft = Math.ceil((end - Date.now()) / 86_400_000)
+    return { pctExpected, actual, daysLeft, behind: actual < pctExpected - 5, overdue: daysLeft < 0 && actual < 100 }
+  }
+  const progressHistory = (siteId) => (state.progress || [])
+    .filter((p) => p.siteId === siteId)
+    .sort((a, b) => new Date(b.loggedAt) - new Date(a.loggedAt))
+
   // username/password check for the local (demo) provider — same matching
   // rules as the server (src/data/match.js) so the demo behaves like live
   const authenticate = (username, password) => {
@@ -422,5 +503,7 @@ export function makeSelectors(state) {
     state, me, userById, siteById, supervisors, engineers,
     cashInHand, owedBack, pendingTotal, siteSpend, supsForEngineer, scopedExpenses, scopedSites, expenseView,
     authenticate, usernameTaken,
+    attendance, attendanceFor, attendanceOn, myAttendanceToday, pendingLeave, pendingLeaveCount,
+    siteSchedule, progressHistory,
   }
 }

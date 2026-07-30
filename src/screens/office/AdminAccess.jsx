@@ -108,22 +108,30 @@ export default function AdminAccess() {
           )}
           {state.sites.map((s) => {
             const eng = userById(s.engineerId)
-            const sups = supervisors.filter((u) => u.siteId === s.id).length
+            const crew = supervisors.filter((u) => u.siteId === s.id)
             const st = SITE_STATUS[s.status] || SITE_STATUS.active
             return (
-              <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 22px', borderTop: '1px solid var(--border-3)', flexWrap: 'wrap' }}>
-                <span className="mono-badge" style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-line)', fontSize: 12 }}>
+              <div key={s.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 22px', borderTop: '1px solid var(--border-3)', flexWrap: 'wrap' }}>
+                <span className="mono-badge" style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-line)', fontSize: 12, flex: 'none' }}>
                   {String(s.label || s.name).replace(/[^A-Z0-9]/gi, '').slice(0, 2).toUpperCase()}
                 </span>
-                <div style={{ flex: 1, minWidth: 150 }}>
+                <div style={{ flex: 1, minWidth: 200 }}>
                   <div style={{ font: '700 13px/1.2 var(--f-body)', color: '#fff' }}>{s.name}</div>
-                  <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>
-                    {[s.city, s.phase].filter(Boolean).join(' · ') || '—'} · {sups} site engineer{sups !== 1 ? 's' : ''}
+                  <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-70)', marginTop: 4 }}>
+                    {[s.city, s.phase].filter(Boolean).join(' · ') || '—'}
+                  </div>
+                  {/* The reporting tree answers this engineer-first. Naming the
+                      crew here answers it site-first, which is how someone
+                      standing on a site asks the question. */}
+                  <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--text-70)', marginTop: 6 }}>
+                    <span style={{ color: 'var(--text-40)' }}>Head engineer · </span>
+                    {eng ? eng.name : <span style={{ color: 'var(--warn)' }}>none</span>}
+                    <span style={{ color: 'var(--text-40)' }}>{'  ·  Site engineers · '}</span>
+                    {crew.length ? crew.map((c) => c.name).join(', ') : <span style={{ color: 'var(--warn)' }}>none assigned</span>}
                   </div>
                 </div>
-                <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-50)', minWidth: 96 }}>{eng ? eng.name.split(' ')[0] : 'no head engineer'}</div>
-                <span className={`pill ${st.pill}`} style={{ height: 22, fontSize: 10 }}>{st.label}</span>
-                <button className="btn btn-ghost btn-sm" onClick={() => setSiteEdit(s)}>Edit</button>
+                <span className={`pill ${st.pill}`} style={{ height: 22, fontSize: 10, flex: 'none' }}>{st.label}</span>
+                <button className="btn btn-ghost btn-sm" style={{ flex: 'none' }} onClick={() => setSiteEdit(s)}>Edit</button>
               </div>
             )
           })}
@@ -250,6 +258,9 @@ function SiteModal({ site, onClose }) {
   const [engId, setEngId] = useState(site?.engineerId || '')
   const [budget, setBudget] = useState(site?.budget ? String(site.budget) : '')
   const [status, setStatus] = useState(site?.status || 'active')
+  // date inputs want plain YYYY-MM-DD; the API may hand back a full timestamp
+  const [startDate, setStartDate] = useState(String(site?.startDate || '').slice(0, 10))
+  const [targetDate, setTargetDate] = useState(String(site?.targetFinishDate || '').slice(0, 10))
 
   const submit = () => {
     if (!name.trim()) return
@@ -261,6 +272,8 @@ function SiteModal({ site, onClose }) {
       engineerId: engId || null,
       budget: Math.round(Number(String(budget).replace(/[^\d]/g, '')) || 0),
       status,
+      startDate: startDate || null,
+      targetFinishDate: targetDate || null,
       supervisorIds: [...supIds],
     }
     if (isNew) dispatch({ type: 'CREATE_SITE', payload, actorId: state.session.userId })
@@ -286,6 +299,19 @@ function SiteModal({ site, onClose }) {
             <div style={{ display: 'flex', gap: 10 }}>
               <div style={{ flex: 1 }}><label className="field-label">Phase</label><input className="field" placeholder="e.g. Grey structure" value={phase} onChange={(e) => setPhase(e.target.value)} /></div>
               <div style={{ flex: 1 }}><label className="field-label">Budget (PKR)</label><input className="field" inputMode="numeric" placeholder="e.g. 2400000" value={budget} onChange={(e) => setBudget(e.target.value)} /></div>
+            </div>
+            {/* Both dates, so progress can be read against a deadline rather
+                than as a bare percentage. Without them the site detail page
+                still shows the bar, just with no on-track judgement. */}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Start date</label>
+                <input className="field" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Target finish</label>
+                <input className="field" type="date" value={targetDate} min={startDate || undefined} onChange={(e) => setTargetDate(e.target.value)} />
+              </div>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <div style={{ flex: 1 }}>

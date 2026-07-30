@@ -1,12 +1,15 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useSelectors } from '../../store.jsx'
+import { useStore, useSelectors } from '../../store.jsx'
 import { formatMoney, formatCompact, fmtDate, CATEGORIES, SITE_STATUS, STATUS } from '../../data/model.js'
 import { Card } from '../../components/page.jsx'
-import { Monogram, Progress, StatusPill } from '../../components/bits.jsx'
+import { Monogram, Progress, StatusPill, Modal } from '../../components/bits.jsx'
 
 export default function SiteDetail() {
   const { id } = useParams()
-  const { state, siteById, userById, siteSpend, cashInHand, supervisors, expenseView } = useSelectors()
+  const { dispatch, toast } = useStore()
+  const { state, me, siteById, userById, siteSpend, cashInHand, supervisors, expenseView, siteSchedule, progressHistory } = useSelectors()
+  const [logging, setLogging] = useState(false)
   const site = siteById(id)
   if (!site) return <div style={{ color: 'var(--text-50)' }}>Site not found. <Link to="/sites">Back</Link></div>
 
@@ -14,6 +17,12 @@ export default function SiteDetail() {
   const eng = userById(site.engineerId)
   const sups = supervisors.filter((s) => s.siteId === id)
   const cats = ['materials', 'labour', 'fuel', 'tea_food'].map((k) => ({ k, val: sp.byCat[k] || 0 }))
+  const sched = siteSchedule(site)
+  const history = progressHistory(id)
+  const pct = site.progress?.pct ?? 0
+  // progress is never self-reported by the people being measured: a head
+  // engineer may log it for their own sites, the office for any
+  const canLogProgress = me.role === 'owner' || me.role === 'admin' || (me.role === 'engineer' && site.engineerId === me.id)
   const maxCat = Math.max(1, ...cats.map((c) => c.val))
   const recent = state.expenses.filter((e) => e.siteId === id).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5).map(expenseView)
 
@@ -46,6 +55,51 @@ export default function SiteDetail() {
             <div style={{ display: 'flex', justifyContent: 'space-between', font: '600 12px/1.4 var(--f-body)', color: 'var(--text-50)', marginBottom: 8 }}><span>Budget used</span><span style={{ color: 'var(--accent)' }}>{sp.pct}%</span></div>
             <Progress pct={sp.pct} />
           </div>
+
+          {/* ---------- construction progress ---------- */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '26px 0 14px' }}>
+            <div style={{ font: '700 13px/1 var(--f-body)', color: '#fff' }}>Construction progress</div>
+            {sched && (
+              <span className={`pill ${sched.behind || sched.overdue ? 'pill-rejected' : 'pill-approved'}`} style={{ height: 22, fontSize: 10 }}>
+                <span className="dot" />{sched.overdue ? 'OVERDUE' : sched.behind ? 'BEHIND SCHEDULE' : 'ON TRACK'}
+              </span>
+            )}
+            <div className="spacer" />
+            {canLogProgress && <button className="btn btn-ghost btn-sm" onClick={() => setLogging(true)}>+ Log progress</button>}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', font: '600 12px/1.4 var(--f-body)', color: 'var(--text-50)', marginBottom: 8 }}>
+            <span>{site.progress ? `Last logged ${fmtDate(site.progress.loggedAt)}` : 'Not logged yet'}</span>
+            <span style={{ color: 'var(--accent)' }}>{pct}%</span>
+          </div>
+          <Progress pct={pct} />
+
+          {sched ? (
+            <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--text-50)', marginTop: 9 }}>
+              {/* say what the comparison assumes rather than quietly implying precision */}
+              About {sched.pctExpected}% expected by today if work ran evenly from {fmtDate(site.startDate)} to {fmtDate(site.targetFinishDate)}
+              {sched.overdue
+                ? <> · <b style={{ color: 'var(--danger)' }}>target date passed</b></>
+                : <> · {sched.daysLeft} day{sched.daysLeft === 1 ? '' : 's'} left</>}.
+              {' '}Even pace is a rough guide, not a schedule.
+            </div>
+          ) : (
+            <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--text-50)', marginTop: 9 }}>
+              Add a start date and target finish in <b style={{ color: 'var(--text-70)' }}>Users &amp; access → Sites</b> to compare this against a deadline.
+            </div>
+          )}
+
+          {history.length > 0 && (
+            <div style={{ marginTop: 14, borderTop: '1px solid var(--border-3)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {history.slice(0, 4).map((h) => (
+                <div key={h.id} style={{ display: 'flex', alignItems: 'baseline', gap: 10, font: '500 12px/1.4 var(--f-body)', color: 'var(--text-70)' }}>
+                  <span className="num" style={{ font: '700 12px/1.4 var(--f-display)', color: 'var(--accent)', width: 38 }}>{h.pct}%</span>
+                  <span style={{ flex: 1, minWidth: 0 }}>{h.note || <span style={{ color: 'var(--text-50)' }}>no note</span>}</span>
+                  <span style={{ flex: 'none', color: 'var(--text-50)' }}>{fmtDate(h.loggedAt)} · {userById(h.loggedBy)?.name.split(' ')[0] || '—'}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div style={{ font: '700 13px/1 var(--f-body)', color: '#fff', margin: '24px 0 14px' }}>Spend by category</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -95,6 +149,60 @@ export default function SiteDetail() {
           </Card>
         </div>
       </div>
+
+      <LogProgressModal
+        open={logging} site={site} current={pct}
+        onClose={() => setLogging(false)}
+        onSubmit={({ pct: next, note }) => {
+          dispatch({ type: 'LOG_PROGRESS', payload: { siteId: site.id, pct: next, note }, actorId: me.id })
+          toast(`${site.label || site.name} at ${next}%`)
+          setLogging(false)
+        }}
+      />
     </div>
+  )
+}
+
+// Slider plus a number box: the slider is quick, the box is exact, and a
+// percentage is the kind of value people want to type rather than drag to.
+function LogProgressModal({ open, site, current, onClose, onSubmit }) {
+  const [pct, setPct] = useState(current)
+  const [note, setNote] = useState('')
+  const [seen, setSeen] = useState(open)
+  if (open !== seen) { setSeen(open); if (open) { setPct(current); setNote('') } }
+  if (!open) return null
+
+  const delta = pct - current
+  return (
+    <Modal open onClose={onClose} width={420}>
+      <div style={{ padding: 22 }}>
+        <div style={{ font: '700 16px/1 var(--f-body)', color: '#fff' }}>Log progress</div>
+        <div style={{ font: '500 12.5px/1.5 var(--f-body)', color: 'var(--text-70)', marginTop: 8 }}>
+          {site.name} — currently {current}%.
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 20 }}>
+          <input type="range" min="0" max="100" value={pct} onChange={(e) => setPct(Number(e.target.value))}
+            style={{ flex: 1, accentColor: 'var(--accent)' }} aria-label="Percent complete" />
+          <input className="field" type="number" min="0" max="100" value={pct}
+            onChange={(e) => setPct(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
+            style={{ width: 84, textAlign: 'center', font: '700 16px/1 var(--f-display)' }} />
+        </div>
+        <div style={{ marginTop: 12 }}><Progress pct={pct} /></div>
+        {delta !== 0 && (
+          <div style={{ font: '500 12px/1.4 var(--f-body)', color: delta > 0 ? 'var(--accent)' : 'var(--warn)', marginTop: 8 }}>
+            {delta > 0 ? `+${delta} points since the last update` : `${delta} points — this moves the site backwards`}
+          </div>
+        )}
+
+        <label className="field-label" style={{ marginTop: 16 }}>Note (optional)</label>
+        <input className="field" placeholder="e.g. Slab poured on block B" value={note} onChange={(e) => setNote(e.target.value)} />
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+          <button className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" style={{ flex: 1.4 }} onClick={() => onSubmit({ pct, note: note.trim() })}>Save {pct}%</button>
+        </div>
+      </div>
+    </Modal>
   )
 }

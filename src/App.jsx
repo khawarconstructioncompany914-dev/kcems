@@ -18,6 +18,8 @@ import Reports from './screens/office/Reports.jsx'
 import AdminAccess from './screens/office/AdminAccess.jsx'
 import Bills from './screens/office/Bills.jsx'
 import MyExpenses from './screens/office/MyExpenses.jsx'
+import OfficeAttendance from './screens/office/Attendance.jsx'
+import FieldAttendance from './screens/mobile/Attendance.jsx'
 
 import FieldHome from './screens/mobile/Home.jsx'
 import LogExpense from './screens/mobile/AddExpense.jsx'
@@ -42,6 +44,15 @@ function RequireAuth({ children }) {
   if (!me) return <Navigate to="/login" replace state={{ from: loc.pathname }} />
   if (me.mustChangePassword) return <Navigate to="/change-password" replace />
   return children
+}
+
+// Attendance has no role gate — everyone marks their own day — but a site
+// engineer gets the field version and the office roles get the month grid.
+// Split on role rather than viewport: what differs is the job, not the screen.
+function AttendanceRoute() {
+  const { me } = useSelectors()
+  if (!me) return <Navigate to="/login" replace />
+  return me.role === 'supervisor' ? <FieldAttendance /> : <OfficeAttendance />
 }
 
 // Per-route permission (Build Spec §2) — falls back to the user's landing.
@@ -75,6 +86,10 @@ export default function App() {
           <Route path="/bills"     element={<RoleGate roles={['owner', 'finance', 'admin']}><Bills /></RoleGate>} />
           {/* an engineer's own reimbursement claims — office shell, same as their queue */}
           <Route path="/my-expenses" element={<RoleGate roles={['engineer']}><MyExpenses /></RoleGate>} />
+          {/* Attendance is the one surface every role reaches. The office roles
+              get the month grid; a site engineer gets the field version, which
+              is the same split the rest of the app already uses. */}
+          <Route path="/attendance" element={<AttendanceRoute />} />
 
           {/* field surfaces (supervisor) — same shell, same breakpoints */}
           <Route path="/home"        element={<RoleGate roles={['supervisor']}><FieldHome /></RoleGate>} />
