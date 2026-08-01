@@ -143,6 +143,17 @@ export async function visiblePaths(me, paths) {
 }
 
 // ---------- helpers ----------
+// Caller's address, for rate limiting. On Vercel the platform appends the real
+// client to x-forwarded-for, so the FIRST entry is the one to use — and it is
+// client-supplied, which is why it only ever loosens a limit here, never grants
+// anything. Returns null when there is nothing trustworthy to key on.
+export function clientIp(req) {
+  const xff = req.headers['x-forwarded-for']
+  const first = String(Array.isArray(xff) ? xff[0] : (xff || '')).split(',')[0].trim()
+  const ip = first || String(req.headers['x-real-ip'] || '').trim()
+  return ip ? ip.slice(0, 64) : null
+}
+
 export function json(res, code, obj) { res.status(code).setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(obj)) }
 export async function readBody(req) {
   if (req.body && typeof req.body === 'object') return req.body

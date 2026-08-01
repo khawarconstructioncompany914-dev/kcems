@@ -16,6 +16,7 @@ import Sites from './screens/office/Sites.jsx'
 import SiteDetail from './screens/office/SiteDetail.jsx'
 import Reports from './screens/office/Reports.jsx'
 import AdminAccess from './screens/office/AdminAccess.jsx'
+import Activity from './screens/office/Activity.jsx'
 import Bills from './screens/office/Bills.jsx'
 import MyExpenses from './screens/office/MyExpenses.jsx'
 import OfficeAttendance from './screens/office/Attendance.jsx'
@@ -83,6 +84,9 @@ export default function App() {
           <Route path="/sites/:id"   element={<RoleGate roles={OFFICE}><SiteDetail /></RoleGate>} />
           <Route path="/reports"   element={<RoleGate roles={['owner', 'finance']}><Reports /></RoleGate>} />
           <Route path="/admin"     element={<RoleGate roles={['owner', 'admin']}><AdminAccess /></RoleGate>} />
+          {/* the audit trail spans every site and everyone's actions, so it
+              stays with the two roles that already see all of both */}
+          <Route path="/activity"  element={<RoleGate roles={['owner', 'admin']}><Activity /></RoleGate>} />
           <Route path="/bills"     element={<RoleGate roles={['owner', 'finance', 'admin']}><Bills /></RoleGate>} />
           {/* an engineer's own reimbursement claims — office shell, same as their queue */}
           <Route path="/my-expenses" element={<RoleGate roles={['engineer']}><MyExpenses /></RoleGate>} />

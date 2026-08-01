@@ -59,6 +59,18 @@ export default async function handler(req, res) {
   const b = await readBody(req)
   const actor = me.id
 
+  // Writes made on a phone with no signal are queued and replayed later, so the
+  // same submission can legitimately arrive twice: once from a request whose
+  // reply was lost on the way back, once from the retry. The ref is claimed
+  // before any work happens (migration 0005) — the second arrival loses the
+  // insert race and is told it already happened, instead of filing a second
+  // expense for the same bill.
+  const ref = typeof b.clientRef === 'string' && b.clientRef ? b.clientRef.slice(0, 100) : null
+  if (ref) {
+    const claim = await q('select kcems_claim_client_ref($1,$2,$3) as claimed', [ref, me.id, String(b.type || '')])
+    if (!claim.rows[0].claimed) return json(res, 200, { ok: true, duplicate: true })
+  }
+
   try {
     switch (b.type) {
       case 'LOG_EXPENSE': {
@@ -198,9 +210,14 @@ export default async function handler(req, res) {
         if (!p.name || !p.username || !p.role) return json(res, 400, { error: 'missing_fields' })
         const taken = await q('select 1 from app_user where lower(username) = lower($1)', [p.username])
         if (taken.rowCount) return json(res, 409, { error: 'username_taken' })
+        // No default password. The old fallback was a literal that is published
+        // in this repo, so any account created without one was open to anybody
+        // who read the source. The UI always generates a temp password; a caller
+        // that does not is a bug, not a case to paper over.
+        if (normPassword(p.password).length < 4) return json(res, 400, { error: 'weak_password' })
         await q(`insert into app_user (name, username, phone, role, password_hash, must_change_password, engineer_id, site_id, status)
                  values ($1,$2,$3,$4,$5,true,$6,$7,'active')`,
-          [p.name, String(p.username).toLowerCase(), p.phone || null, p.role, hashPassword(p.password || 'kcems'), p.engineerId || null, p.siteId || null])
+          [p.name, String(p.username).toLowerCase(), p.phone || null, p.role, hashPassword(p.password), p.engineerId || null, p.siteId || null])
         return ok(res)
       }
       case 'UPDATE_USER': {
@@ -274,7 +291,9 @@ export default async function handler(req, res) {
       }
       case 'RESET_PASSWORD': {
         if (!OWNER_ADMIN.has(me.role)) return deny(res)
-        await q('update app_user set password_hash = $1, must_change_password = true where id = $2', [hashPassword(b.password || 'kcems'), b.userId])
+        // see CREATE_USER — resetting to a published literal is not a reset
+        if (normPassword(b.password).length < 4) return json(res, 400, { error: 'weak_password' })
+        await q('update app_user set password_hash = $1, must_change_password = true where id = $2', [hashPassword(b.password), b.userId])
         return ok(res)
       }
       case 'CHANGE_PASSWORD': {
@@ -288,6 +307,10 @@ export default async function handler(req, res) {
         return json(res, 400, { error: 'unknown_action' })
     }
   } catch (err) {
+    // The work did not happen, so the ref must not stay claimed — otherwise a
+    // retry of a write that failed on a database hiccup would be waved through
+    // as a duplicate and silently lost.
+    if (ref) await q('select kcems_release_client_ref($1)', [ref]).catch(() => {})
     return json(res, 400, { error: String(err && err.message || err) })
   }
 }

@@ -21,13 +21,25 @@ export default function Login() {
 
   const go = (user) => nav(user.mustChangePassword ? '/change-password' : (ROLES[user.role]?.landing || '/'), { replace: true })
 
+  // "in about 4 minutes" reads better on a lockout than "in 213 seconds".
+  const waitWords = (secs) => {
+    const m = Math.ceil((secs || 0) / 60)
+    return m <= 1 ? 'in a minute' : `in about ${m} minutes`
+  }
+
   const submit = async (e) => {
     e.preventDefault()
     if (busy) return
     setBusy(true)
     const res = await login(username, password)
     setBusy(false)
-    if (!res.ok) return setErr(res.reason === 'disabled' ? 'This account has been disabled. Contact the owner.' : 'That name and password did not match. Check the password — it is your name in small letters with @ at the end.')
+    if (!res.ok) {
+      if (res.reason === 'disabled') return setErr('This account has been disabled. Contact the owner.')
+      if (res.reason === 'too_many_attempts') {
+        return setErr(`Too many sign-in attempts from here. Try again ${waitWords(res.retryAfter)}, or ask the owner or admin to reset your password.`)
+      }
+      return setErr('That name and password did not match. Check the password — it is your name in small letters with @ at the end.')
+    }
     setErr('')
     go(res.user)
   }

@@ -7,9 +7,16 @@
 import { createContext, useContext, useReducer, useMemo, useEffect, useRef, useState, useCallback } from 'react'
 import { buildSeed } from './data/seed.js'
 import { resolveLogin } from './data/match.js'
+import {
+  QUEUEABLE, isOnline, enqueue, listQueue, flushQueue, discardFailed,
+  saveSnapshot, loadSnapshot, clearOffline, subscribe,
+} from './offline.js'
 
 const KEY = 'kcems.v1'
 const uid = (p = 'x') => `${p}_${Math.random().toString(36).slice(2, 9)}`
+// one shared empty array, so "nothing pending" is referentially stable and
+// does not re-render every consumer on each pass
+const NONE = []
 
 // Local calendar date as YYYY-MM-DD. Deliberately not toISOString(), which is
 // UTC and would roll the day over at 5am in Pakistan — someone marking early
@@ -76,7 +83,11 @@ function reducer(state, action) {
     case 'LOG_EXPENSE': {
       const { supervisorId, siteId, amount, category, note } = action.payload
       const exp = {
-        id: uid('e'), supervisorId, siteId, amount: Math.round(amount), category, note,
+        // optimisticId is supplied when this action is being replayed from the
+        // offline queue to render what is waiting to sync. It keeps the row's
+        // identity stable across recomputes; live dispatches have none and get
+        // a fresh id as before.
+        id: action.optimisticId || uid('e'), supervisorId, siteId, amount: Math.round(amount), category, note,
         billImageUrl: null, kind: 'site_expense',
         photos: toPhotos(action.payload.photos),
         status: 'engineer_review', rejectReason: null, returnNote: null, settledAt: null,
@@ -94,7 +105,7 @@ function reducer(state, action) {
     case 'LOG_CLAIM': {
       const { claimantId, amount, category, note } = action.payload
       const exp = {
-        id: uid('e'), supervisorId: claimantId, siteId: null, amount: Math.round(amount), category, note,
+        id: action.optimisticId || uid('e'), supervisorId: claimantId, siteId: null, amount: Math.round(amount), category, note,
         billImageUrl: null, kind: 'reimbursement',
         photos: toPhotos(action.payload.photos),
         status: 'finance_review', rejectReason: null, returnNote: null, settledAt: null,
@@ -239,7 +250,7 @@ function reducer(state, action) {
     // row, so history is never overwritten.
     case 'LOG_PROGRESS': {
       const p = action.payload || {}
-      const entry = { id: uid('pg'), siteId: p.siteId, pct: Math.round(p.pct), note: p.note || null, loggedBy: action.actorId, loggedAt: now }
+      const entry = { id: action.optimisticId || uid('pg'), siteId: p.siteId, pct: Math.round(p.pct), note: p.note || null, loggedBy: action.actorId, loggedAt: now }
       return {
         ...state,
         progress: [entry, ...(state.progress || [])],
@@ -258,7 +269,7 @@ function reducer(state, action) {
       if ((state.attendance || []).some((a) => a.userId === action.userId && a.date === today)) return state
       const kind = action.kind === 'leave' ? 'leave' : 'present'
       const row = {
-        id: uid('at'), userId: action.userId, date: today, kind,
+        id: action.optimisticId || uid('at'), userId: action.userId, date: today, kind,
         status: kind === 'present' ? 'approved' : 'pending',
         markedAt: now, note: action.note || null,
         lat: kind === 'present' ? (action.lat ?? null) : null,
@@ -301,16 +312,25 @@ const StoreCtx = createContext(null)
 // Data source: "supabase" talks to the live /api backend; anything else = local demo.
 export const LIVE = import.meta.env.VITE_DATA_SOURCE === 'supabase'
 
+// status 0 means the request never reached the server — no signal, DNS gone,
+// aeroplane mode. It is deliberately distinct from a 4xx/5xx: one is worth
+// retrying later, the other never will be.
+const OFFLINE = { status: 0, body: { error: 'offline' } }
+
 const API = {
   async get(path) {
-    const r = await fetch(path, { credentials: 'same-origin' })
-    let body = {}; try { body = await r.json() } catch { /* ignore */ }
-    return { status: r.status, body }
+    try {
+      const r = await fetch(path, { credentials: 'same-origin' })
+      let body = {}; try { body = await r.json() } catch { /* ignore */ }
+      return { status: r.status, body }
+    } catch { return OFFLINE }
   },
   async post(path, data) {
-    const r = await fetch(path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data || {}) })
-    let body = {}; try { body = await r.json() } catch { /* ignore */ }
-    return { status: r.status, body }
+    try {
+      const r = await fetch(path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data || {}) })
+      let body = {}; try { body = await r.json() } catch { /* ignore */ }
+      return { status: r.status, body }
+    } catch { return OFFLINE }
   },
 }
 
@@ -336,37 +356,180 @@ function LocalStoreProvider({ children }) {
     return res
   }, [state])
   const logout = useCallback(async () => dispatch({ type: 'LOGOUT' }), [])
-  const value = useMemo(() => ({ state, dispatch, toast, toasts, login, logout, loading: false }), [state, toasts, toast, login, logout])
+  // The demo store is the browser, so it is never offline and never has
+  // anything waiting to send. The same keys are present so screens can read
+  // them without caring which provider they are under.
+  const value = useMemo(() => ({
+    state, dispatch, toast, toasts, login, logout, loading: false,
+    online: true, stale: false, pending: NONE, failed: NONE,
+    syncNow: async () => {}, discardFailed: async () => {}, loadFullHistory: async () => {},
+  }), [state, toasts, toast, login, logout])
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>
 }
 
 // ---- live (Supabase via the /api layer) ----
-const EMPTY = { users: [], sites: [], expenses: [], funds: [], attendance: [], audit: [], session: null }
+const EMPTY = {
+  users: [], sites: [], expenses: [], funds: [], attendance: [], progress: [], audit: [],
+  balances: null, siteSpend: null, session: null,
+}
+
+const toState = (body) => ({
+  users: body.users || [], sites: body.sites || [], expenses: body.expenses || [],
+  funds: body.funds || [], attendance: body.attendance || [], progress: body.progress || [],
+  audit: body.audit || [],
+  // Totals computed server-side from the FULL history — see api/data.js. The
+  // row arrays above are windowed, so summing them would understate the money.
+  balances: body.balances || null, siteSpend: body.siteSpend || null,
+  windowed: Boolean(body.windowed), windowDays: body.windowDays ?? null,
+  session: body.session || null,
+})
+
 function LiveStoreProvider({ children }) {
-  const [state, setState] = useState(EMPTY)
+  const [server, setServer] = useState(EMPTY)
   const [loading, setLoading] = useState(true)
+  const [queue, setQueue] = useState([])
+  const [online, setOnline] = useState(isOnline())
+  // true when what is on screen came from the cached snapshot rather than the
+  // server. The UI says so — silently showing stale money as if it were live is
+  // the one thing an offline mode must not do.
+  const [stale, setStale] = useState(false)
   const { toasts, toast } = useToasts()
-  const hydrate = useCallback(async () => {
-    const { status, body } = await API.get('/api/data')
-    if (status === 200) setState({ users: body.users || [], sites: body.sites || [], expenses: body.expenses || [], funds: body.funds || [], attendance: body.attendance || [], audit: [], session: body.session || null })
-    else setState((s) => ({ ...s, session: null }))
-    setLoading(false)
+  const inflight = useRef(null)
+
+  const refreshQueue = useCallback(async () => { setQueue(await listQueue()) }, [])
+
+  // Single-flight: a burst of writes used to fire a burst of identical full
+  // refetches. Concurrent callers now share one request.
+  const hydrate = useCallback((opts = {}) => {
+    if (inflight.current && !opts.full) return inflight.current
+    const run = (async () => {
+      const { status, body } = await API.get(opts.full ? '/api/data?full=1' : '/api/data')
+      if (status === 200) {
+        setServer(toState(body))
+        setStale(false)
+        saveSnapshot(body)
+      } else if (status === 0) {
+        // Never reached the server. Fall back to the last snapshot so the app
+        // still opens with real numbers instead of an empty shell.
+        const snap = await loadSnapshot()
+        if (snap?.data) { setServer(toState(snap.data)); setStale(true) }
+      } else {
+        // A real answer, and it was "no" — the session is gone.
+        setServer((s) => ({ ...s, session: null }))
+      }
+      setLoading(false)
+    })()
+    inflight.current = run
+    run.finally(() => { if (inflight.current === run) inflight.current = null })
+    return run
   }, [])
-  useEffect(() => { hydrate() }, [hydrate])
+
+  // Push whatever is queued, then refresh if anything actually landed.
+  const sync = useCallback(async ({ quiet = false } = {}) => {
+    const before = await listQueue()
+    if (!before.some((e) => !e.failedAt)) { await refreshQueue(); return }
+    const r = await flushQueue((a) => API.post('/api/action', a))
+    await refreshQueue()
+    if (r.sent) {
+      if (!quiet) toast(`Sent ${r.sent} saved item${r.sent === 1 ? '' : 's'}`, 'accent')
+      await hydrate()
+    }
+    if (r.failed && !quiet) toast(`${r.failed} saved item${r.failed === 1 ? '' : 's'} could not be sent — see Waiting to send`, 'danger')
+  }, [hydrate, refreshQueue, toast])
+
+  useEffect(() => { hydrate(); refreshQueue() }, [hydrate, refreshQueue])
+
+  // Keep the pending count live when another tab syncs the same queue.
+  useEffect(() => subscribe(refreshQueue), [refreshQueue])
+
+  useEffect(() => {
+    const up = () => { setOnline(true); sync() }
+    const down = () => setOnline(false)
+    window.addEventListener('online', up)
+    window.addEventListener('offline', down)
+    // The 'online' event only fires on a TRANSITION. A phone that was offline
+    // when the app was closed and has signal by the time it reopens never gets
+    // one, so try once on mount too.
+    if (isOnline()) sync({ quiet: true })
+    return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down) }
+  }, [sync])
+
   const login = useCallback(async (username, password) => {
     const { status, body } = await API.post('/api/login', { username, password })
     if (status === 200) { await hydrate(); return { ok: true, user: body.user } }
-    return { ok: false, reason: body.error || 'bad_password' }
+    if (status === 0) return { ok: false, reason: 'offline' }
+    return { ok: false, reason: body.error || 'bad_password', retryAfter: body.retryAfter }
   }, [hydrate])
-  const logout = useCallback(async () => { await API.post('/api/logout'); setState(EMPTY) }, [])
+
+  const logout = useCallback(async () => {
+    await API.post('/api/logout')
+    // The snapshot holds this person's ledger. Signing out has to take it with
+    // them, or the next person to open the app on a shared site phone sees it.
+    await clearOffline()
+    setServer(EMPTY)
+    setQueue([])
+  }, [])
+
   const dispatch = useCallback(async (action) => {
     if (action.type === 'LOGOUT') return logout()
     if (action.type === 'LOGIN' || action.type === 'SWITCH_USER') return
+
+    const queueable = QUEUEABLE.has(action.type)
+    const park = async (msg) => {
+      const entry = await enqueue(action)
+      if (!entry) return null                  // no IndexedDB — fail honestly below
+      await refreshQueue()
+      toast(msg, 'warn')
+      return { status: 200, body: { ok: true, queued: true } }
+    }
+
+    // Don't even try the network when the device says there isn't one: the
+    // fetch would hang for its full timeout with somebody watching a spinner.
+    if (queueable && !isOnline()) {
+      const parked = await park('No signal — saved on this device and will send itself later')
+      if (parked) return parked
+    }
+
     const res = await API.post('/api/action', action)
+
+    if (res.status === 0) {
+      if (queueable) {
+        const parked = await park('No connection — saved on this device and will send itself later')
+        if (parked) return parked
+      }
+      toast('No connection. This needs to be online — try again when you have signal.', 'danger')
+      return res
+    }
+
     await hydrate()
     return res
-  }, [hydrate, logout])
-  const value = useMemo(() => ({ state, dispatch, toast, toasts, login, logout, loading }), [state, toasts, toast, loading, dispatch, login, logout])
+  }, [hydrate, logout, refreshQueue, toast])
+
+  const pending = useMemo(() => queue.filter((e) => !e.failedAt), [queue])
+  const failed = useMemo(() => queue.filter((e) => e.failedAt), [queue])
+
+  // What is on screen = the server's answer with everything still queued
+  // replayed on top, so a supervisor sees the expense they just logged sitting
+  // in their history rather than nothing at all. Replayed through the same
+  // reducer the demo store uses, so the two cannot drift.
+  const state = useMemo(() => {
+    if (!pending.length) return server
+    const ids = new Set(pending.map((e) => e.optimisticId))
+    const next = pending.reduce((s, e) => reducer(s, { ...e.action, optimisticId: e.optimisticId }), server)
+    return {
+      ...next,
+      expenses: next.expenses.map((e) => (ids.has(e.id) ? { ...e, pendingSync: true } : e)),
+      attendance: (next.attendance || []).map((a) => (ids.has(a.id) ? { ...a, pendingSync: true } : a)),
+    }
+  }, [server, pending])
+
+  const value = useMemo(() => ({
+    state, dispatch, toast, toasts, login, logout, loading,
+    online, stale, pending, failed,
+    syncNow: sync, discardFailed: async () => { await discardFailed(); await refreshQueue() },
+    loadFullHistory: () => hydrate({ full: true }),
+  }), [state, toasts, toast, loading, dispatch, login, logout, online, stale, pending, failed, sync, refreshQueue, hydrate])
+
   if (loading) return <Splash />
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>
 }
@@ -402,14 +565,26 @@ export function makeSelectors(state) {
   const engineers = state.users.filter((u) => u.role === 'engineer')
 
   // derived cash-in-hand for a supervisor (Build Spec §1)
+  //
+  // In live mode these come from v_supervisor_balance, computed over the whole
+  // ledger. They are NOT summed from state.expenses/state.funds any more:
+  // /api/data windows those arrays to keep the payload bounded, and a balance
+  // added up from a truncated history is confidently wrong — the worst kind of
+  // wrong for a number somebody settles cash against. The local sums below are
+  // the demo store's path, and the fallback if a snapshot predates this field.
   const cashInHand = (supId) => {
+    const b = state.balances?.[supId]
+    if (b) return { funded: b.funded, spent: b.spent, cash: b.cash }
     const fundsIn = state.funds.filter((f) => f.supervisorId === supId && f.type === 'funds_in').reduce((a, f) => a + f.amount, 0)
     const approved = state.expenses.filter((e) => e.supervisorId === supId && e.status === 'approved').reduce((a, e) => a + e.amount, 0)
     return { funded: fundsIn, spent: approved, cash: fundsIn - approved }
   }
   // owed-back = rejected & not settled
-  const owedBack = (supId) =>
-    state.expenses.filter((e) => e.supervisorId === supId && e.status === 'rejected' && !e.settledAt).reduce((a, e) => a + e.amount, 0)
+  const owedBack = (supId) => {
+    const b = state.balances?.[supId]
+    if (b) return b.owed
+    return state.expenses.filter((e) => e.supervisorId === supId && e.status === 'rejected' && !e.settledAt).reduce((a, e) => a + e.amount, 0)
+  }
 
   // Money this person has submitted that nobody has decided on yet. Kept
   // separate from cashInHand().spent on purpose: "spent" means APPROVED spend
@@ -423,13 +598,19 @@ export function makeSelectors(state) {
   // site spend = opening + live approved, per category.
   // Reimbursement claims carry no site, but filter on kind as well so the
   // number stays right even if a claim ever gets one (mirrors v_site_spend).
+  // Same story as cashInHand: v_site_spend when live, local sum otherwise.
   const siteSpend = (siteId) => {
     const site = siteById(siteId)
-    const byCat = { ...(site?.openingSpend || { materials: 0, labour: 0, fuel: 0, tea_food: 0, other: 0 }) }
-    state.expenses.filter((e) => e.siteId === siteId && e.status === 'approved' && e.kind !== 'reimbursement').forEach((e) => {
-      byCat[e.category] = (byCat[e.category] || 0) + e.amount
-    })
-    const total = Object.values(byCat).reduce((a, v) => a + v, 0)
+    const server = state.siteSpend?.[siteId]
+    const byCat = server
+      ? { ...server.byCat }
+      : { ...(site?.openingSpend || { materials: 0, labour: 0, fuel: 0, tea_food: 0, other: 0 }) }
+    if (!server) {
+      state.expenses.filter((e) => e.siteId === siteId && e.status === 'approved' && e.kind !== 'reimbursement').forEach((e) => {
+        byCat[e.category] = (byCat[e.category] || 0) + e.amount
+      })
+    }
+    const total = Object.values(byCat).reduce((a, v) => a + (v || 0), 0)
     const budget = site?.budget || 0
     return { byCat, total, budget, remaining: budget - total, pct: budget ? Math.min(100, Math.round((total / budget) * 100)) : 0 }
   }

@@ -3,3 +3,10 @@ dist
 dist-ssr
 *.local
 .DS_Store
+
+# credentials produced by scripts/rotate-passwords.js --out
+temp-passwords.txt
+*-passwords.txt
+# database dumps
+*.dump
+*.dump.gpg
