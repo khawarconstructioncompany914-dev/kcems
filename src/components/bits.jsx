@@ -40,7 +40,7 @@ export function BillPhoto({ w = 72, h = 72, filled = true, label }) {
   return (
     <div style={{
       width: w, height: h, borderRadius: 12, flex: 'none',
-      background: filled ? 'linear-gradient(135deg,#1a1d17,#0f110d)' : 'var(--input)',
+      background: filled ? 'var(--input)' : 'var(--input)',
       border: `1px ${filled ? 'solid var(--accent-line)' : 'dashed var(--border)'}`,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
       color: filled ? 'var(--accent)' : 'var(--text-40)', overflow: 'hidden', position: 'relative',
@@ -69,8 +69,8 @@ export function Modal({ open, onClose, width = 440, children }) {
   }, [open, onClose])
   if (!open) return null
   return createPortal(
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(3,4,3,.66)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} className="fade-in">
-      <div onClick={(e) => e.stopPropagation()} className="card" style={{ width, maxWidth: '100%', maxHeight: '92vh', overflow: 'auto', animation: 'scaleIn .22s cubic-bezier(.2,.7,.2,1) both', boxShadow: '0 50px 120px -50px #000' }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'var(--scrim)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} className="fade-in">
+      <div onClick={(e) => e.stopPropagation()} className="card" style={{ width, maxWidth: '100%', maxHeight: '92vh', overflow: 'auto', animation: 'scaleIn .22s cubic-bezier(.2,.7,.2,1) both', boxShadow: '0 50px 120px -50px var(--shadow-strong)' }}>
         {children}
       </div>
     </div>,

@@ -62,7 +62,7 @@ export default function FieldAttendance() {
   return (
     <div className="field-screen">
       <div style={{ padding: '6px 20px 4px' }}>
-        <div style={{ font: '700 20px/1 var(--f-display)', color: '#fff' }}>Attendance</div>
+        <div style={{ font: '700 20px/1 var(--f-display)', color: 'var(--text)' }}>Attendance</div>
       </div>
 
       {/* today */}
@@ -72,7 +72,7 @@ export default function FieldAttendance() {
             <div style={{ width: 54, height: 54, borderRadius: '50%', background: meta.color, color: 'var(--accent-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 26px/1 var(--f-body)', margin: '0 auto 12px' }}>
               {todays.kind === 'present' ? '✓' : '↪'}
             </div>
-            <div style={{ font: '700 16px/1.3 var(--f-body)', color: '#fff' }}>
+            <div style={{ font: '700 16px/1.3 var(--f-body)', color: 'var(--text)' }}>
               {todays.kind === 'present' ? "You're marked present today" : `Leave ${todays.status}`}
             </div>
             <div style={{ font: '500 12.5px/1.5 var(--f-body)', color: 'var(--text-70)', marginTop: 6 }}>
@@ -105,7 +105,7 @@ export default function FieldAttendance() {
             return (
               <div key={dayKey(d)} className="surface" style={{ borderRadius: 11, padding: '9px 4px', textAlign: 'center', border: '1px solid var(--border-3)' }}>
                 <div style={{ font: '500 11px/1.3 var(--f-body)', color: 'var(--text-50)' }}>{d.toLocaleDateString('en-GB', { weekday: 'narrow' })}</div>
-                <div style={{ font: '700 13px/1.3 var(--f-display)', color: '#fff', marginTop: 2 }}>{d.getDate()}</div>
+                <div style={{ font: '700 13px/1.3 var(--f-display)', color: 'var(--text)', marginTop: 2 }}>{d.getDate()}</div>
                 <div style={{ width: 9, height: 9, borderRadius: '50%', margin: '7px auto 0', background: m ? m.color : 'transparent', border: m ? 'none' : '1px solid var(--border)' }} />
               </div>
             )
@@ -133,7 +133,7 @@ function LeaveModal({ open, onClose, onSubmit }) {
   return (
     <Modal open onClose={onClose} width={400}>
       <div style={{ padding: 22 }}>
-        <div style={{ font: '700 16px/1 var(--f-body)', color: '#fff' }}>Request leave for today</div>
+        <div style={{ font: '700 16px/1 var(--f-body)', color: 'var(--text)' }}>Request leave for today</div>
         <div style={{ font: '500 12.5px/1.5 var(--f-body)', color: 'var(--text-70)', marginTop: 8 }}>
           This goes to the owner or admin to approve. It only counts as leave once they do.
         </div>

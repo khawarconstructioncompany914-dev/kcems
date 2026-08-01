@@ -35,15 +35,15 @@ export default function Dashboard() {
         <Kpi label="Total budget" value={formatCompact(totals.budget)} sub={`${sites.length} sites`} accent />
         <Kpi label="Spent to date" value={formatCompact(totals.spent)} sub={`${Math.round((totals.spent / totals.budget) * 100)}% of budget`} />
         <Kpi label="Cash in field" value={formatCompact(cashDeployed)} sub={`${supervisors.length} site engineers`} />
-        <Kpi label="Awaiting approval" value={pending} sub={`${inReview} in head engineer review`} color={pending ? 'var(--warn)' : '#fff'} />
-        <Kpi label="Owed back" value={formatMoney(owedAll)} sub="rejected · unsettled" color={owedAll ? 'var(--danger)' : '#fff'} />
+        <Kpi label="Awaiting approval" value={pending} sub={`${inReview} in head engineer review`} color={pending ? 'var(--warn)' : 'var(--text)'} />
+        <Kpi label="Owed back" value={formatMoney(owedAll)} sub="rejected · unsettled" color={owedAll ? 'var(--danger)' : 'var(--text)'} />
       </div>
 
       <div className="r-grid" style={{ '--r-cols': '1.55fr 1fr', alignItems: 'start' }}>
         {/* sites */}
         <Card pad={22}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-            <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff' }}>Sites</div>
+            <div style={{ font: '700 15px/1 var(--f-body)', color: 'var(--text)' }}>Sites</div>
             <Link to="/sites" className="tap" style={{ marginLeft: 'auto', font: '600 12px/1 var(--f-body)' }}>All sites →</Link>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -54,7 +54,7 @@ export default function Dashboard() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                     <span className="mono-badge" style={{ width: 40, height: 40, borderRadius: 11, background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-line)', fontSize: 13 }}>{s.label.replace(/[^A-Z0-9]/gi, '').slice(0, 2).toUpperCase()}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ font: '700 14px/1 var(--f-body)', color: '#fff' }}>{s.name}</div>
+                      <div style={{ font: '700 14px/1 var(--f-body)', color: 'var(--text)' }}>{s.name}</div>
                       <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 5 }}>{s.city} · {s.phase}</div>
                     </div>
                     <span className={`pill ${SITE_STATUS[s.status].pill}`} style={{ height: 22, fontSize: 10 }}><span className="dot" />{SITE_STATUS[s.status].label}</span>
@@ -71,16 +71,16 @@ export default function Dashboard() {
 
         {/* recent activity */}
         <Card pad={22}>
-          <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff', marginBottom: 16 }}>Recent activity</div>
+          <div style={{ font: '700 15px/1 var(--f-body)', color: 'var(--text)', marginBottom: 16 }}>Recent activity</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {recent.map((e) => (
               <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderTop: '1px solid var(--border-3)' }}>
                 <Monogram name={e.supervisor?.name} color={STATUS[e.status].color} soft="var(--surface)" size={32} radius={9} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ font: '600 12px/1.2 var(--f-body)', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.note}</div>
+                  <div style={{ font: '600 12px/1.2 var(--f-body)', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.note}</div>
                   <div style={{ font: '500 10px/1 var(--f-mono)', color: STATUS[e.status].color, marginTop: 4 }}>{STATUS[e.status].short} · {e.site?.label} · {relDay(e.decidedAt || e.createdAt)}</div>
                 </div>
-                <div className="num" style={{ font: '700 13px/1 var(--f-display)', color: '#fff' }}>{formatMoney(e.amount).replace('Rs ', '')}</div>
+                <div className="num" style={{ font: '700 13px/1 var(--f-display)', color: 'var(--text)' }}>{formatMoney(e.amount).replace('Rs ', '')}</div>
               </div>
             ))}
           </div>

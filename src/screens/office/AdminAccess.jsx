@@ -36,7 +36,7 @@ export default function AdminAccess() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
         {[['users', `Users · ${users.length}`], ['sites', `Sites · ${state.sites.length}`], ['access', 'Wiring & permissions']].map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} className="btn btn-sm"
-            style={{ background: tab === k ? 'var(--accent)' : 'var(--input)', color: tab === k ? 'var(--accent-ink)' : 'var(--text-70)', border: `1px solid ${tab === k ? 'transparent' : 'var(--border)'}` }}>{label}</button>
+            style={{ background: tab === k ? 'var(--accent-fill)' : 'var(--input)', color: tab === k ? 'var(--accent-ink)' : 'var(--text-70)', border: `1px solid ${tab === k ? 'transparent' : 'var(--border)'}` }}>{label}</button>
         ))}
       </div>
 
@@ -61,7 +61,7 @@ export default function AdminAccess() {
                 <div style={{ flex: 2.2, display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                   <Monogram name={u.name} color={ROLES[u.role].color} soft={ROLES[u.role].soft} size={36} />
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ font: '700 14px/1.3 var(--f-body)', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.name}</div>
+                    <div style={{ font: '700 14px/1.3 var(--f-body)', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.name}</div>
                   {/* This line is the person's sign-in name. It used to read
                       "@meesamali" in a monospace face at 4.06:1 — developer
                       shorthand, in the least legible font at the smallest size,
@@ -97,7 +97,7 @@ export default function AdminAccess() {
         <Card pad={0}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 22px', borderBottom: '1px solid var(--border-3)', flexWrap: 'wrap' }}>
             <div>
-              <div style={{ font: '700 14px/1 var(--f-body)', color: '#fff' }}>Construction sites</div>
+              <div style={{ font: '700 14px/1 var(--f-body)', color: 'var(--text)' }}>Construction sites</div>
               <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginTop: 5 }}>Add your real sites here, then assign each site engineer to one from the Users tab.</div>
             </div>
             <div className="spacer" />
@@ -116,7 +116,7 @@ export default function AdminAccess() {
                   {String(s.label || s.name).replace(/[^A-Z0-9]/gi, '').slice(0, 2).toUpperCase()}
                 </span>
                 <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ font: '700 13px/1.2 var(--f-body)', color: '#fff' }}>{s.name}</div>
+                  <div style={{ font: '700 13px/1.2 var(--f-body)', color: 'var(--text)' }}>{s.name}</div>
                   <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-70)', marginTop: 4 }}>
                     {[s.city, s.phase].filter(Boolean).join(' · ') || '—'}
                   </div>
@@ -145,7 +145,7 @@ export default function AdminAccess() {
               removed — it documented the rules rather than doing anything, and
               the reporting tree now has the full width */}
           <Card pad={26}>
-            <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff' }}>Reporting tree</div>
+            <div style={{ font: '700 15px/1 var(--f-body)', color: 'var(--text)' }}>Reporting tree</div>
             <div style={{ font: '500 12.5px/1.5 var(--f-body)', color: 'var(--text-70)', marginTop: 6, maxWidth: 620 }}>
               Who reports to whom. A head engineer only sees expenses from the site engineers listed under them.
               Click any site engineer to move them to a different head engineer.
@@ -160,7 +160,7 @@ export default function AdminAccess() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                       <Monogram name={eng.name} color="var(--info)" soft="var(--info-soft)" size={36} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ font: '700 14px/1.3 var(--f-body)', color: '#fff' }}>{eng.name}</div>
+                        <div style={{ font: '700 14px/1.3 var(--f-body)', color: 'var(--text)' }}>{eng.name}</div>
                         <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-70)' }}>Head Engineer</div>
                       </div>
                       <span className="pill" style={{ height: 24, fontSize: 11, background: sups.length ? 'var(--info-soft)' : 'var(--input)', color: sups.length ? 'var(--info)' : 'var(--text-50)', border: 'none', flex: 'none' }}>
@@ -184,7 +184,7 @@ export default function AdminAccess() {
                                 <span style={{ flex: 1, minWidth: 0 }}>
                                   {/* full name, not just the first — eight people on
                                       this roster are called Muhammad-something */}
-                                  <span style={{ display: 'block', font: '600 12.5px/1.35 var(--f-body)', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+                                  <span style={{ display: 'block', font: '600 12.5px/1.35 var(--f-body)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
                                   <span style={{ display: 'block', font: '500 11.5px/1.35 var(--f-body)', color: site ? 'var(--text-70)' : 'var(--warn)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {site ? (site.label || site.name) : 'No site assigned'}
                                   </span>
@@ -221,13 +221,13 @@ function ReassignModal({ moving, onClose, onPick }) {
     <Modal open={!!moving} onClose={onClose} width={380}>
       {moving && (
         <div style={{ padding: 22 }}>
-          <div style={{ font: '700 16px/1 var(--f-body)', color: '#fff' }}>Re-assign {moving.name}</div>
+          <div style={{ font: '700 16px/1 var(--f-body)', color: 'var(--text)' }}>Re-assign {moving.name}</div>
           <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--text-42)', marginTop: 8 }}>Move this site engineer to a different head engineer's tree. Their cash and history stay with them.</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
             {engineers.map((e) => (
               <button key={e.id} onClick={() => onPick(e.id)} disabled={e.id === moving.engineerId} className="surface" style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 12, borderRadius: 11, cursor: e.id === moving.engineerId ? 'default' : 'pointer', opacity: e.id === moving.engineerId ? 0.5 : 1, textAlign: 'left' }}>
                 <Monogram name={e.name} color="var(--info)" soft="var(--info-soft)" size={32} />
-                <div style={{ font: '600 13px/1 var(--f-body)', color: '#fff', flex: 1 }}>{e.name}</div>
+                <div style={{ font: '600 13px/1 var(--f-body)', color: 'var(--text)', flex: 1 }}>{e.name}</div>
                 {e.id === moving.engineerId && <span style={{ font: '600 10px/1 var(--f-mono)', color: 'var(--text-40)' }}>CURRENT</span>}
               </button>
             ))}
@@ -289,7 +289,7 @@ function SiteModal({ site, onClose }) {
     <Modal open={!!site} onClose={onClose} width={440}>
       {site && (
         <div style={{ padding: 26 }}>
-          <div style={{ font: '700 16px/1 var(--f-body)', color: '#fff', marginBottom: 18 }}>{isNew ? 'Add a site' : 'Edit site'}</div>
+          <div style={{ font: '700 16px/1 var(--f-body)', color: 'var(--text)', marginBottom: 18 }}>{isNew ? 'Add a site' : 'Edit site'}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div><label className="field-label">Site name</label><input className="field" placeholder="e.g. DHA Phase 6" value={name} onChange={(e) => setName(e.target.value)} autoFocus /></div>
             <div style={{ display: 'flex', gap: 10 }}>
@@ -349,7 +349,7 @@ function SiteModal({ site, onClose }) {
                       return (
                         <label key={s.id} className="tap" style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px', borderRadius: 8, cursor: 'pointer', background: on ? 'var(--accent-soft)' : 'transparent' }}>
                           <input type="checkbox" checked={on} onChange={() => toggleSup(s.id)} style={{ width: 15, height: 15, accentColor: 'var(--accent)', flex: 'none' }} />
-                          <span style={{ flex: 1, minWidth: 0, font: '600 12px/1.2 var(--f-body)', color: on ? '#fff' : 'var(--text-70)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+                          <span style={{ flex: 1, minWidth: 0, font: '600 12px/1.2 var(--f-body)', color: on ? 'var(--text)' : 'var(--text-70)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
                           <span style={{ flex: 'none', font: '500 10px/1 var(--f-mono)', color: elsewhere ? 'var(--warn)' : 'var(--text-40)' }}>
                             {elsewhere ? `on ${their?.label || their?.name}` : s.siteId ? 'here' : 'unassigned'}
                           </span>
@@ -405,7 +405,7 @@ function CreateUserModal({ open, onClose }) {
       <div style={{ padding: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
           <span className="mono-badge" style={{ width: 26, height: 26, borderRadius: 8, background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: 15 }}>+</span>
-          <div style={{ font: '700 16px/1 var(--f-body)', color: '#fff' }}>Create a login</div>
+          <div style={{ font: '700 16px/1 var(--f-body)', color: 'var(--text)' }}>Create a login</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div><label className="field-label">Full name</label><input className="field" placeholder="e.g. Bilal Nawaz" value={name} onChange={(e) => { setName(e.target.value); setErr('') }} /></div>
@@ -417,7 +417,7 @@ function CreateUserModal({ open, onClose }) {
             <label className="field-label">Role</label>
             <div style={{ display: 'flex', gap: 8 }}>
               {CREATE_ROLES.map((r) => (
-                <button key={r} type="button" onClick={() => setRole(r)} className="btn btn-sm" style={{ flex: 1, textTransform: 'capitalize', fontSize: 12, background: role === r ? 'var(--accent)' : 'var(--input)', color: role === r ? 'var(--accent-ink)' : 'var(--text-70)', border: `1px solid ${role === r ? 'transparent' : 'var(--border)'}` }}>{r}</button>
+                <button key={r} type="button" onClick={() => setRole(r)} className="btn btn-sm" style={{ flex: 1, textTransform: 'capitalize', fontSize: 12, background: role === r ? 'var(--accent-fill)' : 'var(--input)', color: role === r ? 'var(--accent-ink)' : 'var(--text-70)', border: `1px solid ${role === r ? 'transparent' : 'var(--border)'}` }}>{r}</button>
               ))}
             </div>
           </div>
@@ -507,7 +507,7 @@ function EditUserModal({ user, onClose }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
             <Monogram name={user.name} color={ROLES[user.role].color} soft={ROLES[user.role].soft} size={40} />
             <div>
-              <div style={{ font: '700 16px/1 var(--f-body)', color: '#fff' }}>{user.name}</div>
+              <div style={{ font: '700 16px/1 var(--f-body)', color: 'var(--text)' }}>{user.name}</div>
               <div style={{ font: '500 12.5px/1.45 var(--f-body)', color: 'var(--text-70)', marginTop: 4 }}>
                 <span style={{ color: 'var(--text-40)' }}>Login · </span>{user.username} · {ROLES[user.role].label}
               </div>

@@ -116,10 +116,10 @@ export function PhotoGrid({ photos = [], onRemove, onOpen, minPx = 72, children 
             </button>
             {onRemove && (
               <button type="button" onClick={() => onRemove(i)} aria-label="Remove photo"
-                style={{ position: 'absolute', top: 3, right: 3, width: 22, height: 22, borderRadius: '50%', background: 'rgba(5,6,5,.82)', border: 'none', color: '#fff', font: '700 13px/1 var(--f-body)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                style={{ position: 'absolute', top: 3, right: 3, width: 22, height: 22, borderRadius: '50%', background: 'var(--scrim)', border: 'none', color: 'var(--text)', font: '700 13px/1 var(--f-body)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
             )}
             {photos.length > 1 && (
-              <span style={{ position: 'absolute', left: 4, bottom: 4, padding: '1px 5px', borderRadius: 5, background: 'rgba(5,6,5,.72)', font: '600 9px/1.5 var(--f-mono)', color: '#fff' }}>{i + 1}</span>
+              <span style={{ position: 'absolute', left: 4, bottom: 4, padding: '1px 5px', borderRadius: 5, background: 'var(--scrim)', font: '600 9px/1.5 var(--f-mono)', color: 'var(--text)' }}>{i + 1}</span>
             )}
           </div>
         )
@@ -157,7 +157,7 @@ export function PhotoViewer({ photos = [], index = 0, open, onClose, onIndex }) 
           {many && <button className="btn btn-ghost btn-sm" onClick={() => go(1)} aria-label="Next photo">›</button>}
         </div>
 
-        <div style={{ marginTop: 12, borderRadius: 14, overflow: 'hidden', border: '1px solid var(--border)', background: '#0d0f0c', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+        <div style={{ marginTop: 12, borderRadius: 14, overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-panel)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
           {url
             ? <img src={url} alt="" style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain', display: 'block' }} />
             : <span style={{ padding: 40, font: '600 12px/1 var(--f-mono)', color: 'var(--text-40)' }}>LOADING…</span>}

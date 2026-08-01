@@ -37,7 +37,7 @@ export default function Approvals() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {[['queue', `Finance review · ${queue.length}`], ['owed', `Owed back · ${owed.length}`]].map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} className="btn btn-sm"
-            style={{ background: tab === k ? 'var(--accent)' : 'var(--input)', color: tab === k ? 'var(--accent-ink)' : 'var(--text-70)', border: `1px solid ${tab === k ? 'transparent' : 'var(--border)'}` }}>{label}</button>
+            style={{ background: tab === k ? 'var(--accent-fill)' : 'var(--input)', color: tab === k ? 'var(--accent-ink)' : 'var(--text-70)', border: `1px solid ${tab === k ? 'transparent' : 'var(--border)'}` }}>{label}</button>
         ))}
       </div>
 
@@ -58,7 +58,7 @@ export default function Approvals() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13 }}>
                   <Monogram name={e.supervisor?.name} color="var(--danger)" soft="var(--danger-soft)" size={40} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ font: '700 14px/1.2 var(--f-body)', color: '#fff' }}>{e.note}</div>
+                    <div style={{ font: '700 14px/1.2 var(--f-body)', color: 'var(--text)' }}>{e.note}</div>
                     <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 6 }}>{e.supervisor?.name} · {e.site?.label} · {fmtDate(e.createdAt)}</div>
                   </div>
                   <div className="num" style={{ font: '700 17px/1 var(--f-display)', color: 'var(--danger)' }}>{formatMoney(e.amount)}</div>

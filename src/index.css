@@ -2,14 +2,41 @@
    KCEMS · Design tokens (Build Spec §5)
    Dark bento UI. Acid green is reserved for money-positive
    states + primary actions only — never a generic accent.
+
+   THEMES
+   :root is the dark theme and the default. Light mode is a
+   pure override block further down — it only redefines values,
+   never adds rules. If JS never runs, if localStorage is
+   blocked, if the toggle breaks: you get this, unchanged.
+
+   Two accent tokens, because acid green cannot do both jobs
+   on a white page:
+     --accent       ink. Green TEXT, borders, KPI figures.
+                    #5CE838 is 1.6:1 on white — invisible — so
+                    it darkens to #276B17 (6.6:1) in light.
+     --accent-fill  surface. Filled buttons, the active nav
+                    item, the FAB. Stays acid green in BOTH
+                    modes: --accent-ink on top of it is 12.3:1
+                    either way, so the loudest part of the
+                    brand never changes.
+   --accent is the one that flips, deliberately: a usage that
+   should have been --accent-fill and wasn't still renders
+   readable, whereas the reverse would be white-on-white.
    ============================================================ */
 :root {
   /* color */
-  --accent:        #5CE838;
-  --accent-hover:  #7BF255;
-  --accent-ink:    #0a0b0a;   /* text on accent */
+  --accent:            #5CE838;
+  --accent-hover:      #7BF255;
+  --accent-fill:       #5CE838;   /* filled surfaces — same in both themes */
+  --accent-fill-hover: #7BF255;
+  --accent-ink:        #0a0b0a;   /* text on --accent-fill */
+  /* Secondary ink and wash ON the acid-green fill. Not overridden in light:
+     the fill they sit on never changes, so neither may they. */
+  --on-accent-dim:  #1C5A10;
+  --on-accent-wash: rgba(11,12,11,.14);
   --accent-soft:   rgba(92, 232, 56, .14);
   --accent-line:   rgba(92, 232, 56, .30);
+  --accent-glow:   rgba(92, 232, 56, .45);   /* FAB / login button bloom */
 
   --bg-root:   #070807;
   --bg-panel:  #0a0b0a;
@@ -19,15 +46,33 @@
   --border:    #23261F;
   --border-2:  #1C1C1C;   /* panel outline */
   --border-3:  #1F221E;   /* hairline inside cards */
+  --border-hover: #34382e;
 
   --warn:   #E0B84A;   /* pending / in-review */
   --warn-soft: rgba(224, 184, 74, .16);
   --danger: #F2704F;   /* owed / rejected */
   --danger-soft: rgba(242, 112, 79, .12);
+  --danger-line: rgba(242, 112, 79, .4);
+  --warn-line:   rgba(224, 184, 74, .28);
+  --info-line:   rgba(120, 170, 255, .25);
+  --hero-veil:   rgba(9,10,9,.55);   /* vignette over the login hero */
   --info:   #8FB6FF;   /* engineer */
   --info-soft: rgba(120, 170, 255, .16);
   --violet: #B49BFF;   /* admin */
   --violet-soft: rgba(180, 155, 255, .16);
+
+  /* chrome — surfaces that used to be hardcoded in the rules below */
+  --hover-bg:     rgba(255,255,255,.04);
+  --scroll-thumb: #2a2d26;
+  --tabbar-bg:    #0E100E;
+  --tabbar-line:  #1C1E1B;
+  --scrim:        rgba(3,4,3,.62);
+  --toast-bg:     #0f110e;
+  --shadow-strong: #000;
+  --hero-bg:      #090a09;
+  --hero-grad:    #0c0e0c;
+  --selection:    rgba(92,232,56,.28);
+  --selection-ink: #fff;
 
   /* Text tokens are white at an alpha, so their contrast depends on the
      lightest surface they sit on — #111311 (--surface / --input). Measured
@@ -69,6 +114,70 @@
   color-scheme: dark;
 }
 
+/* ============================================================
+   Light theme — override only. Set by data-theme on <html>.
+   Every value here was measured against both light surfaces
+   (#FFFFFF cards and the #F4F4F1 page); the lowest ratio in
+   the whole block is 4.6:1, above the 4.5 floor.
+   ============================================================ */
+:root[data-theme="light"] {
+  --accent:        #276B17;   /* 6.6:1 on white — the acid green is 1.6:1 */
+  --accent-hover:  #1C5312;
+  /* --accent-fill / --accent-fill-hover / --accent-ink are NOT overridden:
+     filled buttons stay acid green in both themes, on purpose. */
+  --accent-soft:   rgba(39, 107, 23, .10);
+  --accent-line:   rgba(39, 107, 23, .30);
+  --accent-glow:   rgba(39, 107, 23, .22);
+
+  --bg-root:   #F4F4F1;
+  --bg-panel:  #FFFFFF;
+  --surface:   #FFFFFF;
+  --input:     #FFFFFF;
+
+  --border:    #DEDFD7;
+  --border-2:  #E6E7E0;
+  --border-3:  #EAEBE4;
+  --border-hover: #BFC1B6;
+
+  --warn:   #8A5D0B;                      /* 5.8:1 — #E0B84A is 1.9:1 */
+  --warn-soft: rgba(138, 93, 11, .12);
+  --danger: #B23C18;                      /* 5.9:1 */
+  --danger-soft: rgba(178, 60, 24, .10);
+  --danger-line: rgba(178, 60, 24, .35);
+  --warn-line:   rgba(138, 93, 11, .30);
+  --info-line:   rgba(31, 95, 191, .28);
+  --hero-veil:   rgba(247,247,244,.62);
+  --info:   #1F5FBF;                      /* 6.1:1 */
+  --info-soft: rgba(31, 95, 191, .11);
+  --violet: #5B3FD1;                      /* 6.8:1 */
+  --violet-soft: rgba(91, 63, 209, .11);
+
+  /* Ink at an alpha, mirroring how the dark ramp works. Higher alphas
+     than dark mode for the same contrast — dark text on light needs more
+     of itself than light text on dark does. */
+  --text:      #14160F;
+  --text-70:   rgba(20,22,15,.78);   /* 9.1:1  bright */
+  --text-50:   rgba(20,22,15,.70);   /* 6.8:1  mid    */
+  --text-42:   rgba(20,22,15,.60);   /* 4.8:1  dim    */
+  --text-40:   rgba(20,22,15,.60);
+  --text-32:   rgba(20,22,15,.60);
+  --text-25:   rgba(20,22,15,.32);   /* decorative separators only */
+
+  --hover-bg:     rgba(20,22,15,.05);
+  --scroll-thumb: #C9CBC1;
+  --tabbar-bg:    #FFFFFF;
+  --tabbar-line:  #E3E4DC;
+  --scrim:        rgba(20,22,15,.38);
+  --toast-bg:     #FFFFFF;
+  --shadow-strong: rgba(20,22,15,.28);
+  --hero-bg:      #EDEEE8;
+  --hero-grad:    #F7F7F4;
+  --selection:    rgba(39,107,23,.20);
+  --selection-ink: #14160F;
+
+  color-scheme: light;
+}
+
 * { box-sizing: border-box; }
 
 html, body, #root { height: 100%; }
@@ -87,12 +196,12 @@ a:hover { color: var(--accent-hover); }
 
 button { font-family: inherit; }
 
-::selection { background: rgba(92,232,56,.28); color: #fff; }
+::selection { background: var(--selection); color: var(--selection-ink); }
 
 /* thin scrollbars in dark surfaces */
-* { scrollbar-width: thin; scrollbar-color: #2a2d26 transparent; }
+* { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
 *::-webkit-scrollbar { width: 9px; height: 9px; }
-*::-webkit-scrollbar-thumb { background: #2a2d26; border-radius: 8px; }
+*::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 8px; }
 *::-webkit-scrollbar-track { background: transparent; }
 
 /* ---------- reusable atoms ---------- */
@@ -119,7 +228,7 @@ button { font-family: inherit; }
   transition: border-color .15s, box-shadow .15s;
 }
 .field::placeholder { color: var(--text-40); }
-.field:focus { border-color: var(--accent-line); box-shadow: 0 0 0 3px rgba(92,232,56,.10); }
+.field:focus { border-color: var(--accent-line); box-shadow: 0 0 0 3px var(--accent-soft); }
 textarea.field { height: auto; padding: 12px 15px; resize: vertical; line-height: 1.5; }
 select.field { appearance: none; cursor: pointer; }
 
@@ -149,12 +258,12 @@ select.field { appearance: none; cursor: pointer; }
 }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
-.btn-primary { background: var(--accent); color: var(--accent-ink); }
-.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn-primary { background: var(--accent-fill); color: var(--accent-ink); }
+.btn-primary:hover:not(:disabled) { background: var(--accent-fill-hover); }
 .btn-ghost { background: var(--input); border-color: var(--border); color: var(--text-70); }
-.btn-ghost:hover:not(:disabled) { border-color: #34382e; color: #fff; }
-.btn-danger { background: var(--danger-soft); border-color: rgba(242,112,79,.4); color: var(--danger); }
-.btn-danger:hover:not(:disabled) { background: rgba(242,112,79,.2); }
+.btn-ghost:hover:not(:disabled) { border-color: var(--border-hover); color: var(--text); }
+.btn-danger { background: var(--danger-soft); border-color: var(--danger-line); color: var(--danger); }
+.btn-danger:hover:not(:disabled) { background: var(--danger-line); color: var(--text); }
 .btn-sm { height: 38px; padding: 0 13px; font-size: 13px; }
 
 /* status pills */
@@ -234,8 +343,8 @@ select.field { appearance: none; cursor: pointer; }
   cursor: pointer; width: 100%; text-align: left;
   transition: background .12s, color .12s;
 }
-.app-nav-link:hover { color: #fff; background: rgba(255,255,255,.04); }
-.app-nav-link.on { color: var(--accent-ink); background: var(--accent); }
+.app-nav-link:hover { color: var(--text); background: var(--hover-bg); }
+.app-nav-link.on { color: var(--accent-ink); background: var(--accent-fill); }
 
 /* --- top bar: phones only --- */
 .app-topbar {
@@ -252,7 +361,7 @@ select.field { appearance: none; cursor: pointer; }
 .app-tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   display: flex; align-items: stretch; justify-content: space-around;
-  background: #0E100E; border-top: 1px solid #1C1E1B;
+  background: var(--tabbar-bg); border-top: 1px solid var(--tabbar-line);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 .app-tab {
@@ -270,10 +379,10 @@ select.field { appearance: none; cursor: pointer; }
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(28px + env(safe-area-inset-bottom, 0px)); z-index: 40;
   width: 58px; height: 58px; border-radius: 19px;
-  background: var(--accent); color: var(--accent-ink);
+  background: var(--accent-fill); color: var(--accent-ink);
   display: flex; align-items: center; justify-content: center;
   font: 300 34px/1 var(--f-body); border: none; cursor: pointer;
-  box-shadow: 0 14px 30px -8px rgba(92,232,56,.6);
+  box-shadow: 0 14px 30px -8px var(--accent-glow);
   transition: transform .1s;
 }
 .app-fab:active { transform: translateX(-50%) scale(.94); }
@@ -283,9 +392,9 @@ select.field { appearance: none; cursor: pointer; }
 .app-shell.no-nav .app-main { padding: 0; }
 
 /* --- "More" sheet --- */
-.app-sheet-scrim { position: fixed; inset: 0; z-index: 50; background: rgba(3,4,3,.62); backdrop-filter: blur(3px); display: flex; align-items: flex-end; animation: fadeIn .2s ease both; }
+.app-sheet-scrim { position: fixed; inset: 0; z-index: 50; background: var(--scrim); backdrop-filter: blur(3px); display: flex; align-items: flex-end; animation: fadeIn .2s ease both; }
 .app-sheet { width: 100%; background: var(--bg-panel); border-top: 1px solid var(--border-2); border-radius: 18px 18px 0 0; padding: 10px 16px calc(20px + env(safe-area-inset-bottom, 0px)); animation: fadeUp .25s cubic-bezier(.2,.7,.2,1) both; }
-.app-sheet-grab { width: 38px; height: 4px; border-radius: 3px; background: #2a2d26; margin: 4px auto 14px; }
+.app-sheet-grab { width: 38px; height: 4px; border-radius: 3px; background: var(--scroll-thumb); margin: 4px auto 14px; }
 
 /* ---------- responsive utilities (screens use these, not their own queries) ---------- */
 .r-grid { display: grid; gap: 14px; grid-template-columns: 1fr; }          /* 1 col on phones */
@@ -345,50 +454,50 @@ select.field { appearance: none; cursor: pointer; }
   background: var(--input); border: 1px solid var(--border); cursor: pointer;
   transition: all .12s; white-space: nowrap;
 }
-.chip.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 700; }
+.chip.on { background: var(--accent-fill); color: var(--accent-ink); border-color: transparent; font-weight: 700; }
 
 /* ---------- login (Khawar "routes" hero) ---------- */
 @keyframes arcDraw { to { stroke-dashoffset: 0; } }
 @keyframes arcBreathe { 0%,100% { opacity: .92; } 50% { opacity: .62; } }
 @keyframes arcSway { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(7px,-6px,0) scale(1.015); } }
-@keyframes arcShimmer { 0%,100% { filter: drop-shadow(0 0 6px rgba(92,232,56,.45)); } 50% { filter: drop-shadow(0 0 13px rgba(92,232,56,.9)); } }
+@keyframes arcShimmer { 0%,100% { filter: drop-shadow(0 0 6px var(--accent-glow)); } 50% { filter: drop-shadow(0 0 13px var(--accent-line)); } }
 @keyframes deckFlow { to { stroke-dashoffset: -240; } }
 
 .login-wrap { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: row-reverse; background: var(--bg-root); }
 .login-hero {
   flex: 1 1 auto; position: relative; overflow: hidden;
-  background: radial-gradient(110% 90% at 55% 40%, rgba(92,232,56,.08), transparent 65%), #090a09;
+  background: radial-gradient(110% 90% at 55% 40%, var(--accent-soft), transparent 65%), var(--hero-bg);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  border-left: 1px solid rgba(92,232,56,.10);
+  border-left: 1px solid var(--accent-line);
 }
 .login-form-panel {
   flex: 0 0 clamp(360px, 40vw, 520px);
-  background: linear-gradient(180deg, #0c0e0c 0%, #090a09 100%);
+  background: linear-gradient(180deg, var(--hero-grad) 0%, var(--bg-panel) 100%);
   position: relative; display: flex; flex-direction: column; justify-content: center;
   padding: clamp(30px, 4vw, 54px); overflow-y: auto;
 }
 .login-form-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent) 40%, var(--accent) 60%, transparent); opacity: .5; }
 .login-input {
-  width: 100%; box-sizing: border-box; background: #111311;
-  border: 1px solid rgba(92,232,56,.16); border-radius: 11px;
-  padding: 15px 16px; color: #fff; font: 400 14px/1 var(--f-mono); outline: none;
+  width: 100%; box-sizing: border-box; background: var(--input);
+  border: 1px solid var(--accent-line); border-radius: 11px;
+  padding: 15px 16px; color: var(--text); font: 400 14px/1 var(--f-mono); outline: none;
   transition: border-color .18s, box-shadow .18s;
 }
-.login-input::placeholder { color: rgba(255,255,255,.3); }
-.login-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(92,232,56,.16); }
+.login-input::placeholder { color: var(--text-40); }
+.login-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .login-btn {
-  width: 100%; border: none; background: var(--accent); color: var(--accent-ink);
+  width: 100%; border: none; background: var(--accent-fill); color: var(--accent-ink);
   font: 800 16px/1 var(--f-display); letter-spacing: .01em; padding: 16px; border-radius: 11px;
   cursor: pointer; transition: box-shadow .2s, transform .12s;
 }
-.login-btn:hover:not(:disabled) { box-shadow: 0 6px 30px rgba(92,232,56,.42); transform: translateY(-1px); }
+.login-btn:hover:not(:disabled) { box-shadow: 0 6px 30px var(--accent-glow); transform: translateY(-1px); }
 .login-btn:active:not(:disabled) { transform: translateY(0); }
 .login-btn:disabled { opacity: .6; cursor: not-allowed; }
-.login-label { font: 400 11px/1 var(--f-mono); letter-spacing: .2em; color: rgba(255,255,255,.55); display: block; margin-bottom: 9px; }
+.login-label { font: 400 11px/1 var(--f-mono); letter-spacing: .2em; color: var(--text-50); display: block; margin-bottom: 9px; }
 
 @media (max-width: 900px) {
   .login-wrap { flex-direction: column; }
-  .login-hero { flex: 0 0 40vh; min-height: 288px; border-left: none; border-bottom: 1px solid rgba(92,232,56,.10); }
+  .login-hero { flex: 0 0 40vh; min-height: 288px; border-left: none; border-bottom: 1px solid var(--accent-line); }
   .login-form-panel { flex: 1 1 auto; padding: 26px 22px 34px; }
 }
 
@@ -399,10 +508,10 @@ select.field { appearance: none; cursor: pointer; }
 }
 .toast {
   display: flex; align-items: center; gap: 10px;
-  background: #0f110e; border: 1px solid var(--border);
+  background: var(--toast-bg); border: 1px solid var(--border);
   border-radius: 12px; padding: 12px 16px;
-  font: 600 13px/1.3 var(--f-body); color: #fff;
-  box-shadow: 0 24px 60px -30px #000;
+  font: 600 13px/1.3 var(--f-body); color: var(--text);
+  box-shadow: 0 24px 60px -30px var(--shadow-strong);
   animation: fadeUp .3s ease both;
 }
 .toast .tdot { width: 9px; height: 9px; border-radius: 50%; flex: none; }

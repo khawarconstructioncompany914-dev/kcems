@@ -89,6 +89,34 @@ supabase/migrations/ 0001 schema+views · 0002 state machine · 0003 photos+clai
 scripts/             roster-sync.js, rotate-passwords.js
 ```
 
+## Light mode
+
+Dark is the product and the default; light is opt-in from the user card (or the
+**Me** screen on a phone, where a site engineer has no sidebar). It is deliberately
+not wired to `prefers-color-scheme` — "the phone is in light mode" is not the same
+statement as "I want this app light".
+
+The whole switch is `data-theme="light"` on `<html>`. `:root` in `src/index.css`
+is the dark theme, untouched; light is an override block that only redefines
+values. If JavaScript never runs or localStorage is blocked, you get dark.
+
+Two accent tokens, because acid green cannot do both jobs on a white page:
+
+| Token | Dark | Light | Used for |
+|---|---|---|---|
+| `--accent` | `#5CE838` | `#276B17` | green text, borders, KPI figures |
+| `--accent-fill` | `#5CE838` | `#5CE838` | filled buttons, active nav, the FAB |
+
+`#5CE838` is 1.6:1 on white — invisible — so the ink token darkens to 6.6:1.
+Filled surfaces never change: `--accent-ink` on acid green is 12.3:1 either way,
+so the loudest part of the brand is identical in both themes. `--accent` is the
+one that flips on purpose — a fill that should have used `--accent-fill` and
+didn't still renders readable, whereas the reverse would be white-on-white.
+
+Every value was measured against both light surfaces; the floor across the whole
+palette is 4.6:1. Colour literals do not appear in the JSX at all — a rendered
+contrast audit across all 14 routes in both themes reports zero failures.
+
 ## Design tokens (§5)
 
 Dark bento UI. **Acid green `#5CE62E` is reserved** for money-positive states and

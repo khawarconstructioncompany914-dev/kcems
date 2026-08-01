@@ -28,8 +28,8 @@ export default function People() {
       <div className="r-row" style={{ marginBottom: 24 }}>
         <Kpi label="Site Engineers" value={list.length} accent />
         <Kpi label="Cash in field" value={formatCompact(totalCash)} sub="sum of cash-in-hand" />
-        <Kpi label="Owed back" value={formatMoney(totalOwed)} color={totalOwed ? 'var(--danger)' : '#fff'} />
-        <Kpi label="Pending review" value={formatCompact(totalPending)} sub="submitted, not yet decided" color={totalPending ? 'var(--warn)' : '#fff'} />
+        <Kpi label="Owed back" value={formatMoney(totalOwed)} color={totalOwed ? 'var(--danger)' : 'var(--text)'} />
+        <Kpi label="Pending review" value={formatCompact(totalPending)} sub="submitted, not yet decided" color={totalPending ? 'var(--warn)' : 'var(--text)'} />
       </div>
 
       <div className="r-cards" style={{ '--r-min': '340px' }}>
@@ -45,7 +45,7 @@ export default function People() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <Monogram name={s.name} color="var(--accent)" soft="var(--accent-soft)" size={42} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff' }}>{s.name}</div>
+                  <div style={{ font: '700 15px/1 var(--f-body)', color: 'var(--text)' }}>{s.name}</div>
                   <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 5 }}>{site?.label} · {eng ? eng.name.split(' ')[0] : '—'}</div>
                 </div>
                 {owed > 0 && <span className="pill pill-rejected" style={{ height: 22, fontSize: 10 }}><span className="dot" />OWES</span>}

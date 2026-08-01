@@ -55,13 +55,13 @@ export default function Attendance() {
       <div className="r-row" style={{ marginBottom: 22 }}>
         <Kpi label="Present today" value={presentToday} sub={`of ${people.length} people`} accent />
         <Kpi label="On leave today" value={onLeaveToday} sub="approved leave" />
-        <Kpi label="Awaiting approval" value={pending.length} sub="leave requests" color={pending.length ? 'var(--warn)' : '#fff'} />
+        <Kpi label="Awaiting approval" value={pending.length} sub="leave requests" color={pending.length ? 'var(--warn)' : 'var(--text)'} />
       </div>
 
       {/* pending leave queue — owner/admin only */}
       {canReview && pending.length > 0 && (
         <Card pad={0} style={{ marginBottom: 20 }}>
-          <div style={{ padding: '16px 20px 12px', font: '700 14px/1 var(--f-body)', color: '#fff' }}>
+          <div style={{ padding: '16px 20px 12px', font: '700 14px/1 var(--f-body)', color: 'var(--text)' }}>
             Leave awaiting your approval · {pending.length}
           </div>
           {pending.map((row) => {
@@ -70,7 +70,7 @@ export default function Attendance() {
               <div key={row.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderTop: '1px solid var(--border-3)', flexWrap: 'wrap' }}>
                 <Monogram name={u?.name} color="var(--warn)" soft="var(--warn-soft)" size={34} />
                 <div style={{ flex: 1, minWidth: 180 }}>
-                  <div style={{ font: '700 13px/1.3 var(--f-body)', color: '#fff' }}>{u?.name}</div>
+                  <div style={{ font: '700 13px/1.3 var(--f-body)', color: 'var(--text)' }}>{u?.name}</div>
                   <div style={{ font: '500 12px/1.45 var(--f-body)', color: 'var(--text-70)' }}>
                     {ROLES[u?.role]?.label} · {fmtDate(row.date)}{row.note ? ` · ${row.note}` : ''}
                   </div>
@@ -87,7 +87,7 @@ export default function Attendance() {
       <Card pad={0}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px', borderBottom: '1px solid var(--border-3)', flexWrap: 'wrap' }}>
           <button className="btn btn-ghost btn-sm" onClick={() => setMonth((m) => shiftMonth(m, -1))} aria-label="Previous month">‹</button>
-          <div style={{ font: '700 14px/1 var(--f-body)', color: '#fff', minWidth: 150, textAlign: 'center' }}>{monthLabel(month)}</div>
+          <div style={{ font: '700 14px/1 var(--f-body)', color: 'var(--text)', minWidth: 150, textAlign: 'center' }}>{monthLabel(month)}</div>
           <button className="btn btn-ghost btn-sm" onClick={() => setMonth((m) => shiftMonth(m, 1))} aria-label="Next month">›</button>
           <div className="spacer" />
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -113,7 +113,7 @@ export default function Attendance() {
             {people.map((u) => (
               <div key={u.id} style={{ display: 'flex', alignItems: 'center', padding: '7px 20px', borderTop: '1px solid var(--border-3)' }}>
                 <div style={{ width: 170, flex: 'none', minWidth: 0, paddingRight: 8 }}>
-                  <div style={{ font: '600 12.5px/1.35 var(--f-body)', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</div>
+                  <div style={{ font: '600 12.5px/1.35 var(--f-body)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</div>
                   <div style={{ font: '500 11.5px/1.35 var(--f-body)', color: 'var(--text-70)' }}>{ROLES[u.role]?.label}</div>
                 </div>
                 {days.map((d) => {
@@ -157,7 +157,7 @@ function CellModal({ open, onClose, canSeeLocation }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
           <Monogram name={user.name} color={meta.color} soft={meta.soft} size={38} />
           <div>
-            <div style={{ font: '700 15px/1.3 var(--f-body)', color: '#fff' }}>{user.name}</div>
+            <div style={{ font: '700 15px/1.3 var(--f-body)', color: 'var(--text)' }}>{user.name}</div>
             <div style={{ font: '500 12.5px/1.4 var(--f-body)', color: 'var(--text-70)' }}>{ROLES[user.role]?.label}</div>
           </div>
         </div>

@@ -138,7 +138,7 @@ export default function Activity() {
             <div key={a.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '11px 0', borderTop: '1px solid var(--border-3)' }}>
               <Monogram name={a.actorName || actor?.name || '?'} color={role.color} soft={role.soft} size={30} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ font: '600 13px/1.45 var(--f-body)', color: '#fff' }}>
+                <div style={{ font: '600 13px/1.45 var(--f-body)', color: 'var(--text)' }}>
                   <b style={{ fontWeight: 700 }}>{a.actorName || actor?.name || 'Someone'}</b>
                   <span style={{ color: KIND_COLOR[kind] || 'var(--text-50)', fontWeight: 600 }}> {label}</span>
                   {info && <span style={{ color: 'var(--text-50)', fontWeight: 500 }}> — {info}</span>}

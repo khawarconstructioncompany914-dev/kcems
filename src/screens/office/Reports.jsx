@@ -142,7 +142,7 @@ export default function Reports() {
 
       <div className="r-grid print-hide" style={{ alignItems: 'start', maxWidth: 1160 }}>
         <Card pad={24}>
-          <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff', marginBottom: 16 }}>Filters</div>
+          <div style={{ font: '700 15px/1 var(--f-body)', color: 'var(--text)', marginBottom: 16 }}>Filters</div>
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{ flex: 1 }}><label className="field-label">From</label><input type="date" className="field" value={from} onChange={(e) => setFrom(e.target.value)} style={{ height: 42 }} /></div>
             <div style={{ flex: 1 }}><label className="field-label">To</label><input type="date" className="field" value={to} onChange={(e) => setTo(e.target.value)} style={{ height: 42 }} /></div>
@@ -185,7 +185,7 @@ export default function Reports() {
           <div style={{ maxHeight: 380, overflow: 'auto' }}>
             {rows.length === 0 && <div style={{ padding: '30px 0', textAlign: 'center', font: '500 12px/1 var(--f-body)', color: 'var(--text-40)' }}>No rows match these filters.</div>}
             {rows.map((e) => (
-              <div key={e.id} style={{ display: 'flex', font: '500 12px/1.3 var(--f-body)', color: '#fff', padding: '9px 0', borderTop: '1px solid var(--border-3)' }}>
+              <div key={e.id} style={{ display: 'flex', font: '500 12px/1.3 var(--f-body)', color: 'var(--text)', padding: '9px 0', borderTop: '1px solid var(--border-3)' }}>
                 <span style={{ flex: 2 }}>{fmtDate(e.createdAt)} · {e.note}</span>
                 <span style={{ flex: 1, color: 'var(--text-50)' }}>{e.site?.label}</span>
                 <span className="num" style={{ flex: 1, textAlign: 'right' }}>{formatMoney(e.amount).replace('Rs ', '')}</span>

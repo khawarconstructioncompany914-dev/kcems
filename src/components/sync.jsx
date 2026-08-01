@@ -19,9 +19,9 @@ const Bar = ({ tone, children }) => (
 )
 
 const TONES = {
-  warn: { fg: 'var(--warn)', bg: 'var(--warn-soft, rgba(240,180,41,.1))', border: 'rgba(240,180,41,.28)' },
-  danger: { fg: 'var(--danger)', bg: 'var(--danger-soft)', border: 'rgba(242,112,79,.28)' },
-  info: { fg: 'var(--info)', bg: 'var(--info-soft)', border: 'rgba(90,160,255,.26)' },
+  warn: { fg: 'var(--warn)', bg: 'var(--warn-soft)', border: 'var(--warn-line)' },
+  danger: { fg: 'var(--danger)', bg: 'var(--danger-soft)', border: 'var(--danger-line)' },
+  info: { fg: 'var(--info)', bg: 'var(--info-soft)', border: 'var(--info-line)' },
 }
 
 const Dot = ({ color }) => (

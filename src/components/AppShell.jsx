@@ -12,6 +12,7 @@ import { navFor, NAV_ICONS, MAX_TABS } from '../data/nav.js'
 import { Wordmark } from './Logo.jsx'
 import { Monogram } from './bits.jsx'
 import SyncStatus from './sync.jsx'
+import ThemeToggle from './ThemeToggle.jsx'
 
 function Icon({ d, size = 18 }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
@@ -50,7 +51,7 @@ export default function AppShell() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <Monogram name={me.name} color={roleMeta.color} soft={roleMeta.soft} size={34} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ font: '700 12px/1.1 var(--f-body)', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{me.name}</div>
+          <div style={{ font: '700 12px/1.1 var(--f-body)', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{me.name}</div>
           {/* Uppercase mono at 10px with line-height 1 and no tracking was hard
               to read. Colour was never the issue (11.6:1 against the surface) —
               it needed size, leading and letter-spacing, which is what small
@@ -68,6 +69,10 @@ export default function AppShell() {
             <option value="supervisor">Site Engineer view</option>
           </select>
         )}
+        {/* This card is the only place that renders in BOTH the desktop
+            sidebar and the phone's "More" sheet, so the toggle lands in both
+            without a second copy. */}
+        <ThemeToggle />
         <button className="btn btn-ghost" style={{ height: 38, flex: DEV ? 'none' : 1, padding: '0 12px', gap: 8 }} onClick={logout} title="Sign out">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" /></svg>
           {!DEV && 'Sign out'}
@@ -98,7 +103,19 @@ export default function AppShell() {
       <header className="app-topbar">
         <Wordmark mark={30} stacked={false} />
         <div className="spacer" />
-        <Monogram name={me.name} color={roleMeta.color} soft={roleMeta.soft} size={32} />
+        {/* The monogram was decoration. On a phone a site engineer has four
+            tabs and no "More" sheet, which left /me — sign out, change
+            password, and now the theme — with no way in at all. It is a
+            button now: their own surface for a site engineer, the sheet for
+            everyone else. */}
+        <button
+          type="button"
+          onClick={() => (isSupervisor ? nav('/me') : setMoreOpen(true))}
+          aria-label={isSupervisor ? 'Your account' : 'More'}
+          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}
+        >
+          <Monogram name={me.name} color={roleMeta.color} soft={roleMeta.soft} size={32} />
+        </button>
       </header>
 
       {/* ---------- content ---------- */}

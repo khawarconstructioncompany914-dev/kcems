@@ -46,7 +46,7 @@ export default function AddExpense() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', maxWidth: 620, margin: '0 auto', justifyContent: 'center', padding: '0 20px', textAlign: 'center' }}>
         <div style={{ width: 62, height: 62, borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 30px/1 var(--f-body)', margin: '0 auto 18px' }}>✓</div>
-        <div style={{ font: '700 19px/1.3 var(--f-body)', color: '#fff' }}>Sent for review</div>
+        <div style={{ font: '700 19px/1.3 var(--f-body)', color: 'var(--text)' }}>Sent for review</div>
         <div style={{ font: '500 13px/1.5 var(--f-body)', color: 'var(--text-50)', marginTop: 8 }}>
           {formatMoney(done.amount)} · {done.note}
         </div>
@@ -63,8 +63,8 @@ export default function AddExpense() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', maxWidth: 620, margin: '0 auto' }}>
       <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 20px 14px' }}>
-        <button onClick={() => nav('/home')} style={{ background: 'none', border: 'none', font: '400 24px/1 var(--f-body)', color: '#fff', cursor: 'pointer', padding: 0, minWidth: 44, minHeight: 44, textAlign: 'left' }}>‹</button>
-        <div style={{ font: '700 17px/1 var(--f-body)', color: '#fff' }}>Log an expense</div>
+        <button onClick={() => nav('/home')} style={{ background: 'none', border: 'none', font: '400 24px/1 var(--f-body)', color: 'var(--text)', cursor: 'pointer', padding: 0, minWidth: 44, minHeight: 44, textAlign: 'left' }}>‹</button>
+        <div style={{ font: '700 17px/1 var(--f-body)', color: 'var(--text)' }}>Log an expense</div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px' }}>
