@@ -187,6 +187,9 @@ export const mapSite = (s) => ({
 export const mapAttendance = (a) => ({
   id: a.id, userId: a.user_id, date: a.date, kind: a.kind, status: a.status,
   markedAt: a.marked_at, note: a.note,
+  // rows of one multi-day leave request share this, so the reviewer decides
+  // the request rather than each of its days
+  leaveGroup: a.leave_group,
   reviewedBy: a.reviewed_by, reviewedAt: a.reviewed_at,
 })
 // `photos` is populated by data.js from expense_photo / fund_txn_photo — it is

@@ -26,7 +26,7 @@ export default async function handler(req, res) {
   // Applied in order — 0003 depends on tables from 0001, and its
   // kcems_log_reimbursement depends on the enum/nullable column it creates
   // itself, which is why that function lives in 0003 and not 0002.
-  const FILES = ['0001_init.sql', '0002_functions.sql', '0003_photos_and_claims.sql', '0004_progress_role_attendance.sql', '0005_ratelimit_idempotency_audit.sql']
+  const FILES = ['0001_init.sql', '0002_functions.sql', '0003_photos_and_claims.sql', '0004_progress_role_attendance.sql', '0005_ratelimit_idempotency_audit.sql', '0006_attendance_leave_ranges.sql']
   let sources
   try {
     sources = FILES.map((f) => readFileSync(new URL(f, base), 'utf8'))

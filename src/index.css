@@ -557,5 +557,28 @@ select.field { appearance: none; cursor: pointer; }
   .print-table tfoot { display: table-footer-group; }
   .print-table tr { break-inside: avoid; page-break-inside: avoid; }
   .print-table tfoot td { border-top: 1.5px solid #000; border-bottom: none; font-weight: 700; padding-top: 8px; }
+
+  /* ---- attendance month chart ----
+     31 day columns plus a name column have to fit across A4 landscape:
+     269mm usable, 37mm for the name, leaving ~7.5mm per day. The times are
+     printed without a leading zero ("8:42") which is what buys that fit. */
+  .att-chart { table-layout: fixed; }
+  .att-chart th, .att-chart td {
+    padding: 2px 1px; text-align: center; font-size: 5.6pt; line-height: 1.25;
+    font-variant-numeric: tabular-nums; border-bottom: 0.5px solid #ccc;
+  }
+  .att-chart thead th { font-size: 6pt; border-bottom: 1pt solid #000; }
+  .att-chart .att-name {
+    width: 37mm; text-align: left; font-size: 7pt; padding-left: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .att-chart .att-role { display: block; font-size: 5.5pt; color: #555; }
+  /* Sundays are shaded rather than left blank, so an empty cell on a working
+     day still reads as an absence and not as "the office was shut". */
+  .att-chart .att-off { background: #ededed; color: #999; }
+
+  .att-legend { font-size: 7.5pt; color: #333; margin-top: 6px; line-height: 1.5; }
+  .att-h2 { font: 700 11pt/1.2 inherit; margin: 14px 0 6px; break-before: page; page-break-before: always; }
+
   .print-table .num-col { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 }

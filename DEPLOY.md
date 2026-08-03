@@ -41,10 +41,12 @@ Everything below uses **free** tiers: **GitHub** (code) + **Vercel** (app + API)
    - `supabase/migrations/0003_photos_and_claims.sql`
    - `supabase/migrations/0004_progress_role_attendance.sql`
    - `supabase/migrations/0005_ratelimit_idempotency_audit.sql`
+   - `supabase/migrations/0006_attendance_leave_ranges.sql`
    This creates the tables, the balance/site views, the approval functions, the
    multi-photo tables and reimbursement claims, site progress tracking,
-   attendance and leave, login rate limiting, the replay guard the offline queue
-   depends on, and the private **`bills`** storage bucket for receipt photos.
+   attendance and multi-day leave, login rate limiting, the replay guard the
+   offline queue depends on, and the private **`bills`** storage bucket for
+   receipt photos.
 3. **Project Settings → API** — copy the `Project URL`, the `anon` key, and the
    `service_role` key. (Keep `service_role` secret — it goes into Vercel, step 3.)
 4. **Project Settings → Database** — copy **both** connection strings. They are

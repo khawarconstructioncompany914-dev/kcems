@@ -7,6 +7,7 @@
 import { createContext, useContext, useReducer, useMemo, useEffect, useRef, useState, useCallback } from 'react'
 import { buildSeed } from './data/seed.js'
 import { resolveLogin } from './data/match.js'
+import { datesBetween, groupLeave } from './data/attendance.js'
 import {
   QUEUEABLE, isOnline, enqueue, listQueue, flushQueue, discardFailed,
   saveSnapshot, loadSnapshot, clearOffline, subscribe,
@@ -283,14 +284,40 @@ function reducer(state, action) {
       }
     }
 
-    // owner/admin decides a pending leave request
+    // anyone books their own leave over a range, in advance. One row per day —
+    // the same shape a present mark uses, so the grid needs no special case —
+    // tied together by a shared leaveGroup so it is reviewed as one request.
+    case 'REQUEST_LEAVE': {
+      const { userId, from, to, note } = action.payload || {}
+      const group = action.optimisticId || uid('lg')
+      const taken = new Set((state.attendance || []).filter((a) => a.userId === userId).map((a) => a.date))
+      const rows = datesBetween(from, to)
+        .filter((d) => !taken.has(d))
+        .map((date) => ({
+          id: uid('at'), userId, date, kind: 'leave', status: 'pending',
+          markedAt: now, note: note || null, lat: null, lng: null,
+          leaveGroup: group, reviewedBy: null, reviewedAt: null,
+        }))
+      if (!rows.length) return state
+      return {
+        ...state,
+        attendance: [...rows, ...(state.attendance || [])],
+        audit: log({ actorId: userId, action: 'attendance.leave_request', entity: 'Attendance', entityId: group, after: { from, to, days: rows.length } }),
+      }
+    }
+
+    // owner/admin decides a pending leave request — the whole request, not one
+    // of its days. Single-day rows carry their own id as the group (see 0006).
     case 'REVIEW_LEAVE':
       return {
         ...state,
-        attendance: (state.attendance || []).map((a) => (a.id === action.attendanceId && a.kind === 'leave' && a.status === 'pending'
-          ? { ...a, status: action.approve ? 'approved' : 'rejected', reviewedBy: action.actorId, reviewedAt: now }
-          : a)),
-        audit: log({ actorId: action.actorId, action: 'attendance.review', entity: 'Attendance', entityId: action.attendanceId, after: { status: action.approve ? 'approved' : 'rejected' } }),
+        attendance: (state.attendance || []).map((a) => {
+          const mine = action.leaveGroup ? (a.leaveGroup || a.id) === action.leaveGroup : a.id === action.attendanceId
+          return mine && a.kind === 'leave' && a.status === 'pending'
+            ? { ...a, status: action.approve ? 'approved' : 'rejected', reviewedBy: action.actorId, reviewedAt: now }
+            : a
+        }),
+        audit: log({ actorId: action.actorId, action: 'attendance.review', entity: 'Attendance', entityId: action.leaveGroup || action.attendanceId, after: { status: action.approve ? 'approved' : 'rejected' } }),
       }
 
     // re-wire a supervisor to a different engineer
@@ -362,7 +389,8 @@ function LocalStoreProvider({ children }) {
   const value = useMemo(() => ({
     state, dispatch, toast, toasts, login, logout, loading: false,
     online: true, stale: false, pending: NONE, failed: NONE,
-    syncNow: async () => {}, discardFailed: async () => {}, loadFullHistory: async () => {},
+    syncNow: async () => {}, discardFailed: async () => {},
+    loadFullHistory: async () => {}, loadAttendanceMonth: async () => {},
   }), [state, toasts, toast, login, logout])
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>
 }
@@ -401,9 +429,14 @@ function LiveStoreProvider({ children }) {
   // Single-flight: a burst of writes used to fire a burst of identical full
   // refetches. Concurrent callers now share one request.
   const hydrate = useCallback((opts = {}) => {
-    if (inflight.current && !opts.full) return inflight.current
+    // Only the plain refresh is shared. A `full` or `month` request is asking
+    // for something the in-flight one does not contain, so joining it would
+    // silently return the wrong data.
+    const targeted = opts.full || opts.month
+    if (inflight.current && !targeted) return inflight.current
     const run = (async () => {
-      const { status, body } = await API.get(opts.full ? '/api/data?full=1' : '/api/data')
+      const qs = opts.full ? '?full=1' : opts.month ? `?month=${encodeURIComponent(opts.month)}` : ''
+      const { status, body } = await API.get(`/api/data${qs}`)
       if (status === 200) {
         setServer(toState(body))
         setStale(false)
@@ -419,7 +452,7 @@ function LiveStoreProvider({ children }) {
       }
       setLoading(false)
     })()
-    inflight.current = run
+    if (!targeted) inflight.current = run
     run.finally(() => { if (inflight.current === run) inflight.current = null })
     return run
   }, [])
@@ -528,6 +561,7 @@ function LiveStoreProvider({ children }) {
     online, stale, pending, failed,
     syncNow: sync, discardFailed: async () => { await discardFailed(); await refreshQueue() },
     loadFullHistory: () => hydrate({ full: true }),
+    loadAttendanceMonth: (month) => hydrate({ month }),
   }), [state, toasts, toast, loading, dispatch, login, logout, online, stale, pending, failed, sync, refreshQueue, hydrate])
 
   if (loading) return <Splash />
@@ -646,7 +680,27 @@ export function makeSelectors(state) {
   const myAttendanceToday = () => (me ? attendanceOn(me.id, todayKey()) : null)
   // only leave needs deciding — a present mark is a statement, not a request
   const pendingLeave = () => attendance.filter((a) => a.kind === 'leave' && a.status === 'pending')
-  const pendingLeaveCount = () => pendingLeave().length
+  // ...but it is decided one REQUEST at a time, so the queue counts requests,
+  // not days. A five-day request is one thing to answer, not five.
+  const pendingLeaveRequests = () => groupLeave(pendingLeave())
+  const pendingLeaveCount = () => pendingLeaveRequests().length
+
+  // Who holds the company attendance record. Mirrors ATTENDANCE_ALL in
+  // api/data.js — the server is the one that enforces it; this decides which
+  // parts of the screen are worth rendering.
+  const canSeeAllAttendance = (user = me) => ['owner', 'admin', 'finance'].includes(user?.role)
+
+  // Every leave request this person has made, newest first.
+  const myLeaveRequests = (userId = me?.id) =>
+    groupLeave(attendance.filter((a) => a.userId === userId)).reverse()
+
+  // Days in the range this person already has a mark on. The server refuses the
+  // whole request if any day clashes and names them; checking here first means
+  // the person is told before they submit rather than after.
+  const leaveClash = (userId, from, to) => {
+    const taken = new Set(attendance.filter((a) => a.userId === userId).map((a) => a.date))
+    return datesBetween(from, to).filter((d) => taken.has(d))
+  }
 
   // ---------- site progress ----------
   // Expected progress assumes even, linear work between the two dates. That is
@@ -684,7 +738,9 @@ export function makeSelectors(state) {
     state, me, userById, siteById, supervisors, engineers,
     cashInHand, owedBack, pendingTotal, siteSpend, supsForEngineer, scopedExpenses, scopedSites, expenseView,
     authenticate, usernameTaken,
-    attendance, attendanceFor, attendanceOn, myAttendanceToday, pendingLeave, pendingLeaveCount,
+    attendance, attendanceFor, attendanceOn, myAttendanceToday,
+    pendingLeave, pendingLeaveRequests, pendingLeaveCount,
+    canSeeAllAttendance, myLeaveRequests, leaveClash,
     siteSchedule, progressHistory,
   }
 }

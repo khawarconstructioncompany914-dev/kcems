@@ -37,6 +37,7 @@ To deploy for real (GitHub + Vercel + Supabase, all free) see **[DEPLOY.md](DEPL
 | **3 · Admin access control** | `/admin`: reporting-tree wiring (re-assign supervisors), logins, password resets |
 | **4 · Site detail + reports** | `/sites/:id` detail with category bars · `/reports` builder exporting CSV, Excel (.xlsx) and PDF |
 | _audit_ | `/activity`: the append-only `audit_log`, owner/admin only |
+| _attendance_ | `/attendance`: everyone marks themselves and books leave; the office gets the company record, a day view with arrival times, and a monthly PDF |
 | _router targets_ | owner `Dashboard`, engineer `Review queue`, finance `Approvals`, `People` + ledgers |
 
 ## The approval state machine (§3)
@@ -86,6 +87,7 @@ api/                 Vercel serverless: login, logout, me, data, action,
                      bill/bills-signed, health, setup
 supabase/migrations/ 0001 schema+views · 0002 state machine · 0003 photos+claims
                      0004 progress+attendance · 0005 rate limit+replay guard
+                     0006 multi-day leave
 scripts/             roster-sync.js, rotate-passwords.js
 ```
 
@@ -157,6 +159,33 @@ Sites lose connection, and a supervisor holding a paper bill cannot wait for it.
 - Every queued write carries a `clientRef` the server claims before doing the
   work, so a reply lost on the way back cannot become a second expense for the
   same bill.
+
+## Attendance
+
+Everybody marks themselves — the same panel on the phone and on the desktop.
+One mark per person per day, enforced by `unique(user_id, date)`; a present mark
+records the moment it was tapped, plus coordinates where the device gives them.
+
+Leave is requested over a **date range, in advance** — a three-day request is
+one row per day sharing a `leave_group`, so the grid needs no special case and
+the reviewer answers one request rather than three. Days the person already has
+a mark on are named back to them before they can submit.
+
+Who sees what:
+
+| | Own record | Everyone's | Times + PDF | Decide leave | Coordinates |
+|---|:--:|:--:|:--:|:--:|:--:|
+| owner, admin | ✅ | ✅ | ✅ | ✅ | ✅ |
+| finance | ✅ | ✅ | ✅ | | |
+| head engineer, site engineer | ✅ | | | | |
+
+Enforced in `api/data.js`, not in the UI — a head engineer is sent their own
+rows and nothing else, rather than being shown a smaller version of everything.
+
+The monthly PDF is a chart of arrival times per person per day plus a
+present/leave/absent summary, through the browser's print pipeline. The grid
+pages back through months and asks the server for whichever month is on screen,
+because the default snapshot only carries a rolling 45 days.
 
 ## Operations
 

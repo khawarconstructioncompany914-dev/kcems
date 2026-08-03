@@ -198,9 +198,28 @@ export default async function handler(req, res) {
         return ok(res)
       }
 
+      // anyone books their own leave, over a range, in advance
+      case 'REQUEST_LEAVE': {
+        const p = b.payload || {}
+        const DATE = /^\d{4}-\d{2}-\d{2}$/
+        if (!DATE.test(String(p.from)) || !DATE.test(String(p.to))) return json(res, 400, { error: 'bad_dates' })
+        // Always the caller's own leave. A userId from the client is ignored
+        // outright rather than checked — there is no case for booking somebody
+        // else's day off, so there is no reason to accept the field at all.
+        const r = await q('select kcems_request_leave($1,$2::date,$3::date,$4) as id',
+          [me.id, p.from, p.to, p.note || null])
+        return json(res, 200, { ok: true, id: r.rows[0].id })
+      }
+
       case 'REVIEW_LEAVE': {
         if (!OWNER_ADMIN.has(me.role)) return deny(res)
-        await q('select kcems_review_leave($1,$2,$3)', [b.attendanceId, Boolean(b.approve), actor])
+        // A multi-day request is one decision. Older single-day rows were
+        // backfilled with a group of their own in 0006, so both go the same way.
+        if (b.leaveGroup) {
+          await q('select kcems_review_leave_group($1,$2,$3)', [b.leaveGroup, Boolean(b.approve), actor])
+        } else {
+          await q('select kcems_review_leave($1,$2,$3)', [b.attendanceId, Boolean(b.approve), actor])
+        }
         return ok(res)
       }
 

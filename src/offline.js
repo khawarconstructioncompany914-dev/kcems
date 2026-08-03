@@ -27,7 +27,7 @@ const QUEUE_STORE = 'queue'
 // in the office on a desktop, and deferring them would be worse than refusing:
 // approving an expense against a snapshot that is hours stale is a decision
 // made on information the approver did not know was old.
-export const QUEUEABLE = new Set(['LOG_EXPENSE', 'LOG_CLAIM', 'RESUBMIT', 'MARK_ATTENDANCE', 'LOG_PROGRESS'])
+export const QUEUEABLE = new Set(['LOG_EXPENSE', 'LOG_CLAIM', 'RESUBMIT', 'MARK_ATTENDANCE', 'REQUEST_LEAVE', 'LOG_PROGRESS'])
 
 // What each queued action is called when we tell the user it is waiting.
 export const ACTION_LABEL = {
@@ -35,6 +35,7 @@ export const ACTION_LABEL = {
   LOG_CLAIM: 'Claim',
   RESUBMIT: 'Re-submitted expense',
   MARK_ATTENDANCE: 'Attendance',
+  REQUEST_LEAVE: 'Leave request',
   LOG_PROGRESS: 'Site progress',
 }
 

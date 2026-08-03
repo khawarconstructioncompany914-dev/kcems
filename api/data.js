@@ -17,6 +17,12 @@ function groupPhotos(rows, key) {
 // people × 45 days is a couple of thousand small rows — no need to paginate.
 const ATTENDANCE_WINDOW_DAYS = 45
 
+// Who may see the whole company's attendance. Everyone else gets their own row
+// and nothing else — arrival times for all 32 staff are more personal than the
+// "who is on site" question the grid was originally for, and the office is the
+// only place that needs the record.
+const ATTENDANCE_ALL = new Set(['owner', 'admin', 'finance'])
+
 // Ledger rows older than this are left out of the default snapshot. Expenses
 // only ever accumulate, and this endpoint is re-fetched after every single
 // write, so "send the entire history each time" gets slower every week the
@@ -43,6 +49,12 @@ export default async function handler(req, res) {
   const full = String(req.query?.full || '') === '1'
   const canSeeAudit = me.role === 'owner' || me.role === 'admin'
 
+  // The grid pages back through months, but the default rolling window is 45
+  // days — so any month older than that used to render completely empty, and a
+  // monthly PDF of it would have come out blank. `?month=YYYY-MM` fetches that
+  // month in full instead.
+  const monthParam = /^\d{4}-(0[1-9]|1[0-2])$/.test(String(req.query?.month || '')) ? String(req.query.month) : null
+
   // `$1 = full` short-circuits the date test, so one query serves both modes
   // rather than string-building two variants of the same SQL.
   const [users, sites, expenses, funds, progress, attendance, balances, siteSpend, audit] = await Promise.all([
@@ -57,7 +69,14 @@ export default async function handler(req, res) {
         where $1::boolean or created_at >= now() - ($2::int || ' days')::interval`, [full, HISTORY_WINDOW_DAYS]),
     q(`select site_id, pct, note, logged_by, created_at
          from site_progress order by created_at desc`),
-    q('select * from attendance where date >= (current_date - $1::int)', [ATTENDANCE_WINDOW_DAYS]),
+    // A month request still includes the rolling window, so "today" on the
+    // field app keeps working while the office is looking at March.
+    monthParam
+      ? q(`select * from attendance
+            where date >= (current_date - $1::int)
+               or (date >= $2::date and date < ($2::date + interval '1 month'))`,
+        [ATTENDANCE_WINDOW_DAYS, `${monthParam}-01`])
+      : q('select * from attendance where date >= (current_date - $1::int)', [ATTENDANCE_WINDOW_DAYS]),
     // Money comes from the views, never from summing the rows above — those are
     // windowed, and a balance computed from a truncated history is simply wrong.
     q('select * from v_supervisor_balance'),
@@ -106,15 +125,18 @@ export default async function handler(req, res) {
   let exp = expenses.rows.map((e) => ({ ...mapExpense(e), photos: expensePhotos.get(e.id) || [] }))
   let fnd = funds.rows.map((f) => ({ ...mapFund(f), photos: fundPhotos.get(f.id) || [] }))
 
-  // Attendance is deliberately visible to everyone — that was the requirement.
-  // Coordinates are not: only owner/admin get lat/lng, so the grid can show who
-  // was present without publishing every colleague's whereabouts to all 32
-  // accounts. Stripped here rather than in the UI, so the data never leaves the
-  // server for people who should not have it.
+  // Two separate restrictions, both applied here rather than in the UI so the
+  // data never leaves the server for people who should not have it:
+  //
+  //   whose rows  — the office (owner/admin/finance) keeps the company record;
+  //                 everyone else gets their own attendance and nobody else's.
+  //   coordinates — owner/admin only, even within the office. Finance needs to
+  //                 know who worked, not where they were standing.
   const canSeeLocation = me.role === 'owner' || me.role === 'admin'
-  const att = attendance.rows.map((a) => (
-    canSeeLocation ? { ...mapAttendance(a), lat: a.lat, lng: a.lng } : mapAttendance(a)
-  ))
+  const canSeeEveryone = ATTENDANCE_ALL.has(me.role)
+  const att = attendance.rows
+    .filter((a) => canSeeEveryone || a.user_id === me.id)
+    .map((a) => (canSeeLocation ? { ...mapAttendance(a), lat: a.lat, lng: a.lng } : mapAttendance(a)))
 
   let bal = balances.rows
   if (me.role === 'engineer') {
@@ -145,6 +167,7 @@ export default async function handler(req, res) {
       before: a.before, after: a.after, createdAt: a.created_at,
     })),
     windowed: !full, windowDays: full ? null : HISTORY_WINDOW_DAYS,
+    attendanceMonth: monthParam, attendanceScope: canSeeEveryone ? 'all' : 'self',
     session: { userId: me.id },
   })
 }
