@@ -9,6 +9,7 @@
 import { useMemo, useState } from 'react'
 import { useStore, useSelectors } from '../../store.jsx'
 import { formatMoney, fmtDate, ROLES } from '../../data/model.js'
+import { formatTime12 } from '../../data/attendance.js'
 import { PageHeader, Card } from '../../components/page.jsx'
 import { Monogram, Empty } from '../../components/bits.jsx'
 
@@ -73,11 +74,7 @@ function detail(row) {
   return bits.join(' · ')
 }
 
-const when = (iso) => {
-  const d = new Date(iso)
-  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  return `${fmtDate(iso)} · ${time}`
-}
+const when = (iso) => `${fmtDate(iso)} · ${formatTime12(iso)}`
 
 export default function Activity() {
   const { state } = useStore()

@@ -563,9 +563,16 @@ select.field { appearance: none; cursor: pointer; }
      269mm usable, 37mm for the name, leaving ~7.5mm per day. The times are
      printed without a leading zero ("8:42") which is what buys that fit. */
   .att-chart { table-layout: fixed; }
+  /* The widest a cell gets is a six-character afternoon time — "12:05p".
+     At 5.3pt plus 1px of side padding that is ~6.7mm inside a ~7.5mm column,
+     which leaves enough room that a font with wider digits than Segoe UI does
+     not push the last column off the page. nowrap because table-layout is
+     fixed: without it a time that did not fit would silently wrap to two lines
+     rather than looking wrong. */
   .att-chart th, .att-chart td {
-    padding: 2px 1px; text-align: center; font-size: 5.6pt; line-height: 1.25;
-    font-variant-numeric: tabular-nums; border-bottom: 0.5px solid #ccc;
+    padding: 2px 1px; text-align: center; font-size: 5.3pt; line-height: 1.25;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+    border-bottom: 0.5px solid #ccc;
   }
   .att-chart thead th { font-size: 6pt; border-bottom: 1pt solid #000; }
   .att-chart .att-name {

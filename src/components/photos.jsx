@@ -15,6 +15,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { Modal } from './bits.jsx'
 import { LIVE } from '../store.jsx'
+import { formatTime12 } from '../data/attendance.js'
 
 // Downscale + JPEG-compress so a phone upload stays small. Returns a data URL.
 export async function compress(file, max = 1280, quality = 0.72) {
@@ -93,7 +94,8 @@ const stamp = (iso) => {
   if (!iso) return null
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return null
-  return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const date = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+  return `${date}, ${formatTime12(d)}`
 }
 
 // ---------- responsive thumbnail grid ----------

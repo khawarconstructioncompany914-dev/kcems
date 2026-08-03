@@ -58,13 +58,42 @@ export function datesBetween(from, to) {
   return out
 }
 
-// Arrival time as HH:MM in local time. Present marks carry the moment the
-// person tapped; leave rows carry the moment they asked, which is not an
-// arrival and is never shown as one.
+// ---------- the clock ----------
+//
+// One formatter for the whole app, because a 12-hour clock cannot be sorted.
+// "07:24" and "08:54" happen to compare correctly as strings; "7:24 AM" and
+// "12:30 PM" do not — plain text sort puts noon before seven in the morning.
+// So display and ordering are deliberately two different functions, and
+// anything that sorts must use arrivalMinutes, never the formatted string.
+//
+// `compact` is for the printed month chart: 31 day columns have to fit across
+// A4 landscape, and "8:54a" fits where "8:54 AM" does not.
+export function formatTime12(value, { compact = false } = {}) {
+  const d = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(d.getTime())) return null
+  const h24 = d.getHours()
+  const pm = h24 >= 12
+  const h = h24 % 12 || 12                 // 0 -> 12am, 13 -> 1pm
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return compact ? `${h}:${mm}${pm ? 'p' : 'a'}` : `${h}:${mm} ${pm ? 'PM' : 'AM'}`
+}
+
+// Arrival time in local time. Present marks carry the moment the person
+// tapped; leave rows carry the moment they asked, which is not an arrival and
+// is never shown as one.
 export const arrivalTime = (a) =>
-  a && a.kind === 'present' && a.markedAt
-    ? new Date(a.markedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-    : null
+  a && a.kind === 'present' && a.markedAt ? formatTime12(a.markedAt) : null
+
+export const arrivalTimeCompact = (a) =>
+  a && a.kind === 'present' && a.markedAt ? formatTime12(a.markedAt, { compact: true }) : null
+
+// Minutes since midnight — the sort key. Null when there is no arrival, so
+// callers can push those to the end rather than treating them as 00:00.
+export const arrivalMinutes = (a) => {
+  if (!a || a.kind !== 'present' || !a.markedAt) return null
+  const d = new Date(a.markedAt)
+  return Number.isNaN(d.getTime()) ? null : d.getHours() * 60 + d.getMinutes()
+}
 
 // A day is "expected" if it is a working day that has already happened.
 // Anything else cannot be an absence: you cannot fail to turn up tomorrow, and
@@ -113,18 +142,23 @@ export function summariseMonth(people, attendance, month) {
   const byKey = new Map(attendance.map((a) => [`${a.userId}|${a.date}`, a]))
   return people.map((u) => {
     let present = 0, leave = 0, pending = 0, rejected = 0, absent = 0
-    let firstMark = null
+    // Tracked in minutes, not in the formatted string. Comparing "12:05 PM"
+    // against "7:24 AM" as text would report noon as the earlier arrival.
+    let earliestMins = null, earliest = null
     for (const d of days) {
       const a = byKey.get(`${u.id}|${dayKey(d)}`)
       if (!a) { absent++; continue }
       if (a.kind === 'present') {
         present++
-        const t = arrivalTime(a)
-        if (t && (!firstMark || t < firstMark)) firstMark = t
+        const mins = arrivalMinutes(a)
+        if (mins != null && (earliestMins == null || mins < earliestMins)) {
+          earliestMins = mins
+          earliest = arrivalTime(a)
+        }
       } else if (a.status === 'approved') leave++
       else if (a.status === 'pending') pending++
       else { rejected++; absent++ }
     }
-    return { user: u, present, leave, pending, rejected, absent, expected: days.length, earliest: firstMark }
+    return { user: u, present, leave, pending, rejected, absent, expected: days.length, earliest }
   })
 }

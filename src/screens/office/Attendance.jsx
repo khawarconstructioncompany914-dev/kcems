@@ -20,7 +20,8 @@ import { Monogram, Modal, Empty } from '../../components/bits.jsx'
 import { SelfAttendance } from '../../components/attendance.jsx'
 import {
   MARK, markMeta, dayKey, monthKey, daysInMonth, isWeekend, isFuture,
-  monthLabel, shiftMonth, arrivalTime, rangeLabel, summariseMonth, isExpected,
+  monthLabel, shiftMonth, arrivalTime, arrivalTimeCompact, arrivalMinutes,
+  formatTime12, rangeLabel, summariseMonth, isExpected,
 } from '../../data/attendance.js'
 
 export default function Attendance() {
@@ -250,11 +251,13 @@ function MonthGrid({ days, people, byPersonDay, today, onOpen }) {
 function DayList({ people, byPersonDay, day, onOpen }) {
   const rows = people.map((u) => {
     const a = byPersonDay.get(`${u.id}|${day}`)
-    return { u, a, time: arrivalTime(a), meta: markMeta(a) }
+    return { u, a, time: arrivalTime(a), mins: arrivalMinutes(a), meta: markMeta(a) }
   })
   // Earliest arrivals first, then leave, then whoever has no mark at all.
+  // Ordered on minutes, never on the displayed text: "12:30 PM" sorts before
+  // "7:00 AM" as a string, which would put the latest arrival at the top.
   const rank = (r) => (r.time ? 0 : r.a ? 1 : 2)
-  rows.sort((x, y) => rank(x) - rank(y) || (x.time || '').localeCompare(y.time || '') || x.u.name.localeCompare(y.u.name))
+  rows.sort((x, y) => rank(x) - rank(y) || (x.mins ?? 0) - (y.mins ?? 0) || x.u.name.localeCompare(y.u.name))
 
   const marked = rows.filter((r) => r.a).length
   const d = new Date(`${day}T00:00:00`)
@@ -301,7 +304,6 @@ function DayList({ people, byPersonDay, day, onOpen }) {
 // Cells carry the arrival TIME rather than a tick: a record that says somebody
 // was present is worth much less than one that says they arrived at 07:40.
 function PrintSheet({ month, days, summary, byPersonDay, by }) {
-  const shortTime = (t) => (t ? t.replace(/^0/, '') : null)   // "08:42" -> "8:42", buys a column of width
   return (
     <div className="print-only print-sheet">
       <div className="print-head">
@@ -334,7 +336,9 @@ function PrintSheet({ month, days, summary, byPersonDay, by }) {
               </td>
               {days.map((d) => {
                 const a = byPersonDay.get(`${user.id}|${dayKey(d)}`)
-                const t = shortTime(arrivalTime(a))
+                // "8:54a" rather than "8:54 AM": 31 day columns only fit across
+                // A4 landscape at about 7.5mm each, and the full suffix does not.
+                const t = arrivalTimeCompact(a)
                 const off = isWeekend(d)
                 let content = ''
                 if (t) content = t
@@ -348,7 +352,8 @@ function PrintSheet({ month, days, summary, byPersonDay, by }) {
       </table>
 
       <div className="att-legend">
-        Times are when the person marked themselves present. <b>LV</b> approved leave ·
+        Times are when the person marked themselves present, shortened to fit:
+        <b> 8:54a</b> is 8:54 AM, <b>2:15p</b> is 2:15 PM. <b>LV</b> approved leave ·
         <b> lv?</b> leave still awaiting approval · <b>—</b> no mark on a working day ·
         shaded columns are Sundays.
       </div>
@@ -409,7 +414,7 @@ function CellModal({ open, onClose, canSeeLocation }) {
           <Row k="Mark" v={meta.label} color={meta.color} />
           <Row
             k={row.kind === 'present' ? 'Arrived' : 'Requested'}
-            v={at.toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })}
+            v={`${at.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} · ${formatTime12(at)}`}
           />
           {row.note && <Row k="Note" v={row.note} />}
         </div>
