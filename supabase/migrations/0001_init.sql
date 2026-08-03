@@ -112,7 +112,13 @@ create index if not exists idx_user_site           on app_user(site_id);
 -- ============================================================
 
 -- cash-in-hand = Σ funds_in − Σ approved expenses ; owed = Σ rejected unsettled
-create or replace view v_supervisor_balance as
+--
+-- security_invoker: without it a view runs as its OWNER and sees straight past
+-- the row level security below, which would make every supervisor's cash
+-- readable by any role granted select on it. Set here rather than only in 0007
+-- because `create or replace view` resets view options — re-running this file
+-- alone would otherwise quietly undo the fix.
+create or replace view v_supervisor_balance with (security_invoker = on) as
 select
   u.id as supervisor_id,
   coalesce((select sum(f.amount) from fund_txn f where f.supervisor_id = u.id and f.type = 'funds_in'), 0) as funded,
@@ -124,7 +130,8 @@ from app_user u
 where u.role = 'supervisor';
 
 -- site spend = opening + live approved, per category
-create or replace view v_site_spend as
+-- security_invoker — see the note on v_supervisor_balance above
+create or replace view v_site_spend with (security_invoker = on) as
 select
   s.id as site_id,
   s.budget,
