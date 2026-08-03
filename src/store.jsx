@@ -409,6 +409,11 @@ const toState = (body) => ({
   // row arrays above are windowed, so summing them would understate the money.
   balances: body.balances || null, siteSpend: body.siteSpend || null,
   windowed: Boolean(body.windowed), windowDays: body.windowDays ?? null,
+  // Which month this snapshot was fetched for, if any. A month fetch REPLACES
+  // the attendance array rather than merging into it, so this is how a screen
+  // knows whether the month it is showing is actually in the data it holds.
+  attendanceMonth: body.attendanceMonth ?? null,
+  attendanceScope: body.attendanceScope ?? null,
   session: body.session || null,
 })
 

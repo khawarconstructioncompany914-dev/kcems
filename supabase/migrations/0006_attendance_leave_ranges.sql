@@ -74,6 +74,12 @@ begin
           jsonb_build_object('from', p_from, 'to', p_to, 'days', v_days));
 
   return v_group;
+
+-- The clash check above is a read, so two requests racing on the same day can
+-- still both pass it and collide on unique(user_id, date). The constraint is
+-- the real guard; this only turns it into something a person can read.
+exception when unique_violation then
+  raise exception 'one of those days was marked while you were choosing — check the dates and try again';
 end $$;
 
 -- ------------------------------------------------------------

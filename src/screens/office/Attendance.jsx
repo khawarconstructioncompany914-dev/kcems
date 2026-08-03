@@ -12,7 +12,7 @@
 // everyone's rows and then shown a smaller screen — they are sent their own
 // rows only, and this renders what arrived.
 // ============================================================
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useStore, useSelectors } from '../../store.jsx'
 import { ROLES, roleEyebrow, fmtDate } from '../../data/model.js'
 import { PageHeader, Kpi, Card } from '../../components/page.jsx'
@@ -40,12 +40,20 @@ export default function Attendance() {
   // The snapshot carries a rolling 45-day window, so paging back to an older
   // month used to show an empty grid — and would have produced a blank PDF.
   // Ask the server for the month being looked at.
-  const asked = useRef(new Set())
+  // Keyed on what the snapshot actually HOLDS, not on what has been asked for
+  // before. A month fetch replaces the attendance array rather than merging, so
+  // remembering "we already requested March" was wrong the moment April was
+  // loaded over the top of it: going back to March would then show an empty
+  // grid, and print a blank PDF.
+  //
+  // The current month never needs a fetch — the default rolling 45-day window
+  // always covers it.
+  const thisMonth = monthKey(new Date())
+  const loadedMonth = state.attendanceMonth ?? null
   useEffect(() => {
-    if (!seesEveryone || asked.current.has(month)) return
-    asked.current.add(month)
+    if (!seesEveryone || month === thisMonth || loadedMonth === month) return
     loadAttendanceMonth(month)
-  }, [month, seesEveryone, loadAttendanceMonth])
+  }, [month, thisMonth, loadedMonth, seesEveryone, loadAttendanceMonth])
 
   // Everyone who could mark a day. Office staff included — attendance is the
   // one feature every role gets.
