@@ -50,7 +50,7 @@ export function AddFundsModal({ open, onClose, supervisorId, presetSupervisor = 
       <div style={{ padding: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 18 }}>
           <span className="mono-badge" style={{ width: 34, height: 34, borderRadius: 9, background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: 18 }}>+</span>
-          <div style={{ font: '700 16px/1 var(--f-body)', color: '#fff' }}>Add funds</div>
+          <div style={{ font: '700 16px/1 var(--f-body)', color: 'var(--text)' }}>Add funds</div>
         </div>
 
         {!supervisorId && (
@@ -66,7 +66,7 @@ export function AddFundsModal({ open, onClose, supervisorId, presetSupervisor = 
           <div className="surface" style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 12, borderRadius: 12, marginBottom: 14 }}>
             <Monogram name={sup.name} color="var(--accent)" soft="var(--accent-soft)" size={34} />
             <div style={{ flex: 1 }}>
-              <div style={{ font: '700 13px/1 var(--f-body)', color: '#fff' }}>{sup.name}</div>
+              <div style={{ font: '700 13px/1 var(--f-body)', color: 'var(--text)' }}>{sup.name}</div>
               <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>current cash · {formatMoney(bal.cash)}</div>
             </div>
           </div>
@@ -78,7 +78,7 @@ export function AddFundsModal({ open, onClose, supervisorId, presetSupervisor = 
         <label className="field-label" style={{ marginTop: 14 }}>Method</label>
         <div style={{ display: 'flex', gap: 8 }}>
           {METHODS.map((m) => (
-            <button key={m} type="button" onClick={() => setMethod(m)} className="btn btn-sm" style={{ flex: 1, textTransform: 'capitalize', background: method === m ? 'var(--accent)' : 'var(--input)', color: method === m ? 'var(--accent-ink)' : 'var(--text-70)', border: `1px solid ${method === m ? 'transparent' : 'var(--border)'}` }}>{m}</button>
+            <button key={m} type="button" onClick={() => setMethod(m)} className="btn btn-sm" style={{ flex: 1, textTransform: 'capitalize', background: method === m ? 'var(--accent-fill)' : 'var(--input)', color: method === m ? 'var(--accent-ink)' : 'var(--text-70)', border: `1px solid ${method === m ? 'transparent' : 'var(--border)'}` }}>{m}</button>
           ))}
         </div>
 

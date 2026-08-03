@@ -33,7 +33,7 @@ export default function PersonLedger() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 15, margin: '16px 0 24px', flexWrap: 'wrap' }}>
         <Monogram name={sup.name} color="var(--accent)" soft="var(--accent-soft)" size={54} radius={15} font={18} />
         <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ font: '700 24px/1 var(--f-display)', color: '#fff', letterSpacing: '-.02em' }}>{sup.name}</div>
+          <div style={{ font: '700 24px/1 var(--f-display)', color: 'var(--text)', letterSpacing: '-.02em' }}>{sup.name}</div>
           <div style={{ font: '500 12px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 8 }}>SITE ENGINEER · {site?.name} · reports to {eng?.name}</div>
         </div>
         {canFund && <button className="btn btn-primary" onClick={() => setFunds(true)}>+ Add funds</button>}
@@ -46,11 +46,11 @@ export default function PersonLedger() {
         </div>
         <div className="card" style={{ padding: '18px 22px', flex: 1, minWidth: 150 }}>
           <div style={{ font: '600 10px/1 var(--f-mono)', color: 'var(--text-40)' }}>FUNDED</div>
-          <div className="num" style={{ font: '700 28px/1 var(--f-display)', color: '#fff', marginTop: 10 }}>{formatMoney(bal.funded)}</div>
+          <div className="num" style={{ font: '700 28px/1 var(--f-display)', color: 'var(--text)', marginTop: 10 }}>{formatMoney(bal.funded)}</div>
         </div>
         <div className="card" style={{ padding: '18px 22px', flex: 1, minWidth: 150 }}>
           <div style={{ font: '600 10px/1 var(--f-mono)', color: 'var(--text-40)' }}>SPENT · APPROVED</div>
-          <div className="num" style={{ font: '700 28px/1 var(--f-display)', color: '#fff', marginTop: 10 }}>{formatMoney(bal.spent)}</div>
+          <div className="num" style={{ font: '700 28px/1 var(--f-display)', color: 'var(--text)', marginTop: 10 }}>{formatMoney(bal.spent)}</div>
         </div>
         <div className="card" style={{ padding: '18px 22px', flex: 1, minWidth: 150 }}>
           <div style={{ font: '600 10px/1 var(--f-mono)', color: 'var(--text-40)' }}>OWED BACK</div>
@@ -63,7 +63,7 @@ export default function PersonLedger() {
       </div>
 
       <Card pad={0}>
-        <div style={{ padding: '16px 20px', font: '700 14px/1 var(--f-body)', color: '#fff' }}>Ledger</div>
+        <div style={{ padding: '16px 20px', font: '700 14px/1 var(--f-body)', color: 'var(--text)' }}>Ledger</div>
         <div className="r-scroll-x" style={{ '--r-tablemin': '520px' }}>
         <div>
         <div style={{ display: 'flex', font: '500 10px/1 var(--f-mono)', color: 'var(--text-40)', padding: '0 20px 10px', textTransform: 'uppercase', letterSpacing: '.05em', borderBottom: '1px solid var(--border-3)' }}>
@@ -76,7 +76,7 @@ export default function PersonLedger() {
                 ? <span className="mono-badge" style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: 15 }}>+</span>
                 : <span style={{ width: 6, height: 30, borderRadius: 3, background: STATUS[r.status].color, flex: 'none' }} />}
               <div>
-                <div style={{ font: '600 13px/1.2 var(--f-body)', color: '#fff' }}>{r.kind === 'fund' ? (r.type === 'settlement' ? 'Settlement' : 'Funds added') : r.note}</div>
+                <div style={{ font: '600 13px/1.2 var(--f-body)', color: 'var(--text)' }}>{r.kind === 'fund' ? (r.type === 'settlement' ? 'Settlement' : 'Funds added') : r.note}</div>
                 <div style={{ font: '500 10px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 4 }}>{fmtDate(r.at)}{r.kind === 'fund' ? ` · ${r.method}` : ''}</div>
               </div>
             </div>
@@ -85,7 +85,7 @@ export default function PersonLedger() {
                 ? <span className="pill pill-approved" style={{ height: 22, fontSize: 10 }}>{r.type === 'settlement' ? 'SETTLED' : 'FUNDS IN'}</span>
                 : <StatusPill status={r.status} small />}
             </div>
-            <div className="num" style={{ flex: 1, textAlign: 'right', font: '700 14px/1 var(--f-display)', color: r.kind === 'fund' && r.type === 'funds_in' ? 'var(--accent)' : '#fff' }}>
+            <div className="num" style={{ flex: 1, textAlign: 'right', font: '700 14px/1 var(--f-display)', color: r.kind === 'fund' && r.type === 'funds_in' ? 'var(--accent)' : 'var(--text)' }}>
               {r.kind === 'fund' && r.type === 'funds_in' ? '+' : ''}{formatMoney(r.amount).replace('Rs ', '')}
             </div>
           </div>

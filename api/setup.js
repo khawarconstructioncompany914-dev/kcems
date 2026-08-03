@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs'
 import { timingSafeEqual } from 'crypto'
-import { directClient, hashPassword, json } from './_lib.js'
+import { directClient, hashPassword, normPassword, json } from './_lib.js'
 
 // POST /api/setup?token=...  — applies the schema + functions, then seeds the
 // demo dataset (once). Idempotent: DDL uses IF NOT EXISTS / OR REPLACE; the seed
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
   // Applied in order — 0003 depends on tables from 0001, and its
   // kcems_log_reimbursement depends on the enum/nullable column it creates
   // itself, which is why that function lives in 0003 and not 0002.
-  const FILES = ['0001_init.sql', '0002_functions.sql', '0003_photos_and_claims.sql', '0004_progress_role_attendance.sql']
+  const FILES = ['0001_init.sql', '0002_functions.sql', '0003_photos_and_claims.sql', '0004_progress_role_attendance.sql', '0005_ratelimit_idempotency_audit.sql', '0006_attendance_leave_ranges.sql']
   let sources
   try {
     sources = FILES.map((f) => readFileSync(new URL(f, base), 'utf8'))
@@ -47,7 +47,20 @@ export default async function handler(req, res) {
       return json(res, 200, { ok: true, migrated: true, seeded: false, users: c.rows[0].n })
     }
 
-    await seed(client)
+    // The seed needs a starting password, and this repository is public — so it
+    // cannot ship one. Without SEED_PASSWORD the migrations still apply and the
+    // database is left empty rather than populated with accounts whose password
+    // anybody can read on GitHub.
+    const seedPw = normPassword(process.env.SEED_PASSWORD || '')
+    if (seedPw.length < 8) {
+      await client.end()
+      return json(res, 200, {
+        ok: true, migrated: true, seeded: false, users: 0,
+        note: 'Schema applied. Set SEED_PASSWORD (8+ chars) and call again to seed the demo roster.',
+      })
+    }
+
+    await seed(client, seedPw)
     const c2 = await client.query('select count(*)::int as n from app_user')
     await client.end()
     return json(res, 200, { ok: true, migrated: true, seeded: true, users: c2.rows[0].n })
@@ -57,8 +70,8 @@ export default async function handler(req, res) {
   }
 }
 
-async function seed(client) {
-  const hash = hashPassword('kcems')
+async function seed(client, seedPw) {
+  const hash = hashPassword(seedPw)
   const U = (id) => '00000000-0000-0000-0000-' + String(id).padStart(12, '0')
 
   const users = [
@@ -120,8 +133,11 @@ async function seed(client) {
   // array, satisfying the self-FK), then sites, then backfill supervisor sites.
   for (const u of users) {
     await client.query(
+      // must_change_password is true for every seeded account: the caller who
+      // ran setup knows SEED_PASSWORD, so it is a shared secret from the moment
+      // it is used and has to be replaced by each person at first login.
       `insert into app_user (id,name,username,phone,email,role,engineer_id,site_id,password_hash,must_change_password,status)
-       values ($1,$2,$3,$4,$5,$6,$7,null,$8,false,'active')`,
+       values ($1,$2,$3,$4,$5,$6,$7,null,$8,true,'active')`,
       [u[0], u[1], u[2], u[3], u[4], u[5], u[6], hash])
   }
   for (const s of sites) {

@@ -40,19 +40,32 @@ Everything below uses **free** tiers: **GitHub** (code) + **Vercel** (app + API)
    - `supabase/migrations/0002_functions.sql`
    - `supabase/migrations/0003_photos_and_claims.sql`
    - `supabase/migrations/0004_progress_role_attendance.sql`
+   - `supabase/migrations/0005_ratelimit_idempotency_audit.sql`
+   - `supabase/migrations/0006_attendance_leave_ranges.sql`
    This creates the tables, the balance/site views, the approval functions, the
    multi-photo tables and reimbursement claims, site progress tracking,
-   attendance and leave, and the private **`bills`** storage bucket for receipt
-   photos.
+   attendance and multi-day leave, login rate limiting, the replay guard the
+   offline queue depends on, and the private **`bills`** storage bucket for
+   receipt photos.
 3. **Project Settings → API** — copy the `Project URL`, the `anon` key, and the
    `service_role` key. (Keep `service_role` secret — it goes into Vercel, step 3.)
-4. Create the first **Owner** login. In SQL Editor:
+4. **Project Settings → Database** — copy **both** connection strings. They are
+   not interchangeable and you need each of them:
+   - **Connection pooling** URI, port 6543 → `POSTGRES_URL` (what the app uses)
+   - **Connection string** URI, port 5432 → `POSTGRES_URL_NON_POOLING` (what
+     `pg_dump`, `pg_restore` and the scripts use; the pooler cannot do those)
+5. Create the first **Owner** login. In SQL Editor:
    ```sql
    insert into app_user (name, username, role, password_hash, must_change_password)
    values ('Meesam Ali', 'meesamali', 'owner',
            crypt('CHANGE_ME_TEMP', gen_salt('bf')), true);
    ```
    (Owner then creates everyone else in-app under **Users & access**.)
+
+> **Pick a region near Pakistan.** Supabase cannot move a project between
+> regions afterwards — you have to create a new one and migrate into it
+> (docs/OPERATIONS.md §3). Singapore is roughly a fifth of the round-trip time
+> of the US East regions from Pakistan.
 
 ## Step 2 — GitHub (code)
 
@@ -70,28 +83,51 @@ Everything below uses **free** tiers: **GitHub** (code) + **Vercel** (app + API)
 1. Create a free account, **Add New → Project**, import the `kcems` repo.
    Framework preset: **Vite**. Build: `npm run build`. Output: `dist`.
 2. **Settings → Environment Variables** — add (from `.env.example`):
-   `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET` (any long random string),
-   `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `VITE_DATA_SOURCE=supabase`.
+
+   | Variable | Value |
+   |---|---|
+   | `POSTGRES_URL` | pooler URI, port **6543** |
+   | `POSTGRES_URL_NON_POOLING` | direct URI, port **5432** |
+   | `SUPABASE_URL` | project URL |
+   | `SUPABASE_SERVICE_ROLE_KEY` | service_role key (secret) |
+   | `JWT_SECRET` | any long random string — changing it signs everyone out |
+   | `VITE_SUPABASE_URL` | project URL |
+   | `VITE_SUPABASE_ANON_KEY` | anon key |
+   | `VITE_DATA_SOURCE` | `supabase` |
+
+   `POSTGRES_URL` is the one people miss. Without it the site builds and
+   deploys perfectly and then every single API call fails.
+
+   The `VITE_*` values are read at **build** time, so changing any of them means
+   a redeploy — an existing deployment will not pick them up.
+
 3. **Deploy.** You get a free `https://kcems-xxxx.vercel.app` address — that's what the
    office and supervisors open. (A custom domain can be added later.)
 
+## Step 4 — backups
+
+Supabase's free tier takes none. `.github/workflows/backup.yml` runs a nightly
+encrypted dump and proves it restores. Add two repository secrets —
+`SUPABASE_DB_URL` (the direct, port-5432 string) and `BACKUP_PASSPHRASE` — then
+trigger it once by hand from the Actions tab to confirm it passes.
+
 ---
 
-## What's still to wire (next build step)
-
-The database blueprint, the app, auth, roles and the PWA are done. Once the Supabase
-project above exists, the remaining work is the **`/api` serverless layer + the
-Supabase data provider** that swaps the app from the in-browser demo (`VITE_DATA_SOURCE=local`)
-to live data (`=supabase`). That part is fast but needs the live project to test
-against — so it's the first thing to do after Step 1.
-
-## Status page
+## Status
 
 | Layer | State |
 |---|---|
 | React app (desktop + mobile PWA) | ✅ built & running |
 | 5 roles, username/password, forced first-login change | ✅ built |
-| Approval state machine + money logic | ✅ built (local), ✅ SQL functions ready |
-| Supabase schema, views, RPCs, storage bucket | ✅ SQL ready to run |
-| `/api` serverless layer + Supabase provider | ⏳ next (needs live project) |
-| Deployed to Vercel | ⏳ needs your accounts |
+| Approval state machine + money logic | ✅ built, enforced server-side |
+| Supabase schema, views, RPCs, storage bucket | ✅ applied |
+| `/api` serverless layer + Supabase provider | ✅ built & live |
+| Deployed to Vercel | ✅ live at kcems.vercel.app |
+| Login rate limiting + audit trail on screen | ✅ built |
+| Offline queue for field writes | ✅ built |
+| CSV / Excel / PDF export | ✅ built |
+| Nightly verified backups | ⚙️ needs the two repository secrets above |
+| Database region | ⚠️ us-east-1 — see docs/OPERATIONS.md §3 |
+
+Day-to-day operations — rotating passwords, restoring a backup, moving region —
+are in **[docs/OPERATIONS.md](docs/OPERATIONS.md)**.

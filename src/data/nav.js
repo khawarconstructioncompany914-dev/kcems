@@ -22,6 +22,7 @@ export const NAV_ICONS = {
   bills:     'M4 3h16v18l-3-2-2 2-3-2-3 2-2-2-3 2zM8 8h8M8 12h5',
   claims:    'M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2zM9 9h6M9 13h4',
   attendance: 'M3 5h18v16H3zM3 10h18M8 3v4M16 3v4M8 15l2 2 4-4',
+  activity:  'M3 12h4l3 7 4-14 3 7h4',
 }
 
 // label = sidebar text, short = bottom-tab text (must stay tiny)
@@ -40,14 +41,15 @@ export const NAV_ITEMS = {
   bills:     { to: '/bills',        label: 'Bills',       short: 'BILLS' },
   claims:    { to: '/my-expenses',  label: 'My expenses', short: 'MINE' },
   attendance: { to: '/attendance',  label: 'Attendance',  short: 'ATTEND' },
+  activity:   { to: '/activity',    label: 'Activity log', short: 'LOG' },
 }
 
 // role -> ordered nav keys (first 4 become the phone's primary tabs)
 // Attendance is the one entry every role carries — unlike the money and bills
 // features, which are split by role, everybody marks their own day.
 export const ROLE_NAV = {
-  owner:      ['dashboard', 'approvals', 'people', 'sites', 'bills', 'attendance', 'reports', 'admin'],
-  admin:      ['dashboard', 'people', 'sites', 'attendance', 'bills', 'admin'],
+  owner:      ['dashboard', 'approvals', 'people', 'sites', 'bills', 'attendance', 'reports', 'activity', 'admin'],
+  admin:      ['dashboard', 'people', 'sites', 'attendance', 'bills', 'activity', 'admin'],
   finance:    ['approvals', 'people', 'sites', 'attendance', 'bills', 'reports'],
   engineer:   ['review', 'claims', 'sites', 'attendance', 'people'],
   supervisor: ['home', 'history', 'attendance', 'funds', 'me'],

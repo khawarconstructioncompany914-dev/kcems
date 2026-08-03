@@ -65,7 +65,7 @@ export default function MyExpenses() {
 
       <div className="r-cards" style={{ '--r-min': '420px' }}>
         <Card>
-          <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff', marginBottom: 16 }}>New claim</div>
+          <div style={{ font: '700 15px/1 var(--f-body)', color: 'var(--text)', marginBottom: 16 }}>New claim</div>
 
           <label className="field-label">Amount (PKR)</label>
           <input className="field" inputMode="numeric" placeholder="e.g. 4,500" value={amount}
@@ -95,7 +95,7 @@ export default function MyExpenses() {
         </Card>
 
         <Card pad={0}>
-          <div style={{ padding: '18px 20px 14px', font: '700 15px/1 var(--f-body)', color: '#fff' }}>My claims</div>
+          <div style={{ padding: '18px 20px 14px', font: '700 15px/1 var(--f-body)', color: 'var(--text)' }}>My claims</div>
           {mine.length === 0
             ? <Empty title="No claims yet" sub="Anything you pay for yourself goes here." />
             : mine.map((e) => {
@@ -104,13 +104,13 @@ export default function MyExpenses() {
                 <div key={e.id} style={{ padding: '13px 20px', borderTop: '1px solid var(--border-3)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ font: '600 13px/1.3 var(--f-body)', color: '#fff' }}>{e.note}</div>
+                      <div style={{ font: '600 13px/1.3 var(--f-body)', color: 'var(--text)' }}>{e.note}</div>
                       <div style={{ font: '500 10px/1 var(--f-mono)', color: 'var(--text-42)', marginTop: 5 }}>
                         {CATEGORIES[e.category]?.label} · {fmtDate(e.createdAt)}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', flex: 'none' }}>
-                      <div className="num" style={{ font: '700 15px/1 var(--f-display)', color: '#fff' }}>{formatMoney(e.amount)}</div>
+                      <div className="num" style={{ font: '700 15px/1 var(--f-display)', color: 'var(--text)' }}>{formatMoney(e.amount)}</div>
                       <div style={{ marginTop: 6 }}><StatusPill status={e.status} small /></div>
                     </div>
                   </div>

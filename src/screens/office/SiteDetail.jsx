@@ -36,14 +36,14 @@ export default function SiteDetail() {
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
             <span className="mono-badge" style={{ width: 52, height: 52, borderRadius: 14, background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-line)', fontSize: 16 }}>{site.label.replace(/[^A-Z0-9]/gi, '').slice(0, 2).toUpperCase()}</span>
             <div style={{ flex: 1 }}>
-              <div style={{ font: '700 20px/1 var(--f-display)', color: '#fff' }}>{site.name}</div>
+              <div style={{ font: '700 20px/1 var(--f-display)', color: 'var(--text)' }}>{site.name}</div>
               <div style={{ font: '500 12px/1.3 var(--f-mono)', color: 'var(--text-42)', marginTop: 7 }}>{site.city} · {site.phase} · {eng?.name} (eng)</div>
             </div>
             <span className={`pill ${SITE_STATUS[site.status].pill}`}><span className="dot" />{SITE_STATUS[site.status].label.toUpperCase()}</span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginTop: 22 }}>
-            {[['BUDGET', formatCompact(sp.budget), '#fff'], ['SPENT', formatCompact(sp.total), '#fff'], ['REMAINING', formatCompact(sp.remaining), 'var(--accent)']].map(([l, v, c]) => (
+            {[['BUDGET', formatCompact(sp.budget), 'var(--text)'], ['SPENT', formatCompact(sp.total), 'var(--text)'], ['REMAINING', formatCompact(sp.remaining), 'var(--accent)']].map(([l, v, c]) => (
               <div key={l} className="surface" style={{ padding: 14, borderRadius: 13 }}>
                 <div style={{ font: '600 9px/1 var(--f-mono)', color: 'var(--text-40)' }}>{l}</div>
                 <div className="num" style={{ font: '700 20px/1 var(--f-display)', color: c, marginTop: 9 }}>{v}</div>
@@ -58,7 +58,7 @@ export default function SiteDetail() {
 
           {/* ---------- construction progress ---------- */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '26px 0 14px' }}>
-            <div style={{ font: '700 13px/1 var(--f-body)', color: '#fff' }}>Construction progress</div>
+            <div style={{ font: '700 13px/1 var(--f-body)', color: 'var(--text)' }}>Construction progress</div>
             {sched && (
               <span className={`pill ${sched.behind || sched.overdue ? 'pill-rejected' : 'pill-approved'}`} style={{ height: 22, fontSize: 10 }}>
                 <span className="dot" />{sched.overdue ? 'OVERDUE' : sched.behind ? 'BEHIND SCHEDULE' : 'ON TRACK'}
@@ -101,7 +101,7 @@ export default function SiteDetail() {
             </div>
           )}
 
-          <div style={{ font: '700 13px/1 var(--f-body)', color: '#fff', margin: '24px 0 14px' }}>Spend by category</div>
+          <div style={{ font: '700 13px/1 var(--f-body)', color: 'var(--text)', margin: '24px 0 14px' }}>Spend by category</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {cats.map(({ k, val }) => (
               <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -109,7 +109,7 @@ export default function SiteDetail() {
                 <div style={{ flex: 1, height: 8, borderRadius: 5, background: 'var(--surface)', overflow: 'hidden' }}>
                   <div style={{ width: `${Math.round((val / maxCat) * 100)}%`, height: '100%', background: CATEGORIES[k].color, transition: 'width .5s' }} />
                 </div>
-                <span className="num" style={{ width: 74, textAlign: 'right', font: '700 11px/1 var(--f-display)', color: '#fff' }}>{formatCompact(val)}</span>
+                <span className="num" style={{ width: 74, textAlign: 'right', font: '700 11px/1 var(--f-display)', color: 'var(--text)' }}>{formatCompact(val)}</span>
               </div>
             ))}
           </div>
@@ -118,14 +118,14 @@ export default function SiteDetail() {
         {/* right: supervisors + recent */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <Card pad={22}>
-            <div style={{ font: '700 14px/1 var(--f-body)', color: '#fff', marginBottom: 14 }}>On this site</div>
+            <div style={{ font: '700 14px/1 var(--f-body)', color: 'var(--text)', marginBottom: 14 }}>On this site</div>
             {sups.length === 0 && <div style={{ font: '500 12px/1 var(--f-body)', color: 'var(--text-40)' }}>No site engineer assigned.</div>}
             {sups.map((s) => {
               const bal = cashInHand(s.id)
               return (
                 <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 11, paddingTop: 4 }}>
                   <Monogram name={s.name} color="var(--accent)" soft="var(--accent-soft)" size={34} radius={17} />
-                  <div style={{ font: '500 12px/1.3 var(--f-body)', color: 'var(--text-70)', flex: 1 }}>{s.name} · <b style={{ color: '#fff' }}>{formatMoney(bal.cash)}</b> cash in hand</div>
+                  <div style={{ font: '500 12px/1.3 var(--f-body)', color: 'var(--text-70)', flex: 1 }}>{s.name} · <b style={{ color: 'var(--text)' }}>{formatMoney(bal.cash)}</b> cash in hand</div>
                   <Link to={`/people/${s.id}`} className="tap" style={{ font: '600 12px/1 var(--f-body)' }}>Ledger →</Link>
                 </div>
               )
@@ -133,16 +133,16 @@ export default function SiteDetail() {
           </Card>
 
           <Card pad={22}>
-            <div style={{ font: '700 14px/1 var(--f-body)', color: '#fff', marginBottom: 12 }}>Recent expenses</div>
+            <div style={{ font: '700 14px/1 var(--f-body)', color: 'var(--text)', marginBottom: 12 }}>Recent expenses</div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {recent.map((e) => (
                 <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 0', borderTop: '1px solid var(--border-3)' }}>
                   <span style={{ width: 6, height: 30, borderRadius: 3, background: STATUS[e.status].color, flex: 'none' }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ font: '600 12px/1.2 var(--f-body)', color: '#fff' }}>{e.note}</div>
+                    <div style={{ font: '600 12px/1.2 var(--f-body)', color: 'var(--text)' }}>{e.note}</div>
                     <div style={{ font: '500 10px/1 var(--f-mono)', color: STATUS[e.status].color, marginTop: 4 }}>{STATUS[e.status].short} · {fmtDate(e.createdAt)}</div>
                   </div>
-                  <div className="num" style={{ font: '700 13px/1 var(--f-display)', color: '#fff' }}>{formatMoney(e.amount).replace('Rs ', '')}</div>
+                  <div className="num" style={{ font: '700 13px/1 var(--f-display)', color: 'var(--text)' }}>{formatMoney(e.amount).replace('Rs ', '')}</div>
                 </div>
               ))}
             </div>
@@ -176,7 +176,7 @@ function LogProgressModal({ open, site, current, onClose, onSubmit }) {
   return (
     <Modal open onClose={onClose} width={420}>
       <div style={{ padding: 22 }}>
-        <div style={{ font: '700 16px/1 var(--f-body)', color: '#fff' }}>Log progress</div>
+        <div style={{ font: '700 16px/1 var(--f-body)', color: 'var(--text)' }}>Log progress</div>
         <div style={{ font: '500 12.5px/1.5 var(--f-body)', color: 'var(--text-70)', marginTop: 8 }}>
           {site.name} — currently {current}%.
         </div>

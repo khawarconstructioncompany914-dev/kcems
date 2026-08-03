@@ -129,27 +129,50 @@ export function buildSeed() {
   // A fortnight of marks for the field staff, plus one leave request left
   // pending so the admin's approval strip has something in it.
   const attendance = []
-  const field = users.filter((u) => u.role === 'supervisor' || u.role === 'engineer')
-  field.forEach((u, ui) => {
+  // Everybody, not just the field staff: every role marks their own attendance,
+  // and seeding only the supervisors made the whole office look absent.
+  const marking = users.filter((u) => u.status !== 'disabled')
+  marking.forEach((u, ui) => {
     for (let d = 0; d < 14; d++) {
       const day = new Date(); day.setDate(day.getDate() - d)
       if (day.getDay() === 0) continue                    // Sundays off
       if ((ui + d) % 11 === 0) continue                   // the odd unmarked day
-      const date = localKey(day)
+
+      // A plausible morning arrival rather than "whenever the seed was built",
+      // which stamped everyone with the same time and made the arrival-time
+      // views look broken. Deterministic, so the demo is stable across reloads.
+      const office = u.role !== 'supervisor'
+      const base = office ? 8 * 60 + 45 : 7 * 60 + 20      // site starts earlier than the office
+      const jitter = ((ui * 17 + d * 29) % 47) - 8
+      const mins = base + jitter
+      day.setHours(Math.floor(mins / 60), mins % 60, (ui * 7 + d) % 60, 0)
+
       attendance.push({
-        id: `at_${u.id}_${d}`, userId: u.id, date, kind: 'present', status: 'approved',
+        id: `at_${u.id}_${d}`, userId: u.id, date: localKey(day), kind: 'present', status: 'approved',
         markedAt: day.toISOString(), note: null,
-        lat: 31.5204 + (ui * 0.004), lng: 74.3587 + (ui * 0.004),
+        // office staff mark from the office; only the field carries a site fix
+        lat: office ? null : 31.5204 + (ui * 0.004),
+        lng: office ? null : 74.3587 + (ui * 0.004),
         reviewedBy: null, reviewedAt: null,
       })
     }
   })
-  const leaveDay = new Date(); leaveDay.setDate(leaveDay.getDate() + 1)
+
+  // One single-day request and one multi-day one, so the approval queue shows
+  // both shapes without anybody having to create them first.
+  const plusDays = (n) => { const x = new Date(); x.setDate(x.getDate() + n); return localKey(x) }
   attendance.push({
-    id: 'at_leave_pending', userId: 's_saqib', date: localKey(leaveDay),
-    kind: 'leave', status: 'pending', markedAt: new Date().toISOString(),
+    id: 'at_leave_pending', userId: 's_saqib', date: plusDays(1),
+    kind: 'leave', status: 'pending', markedAt: new Date().toISOString(), leaveGroup: 'lg_saqib',
     note: 'Family wedding — one day', lat: null, lng: null, reviewedBy: null, reviewedAt: null,
   })
+  for (let i = 0; i < 3; i++) {
+    attendance.push({
+      id: `at_leave_rana_${i}`, userId: 's_rana', date: plusDays(4 + i),
+      kind: 'leave', status: 'pending', markedAt: new Date().toISOString(), leaveGroup: 'lg_rana',
+      note: 'Travelling to the village', lat: null, lng: null, reviewedBy: null, reviewedAt: null,
+    })
+  }
 
   return {
     users,

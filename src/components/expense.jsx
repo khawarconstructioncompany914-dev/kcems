@@ -24,7 +24,7 @@ export function ExpenseCard({ e, mode }) {
         <Monogram name={e.supervisor?.name} color="var(--accent)" soft="var(--accent-soft)" size={40} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ font: '700 14px/1.2 var(--f-body)', color: '#fff' }}>{e.note}</div>
+            <div style={{ font: '700 14px/1.2 var(--f-body)', color: 'var(--text)' }}>{e.note}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
             <span style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)' }}>{e.supervisor?.name}</span>
@@ -38,13 +38,13 @@ export function ExpenseCard({ e, mode }) {
           </div>
         </div>
         <div style={{ textAlign: 'right', flex: 'none' }}>
-          <div className="num" style={{ font: '700 17px/1 var(--f-display)', color: '#fff' }}>{formatMoney(e.amount)}</div>
+          <div className="num" style={{ font: '700 17px/1 var(--f-display)', color: 'var(--text)' }}>{formatMoney(e.amount)}</div>
           <div style={{ marginTop: 7 }}><StatusPill status={e.status} small /></div>
         </div>
       </div>
 
-      {e.returnNote && <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--info)', background: 'var(--info-soft)', border: '1px solid rgba(120,170,255,.25)', borderRadius: 10, padding: '9px 12px' }}>↩ Returned: {e.returnNote}</div>}
-      {e.rejectReason && <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--danger)', background: 'var(--danger-soft)', border: '1px solid rgba(242,112,79,.25)', borderRadius: 10, padding: '9px 12px' }}>✕ {e.rejectReason}</div>}
+      {e.returnNote && <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--info)', background: 'var(--info-soft)', border: '1px solid var(--info-line)', borderRadius: 10, padding: '9px 12px' }}>↩ Returned: {e.returnNote}</div>}
+      {e.rejectReason && <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--danger)', background: 'var(--danger-soft)', border: '1px solid var(--danger-line)', borderRadius: 10, padding: '9px 12px' }}>✕ {e.rejectReason}</div>}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
         <button className="btn btn-ghost btn-sm" onClick={() => setBill(true)}>
@@ -70,7 +70,7 @@ export function ExpenseCard({ e, mode }) {
       {/* bill modal */}
       <Modal open={bill} onClose={() => setBill(false)} width={520}>
         <div style={{ padding: 20 }}>
-          <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff', marginBottom: 4 }}>
+          <div style={{ font: '700 15px/1 var(--f-body)', color: 'var(--text)', marginBottom: 4 }}>
             {photos.length > 1 ? `Bill photos · ${photos.length}` : 'Bill photo'}
           </div>
           <div style={{ font: '500 12px/1.4 var(--f-body)', color: 'var(--text-42)', marginBottom: 16 }}>{e.note} · {formatMoney(e.amount)}</div>
@@ -102,7 +102,7 @@ export function ReasonModal({ open, onClose, title, hint, placeholder, cta, tone
   return (
     <Modal open={open} onClose={onClose} width={420}>
       <div style={{ padding: 22 }}>
-        <div style={{ font: '700 16px/1 var(--f-body)', color: '#fff' }}>{title}</div>
+        <div style={{ font: '700 16px/1 var(--f-body)', color: 'var(--text)' }}>{title}</div>
         <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--text-42)', marginTop: 8 }} dangerouslySetInnerHTML={{ __html: hint }} />
         <textarea className="field" style={{ marginTop: 16, minHeight: 88 }} placeholder={placeholder} value={val} onChange={(e) => setVal(e.target.value)} autoFocus />
         <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>

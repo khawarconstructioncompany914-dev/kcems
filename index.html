@@ -14,6 +14,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <script>
+      /* Applies the saved theme before the stylesheet paints. Without this a
+         light-mode user gets a dark flash on every cold start while the bundle
+         downloads. Dark is the default, so it needs no attribute — and if this
+         script throws, that default is exactly what you get. */
+      (function () {
+        try {
+          if (localStorage.getItem('kcems.theme') === 'light') {
+            document.documentElement.dataset.theme = 'light';
+            var m = document.querySelector('meta[name="theme-color"]');
+            if (m) m.setAttribute('content', '#F4F4F1');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

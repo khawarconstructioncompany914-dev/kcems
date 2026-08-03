@@ -119,14 +119,14 @@ export default function Bills() {
               return (
                 <button key={e.id} type="button" onClick={() => ph.length && setOpen({ photos: ph, index: 0 })}
                   className="card" style={{ padding: 0, overflow: 'hidden', textAlign: 'left', border: '1px solid var(--border)', cursor: ph.length ? 'zoom-in' : 'default', display: 'block', width: '100%' }}>
-                  <div style={{ position: 'relative', aspectRatio: '4/3', background: '#0d0f0c' }}>
+                  <div style={{ position: 'relative', aspectRatio: '4/3', background: 'var(--bg-panel)' }}>
                     {url
                       ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                       : <span style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', font: '600 10px/1 var(--f-mono)', color: 'var(--text-40)' }}>
                           {ph.length ? 'LOADING…' : 'NO PHOTO'}
                         </span>}
                     {ph.length > 1 && (
-                      <span style={{ position: 'absolute', top: 8, right: 8, padding: '2px 7px', borderRadius: 6, background: 'rgba(5,6,5,.78)', font: '600 10px/1.6 var(--f-mono)', color: '#fff' }}>
+                      <span style={{ position: 'absolute', top: 8, right: 8, padding: '2px 7px', borderRadius: 6, background: 'var(--scrim)', font: '600 10px/1.6 var(--f-mono)', color: 'var(--text)' }}>
                         {ph.length} photos
                       </span>
                     )}
@@ -134,8 +134,8 @@ export default function Bills() {
                   </div>
                   <div style={{ padding: 13 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                      <div style={{ font: '700 13px/1.3 var(--f-body)', color: '#fff', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.note}</div>
-                      <div className="num" style={{ font: '700 14px/1 var(--f-display)', color: '#fff', flex: 'none' }}>{formatMoney(e.amount)}</div>
+                      <div style={{ font: '700 13px/1.3 var(--f-body)', color: 'var(--text)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.note}</div>
+                      <div className="num" style={{ font: '700 14px/1 var(--f-display)', color: 'var(--text)', flex: 'none' }}>{formatMoney(e.amount)}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 9 }}>
                       <Monogram name={e.supervisor?.name} color="var(--accent)" soft="var(--accent-soft)" size={22} radius={7} />

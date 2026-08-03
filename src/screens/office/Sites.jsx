@@ -28,14 +28,14 @@ export default function Sites() {
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13 }}>
                 <span className="mono-badge" style={{ width: 48, height: 48, borderRadius: 13, background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-line)', fontSize: 15 }}>{s.label.replace(/[^A-Z0-9]/gi, '').slice(0, 2).toUpperCase()}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ font: '700 17px/1.1 var(--f-display)', color: '#fff' }}>{s.name}</div>
+                  <div style={{ font: '700 17px/1.1 var(--f-display)', color: 'var(--text)' }}>{s.name}</div>
                   <div style={{ font: '500 12px/1.4 var(--f-mono)', color: 'var(--text-42)', marginTop: 6 }}>{s.city} · {s.phase} · {eng?.name.split(' ')[0]}</div>
                 </div>
                 <span className={`pill ${SITE_STATUS[s.status].pill}`} style={{ height: 24, fontSize: 10 }}><span className="dot" />{SITE_STATUS[s.status].label}</span>
               </div>
 
               <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-                {[['BUDGET', formatCompact(sp.budget), '#fff'], ['SPENT', formatCompact(sp.total), '#fff'], ['REMAINING', formatCompact(sp.remaining), 'var(--accent)']].map(([l, v, c]) => (
+                {[['BUDGET', formatCompact(sp.budget), 'var(--text)'], ['SPENT', formatCompact(sp.total), 'var(--text)'], ['REMAINING', formatCompact(sp.remaining), 'var(--accent)']].map(([l, v, c]) => (
                   <div key={l} className="surface" style={{ flex: 1, padding: '11px 12px', borderRadius: 11 }}>
                     <div style={{ font: '600 9px/1 var(--f-mono)', color: 'var(--text-40)' }}>{l}</div>
                     <div className="num" style={{ font: '700 16px/1 var(--f-display)', color: c, marginTop: 7 }}>{v}</div>

@@ -33,10 +33,10 @@ export default function History() {
   const Row = ({ e }) => {
     const ph = photosOf(e)
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 12px', borderRadius: 13, background: '#121412', border: '1px solid var(--border-3)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 12px', borderRadius: 13, background: 'var(--surface)', border: '1px solid var(--border-3)' }}>
         <span style={{ width: 6, height: 34, borderRadius: 3, background: STATUS[e.status].color, flex: 'none' }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ font: '600 12px/1.2 var(--f-body)', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.note}</div>
+          <div style={{ font: '600 12px/1.2 var(--f-body)', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.note}</div>
           <div style={{ font: '500 10px/1.2 var(--f-mono)', color: STATUS[e.status].color, marginTop: 4 }}>
             {STATUS[e.status].short}{e.status === 'engineer_review' ? ` · ${eng?.name.split(' ')[0]}` : e.status === 'rejected' ? ' · ' + (e.rejectReason?.split('—')[0].trim() || '') : ''}
             {ph.length > 0 && (
@@ -48,7 +48,7 @@ export default function History() {
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div className="num" style={{ font: '700 13px/1 var(--f-display)', color: '#fff' }}>{formatMoney(e.amount).replace('Rs ', '')}</div>
+          <div className="num" style={{ font: '700 13px/1 var(--f-display)', color: 'var(--text)' }}>{formatMoney(e.amount).replace('Rs ', '')}</div>
           {e.status === 'returned' && (
             <button className="btn btn-primary btn-sm" style={{ height: 26, marginTop: 6, fontSize: 11, padding: '0 9px' }}
               onClick={() => setFixing(e)}>Fix &amp; re-submit</button>
@@ -61,7 +61,7 @@ export default function History() {
   return (
     <div className="field-screen">
       <div style={{ padding: '6px 20px 12px' }}>
-        <div style={{ font: '700 20px/1 var(--f-display)', color: '#fff' }}>My history</div>
+        <div style={{ font: '700 20px/1 var(--f-display)', color: 'var(--text)' }}>My history</div>
         <div style={{ display: 'flex', gap: 7, marginTop: 14, flexWrap: 'wrap' }}>
           {FILTERS.map(([k, label]) => (
             <button key={k} className={`chip ${f === k ? 'on' : ''}`} style={{ height: 30, fontSize: 11 }} onClick={() => setF(k)}>{label}</button>
@@ -92,7 +92,7 @@ export default function History() {
 
       <Modal open={Boolean(viewing)} onClose={() => setViewing(null)} width={520}>
         <div style={{ padding: 20 }}>
-          <div style={{ font: '700 15px/1 var(--f-body)', color: '#fff', marginBottom: 14 }}>{viewing?.note}</div>
+          <div style={{ font: '700 15px/1 var(--f-body)', color: 'var(--text)', marginBottom: 14 }}>{viewing?.note}</div>
           <PhotoGallery photos={photosOf(viewing || {})} minPx={92} />
           <button className="btn btn-ghost" style={{ width: '100%', marginTop: 16 }} onClick={() => setViewing(null)}>Close</button>
         </div>
@@ -130,8 +130,8 @@ function ResubmitModal({ e, onClose, onDone }) {
   return (
     <Modal open onClose={onClose} width={460}>
       <div style={{ padding: 20 }}>
-        <div style={{ font: '700 16px/1 var(--f-body)', color: '#fff' }}>Fix &amp; re-submit</div>
-        <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--info)', background: 'var(--info-soft)', border: '1px solid rgba(120,170,255,.25)', borderRadius: 10, padding: '9px 12px', marginTop: 12 }}>
+        <div style={{ font: '700 16px/1 var(--f-body)', color: 'var(--text)' }}>Fix &amp; re-submit</div>
+        <div style={{ font: '500 12px/1.5 var(--f-body)', color: 'var(--info)', background: 'var(--info-soft)', border: '1px solid var(--info-line)', borderRadius: 10, padding: '9px 12px', marginTop: 12 }}>
           ↩ {e.returnNote || 'Returned to fix.'}
         </div>
 

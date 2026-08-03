@@ -143,6 +143,17 @@ export async function visiblePaths(me, paths) {
 }
 
 // ---------- helpers ----------
+// Caller's address, for rate limiting. On Vercel the platform appends the real
+// client to x-forwarded-for, so the FIRST entry is the one to use — and it is
+// client-supplied, which is why it only ever loosens a limit here, never grants
+// anything. Returns null when there is nothing trustworthy to key on.
+export function clientIp(req) {
+  const xff = req.headers['x-forwarded-for']
+  const first = String(Array.isArray(xff) ? xff[0] : (xff || '')).split(',')[0].trim()
+  const ip = first || String(req.headers['x-real-ip'] || '').trim()
+  return ip ? ip.slice(0, 64) : null
+}
+
 export function json(res, code, obj) { res.status(code).setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(obj)) }
 export async function readBody(req) {
   if (req.body && typeof req.body === 'object') return req.body
@@ -176,6 +187,9 @@ export const mapSite = (s) => ({
 export const mapAttendance = (a) => ({
   id: a.id, userId: a.user_id, date: a.date, kind: a.kind, status: a.status,
   markedAt: a.marked_at, note: a.note,
+  // rows of one multi-day leave request share this, so the reviewer decides
+  // the request rather than each of its days
+  leaveGroup: a.leave_group,
   reviewedBy: a.reviewed_by, reviewedAt: a.reviewed_at,
 })
 // `photos` is populated by data.js from expense_photo / fund_txn_photo — it is

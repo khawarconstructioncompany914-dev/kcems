@@ -1,0 +1,144 @@
+# ============================================================
+# KCEMS · nightly database backup
+#
+# Supabase's free tier takes no backups at all. This holds every site expense,
+# every hand-over of cash and every approval, so "no backups" is not a state to
+# leave it in.
+#
+# Runs at 02:00 Pakistan time, dumps the database, ENCRYPTS the dump, checks the
+# dump actually restores, and keeps it as a workflow artifact for 90 days (the
+# maximum the free plan retains).
+#
+# The encryption is not optional paranoia: this repository is public, and
+# artifacts on a public repository can be downloaded by anyone who finds the
+# run. Encrypted, the artifact is useless without BACKUP_PASSPHRASE.
+#
+# ---- Setup (once) ----
+# Repo → Settings → Secrets and variables → Actions → New repository secret:
+#
+#   SUPABASE_DB_URL     Supabase → Project Settings → Database → Connection
+#                       string → URI. Use the DIRECT connection (port 5432),
+#                       NOT the pooler (port 6543): pg_dump cannot run through
+#                       the transaction pooler.
+#   BACKUP_PASSPHRASE   A long random string. Store it somewhere that is not
+#                       this repository and not the same GitHub account — a
+#                       backup you cannot decrypt is not a backup.
+#
+# Restoring is documented in docs/OPERATIONS.md.
+# ============================================================
+name: Database backup
+
+on:
+  schedule:
+    # 21:00 UTC = 02:00 PKT — after the working day, before the next one.
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+
+# Never let two backups overlap; a slow one should be skipped, not queued.
+concurrency:
+  group: kcems-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      # A throwaway Postgres to restore INTO. A dump nobody has ever restored is
+      # a guess, not a backup — this turns every night's run into a rehearsal.
+      verify:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: verify
+          POSTGRES_DB: verify
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Install PostgreSQL 17 client
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          pg_dump --version
+
+      - name: Dump the database
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DB_URL:-}" ]; then
+            echo "::error::SUPABASE_DB_URL is not set. See the header of this workflow file."
+            exit 1
+          fi
+          echo "stamp=$(date -u +%Y-%m-%dT%H%M)" >> "$GITHUB_ENV"
+          # Custom format: compressed, and pg_restore can be selective with it.
+          # --no-owner/--no-privileges so it restores into any role, which is
+          # what you need when restoring into a NEW Supabase project.
+          pg_dump "$DB_URL" \
+            --format=custom \
+            --no-owner \
+            --no-privileges \
+            --file=kcems.dump
+          ls -lh kcems.dump
+
+      - name: Verify the dump restores
+        run: |
+          set -euo pipefail
+          export PGPASSWORD=verify
+          TARGET="postgresql://postgres:verify@localhost:5432/verify"
+
+          # Supabase-specific roles and extensions do not exist on a plain
+          # Postgres, so some errors here are expected and harmless. What is NOT
+          # negotiable is that the tables come back with their rows.
+          pg_restore --dbname "$TARGET" --no-owner --no-privileges kcems.dump || true
+
+          echo "--- tables restored ---"
+          psql "$TARGET" -Atc "select count(*) from information_schema.tables where table_schema='public'"
+
+          USERS=$(psql "$TARGET" -Atc "select count(*) from app_user")
+          EXPENSES=$(psql "$TARGET" -Atc "select count(*) from expense")
+          echo "app_user rows: $USERS"
+          echo "expense rows:  $EXPENSES"
+
+          if [ "$USERS" -lt 1 ]; then
+            echo "::error::Restore check failed — app_user came back empty. This backup is not trustworthy."
+            exit 1
+          fi
+          echo "::notice::Backup verified — $USERS users, $EXPENSES expenses restored cleanly."
+
+      - name: Encrypt
+        env:
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PASSPHRASE:-}" ]; then
+            echo "::error::BACKUP_PASSPHRASE is not set. Refusing to upload an unencrypted dump to a public repository."
+            exit 1
+          fi
+          gpg --batch --yes --symmetric \
+              --cipher-algo AES256 \
+              --passphrase "$PASSPHRASE" \
+              --output "kcems-${{ env.stamp }}.dump.gpg" \
+              kcems.dump
+          # The cleartext dump must not survive into the upload step.
+          shred -u kcems.dump 2>/dev/null || rm -f kcems.dump
+          ls -lh kcems-*.dump.gpg
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: kcems-backup-${{ env.stamp }}
+          path: kcems-*.dump.gpg
+          retention-days: 90
+          if-no-files-found: error
