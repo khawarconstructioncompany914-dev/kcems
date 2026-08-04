@@ -611,6 +611,10 @@ function LiveStoreProvider({ children }) {
     const { status, body } = await API.post('/api/login', { username, password })
     if (status === 200) { await hydrate(); return { ok: true, user: body.user } }
     if (status === 0) return { ok: false, reason: 'offline' }
+    // A 5xx is the server falling over, not a wrong password. Lumping the two
+    // together sent people off checking their spelling while the backend was
+    // down — the failure has to name itself or nobody can act on it.
+    if (status >= 500) return { ok: false, reason: 'server_error' }
     return { ok: false, reason: body.error || 'bad_password', retryAfter: body.retryAfter }
   }, [hydrate])
 
