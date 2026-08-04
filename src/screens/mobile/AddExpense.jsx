@@ -20,14 +20,28 @@ export default function AddExpense() {
   const [done, setDone] = useState(null)   // the bill just sent, if any
 
   const amt = Math.max(0, Math.round(Number(amount.toString().replace(/[^\d]/g, '')) || 0))
-  const valid = amt > 0 && note.trim() && photos.length >= 1
+  // An expense must belong to a site, so somebody who has not been put on one
+  // cannot file anything. Say so before they type an amount and photograph a
+  // bill, rather than refusing at the end.
+  const onSite = Boolean(me.siteId)
+  const valid = onSite && amt > 0 && note.trim() && photos.length >= 1
 
   const reset = () => { setAmount(''); setNote(''); setPhotos([]); setCat('materials'); setDone(null) }
+
+  // Anything the server can refuse, said in words a person on a site can act
+  // on. Anything not listed falls back to the raw message, which is still
+  // better than pretending it worked.
+  const REFUSALS = {
+    no_site_assigned: 'You are not on a site yet, so this cannot be filed. Ask the office to put you on one.',
+    photo_required: 'A photo of the bill is required.',
+    bad_amount: 'Enter an amount greater than zero.',
+    forbidden: 'Your account is not allowed to log expenses.',
+  }
 
   const submit = async () => {
     if (!valid || busy) return
     setBusy(true)
-    await dispatch({
+    const res = await dispatch({
       type: 'LOG_EXPENSE',
       payload: {
         supervisorId: me.id, siteId: me.siteId, amount: amt, category: cat, note: note.trim(),
@@ -35,7 +49,18 @@ export default function AddExpense() {
       },
     })
     setBusy(false)
-    toast(`Sent to ${eng?.name.split(' ')[0] || 'head engineer'} for review`)
+
+    // This used to show the success screen unconditionally, without looking at
+    // the reply — so a refused expense read as "Sent for review" and the bill
+    // was simply gone. The demo store returns nothing and always succeeds, so
+    // only an explicit failure counts as one.
+    if (res && res.status >= 400) {
+      return toast(REFUSALS[res.body?.error] || `Not sent — ${res.body?.error || 'please try again'}. Nothing was saved.`, 'danger')
+    }
+
+    toast(res?.body?.queued
+      ? 'No signal — saved on this phone, it will send itself'
+      : `Sent to ${eng?.name.split(' ')[0] || 'head engineer'} for review`)
     setDone({ amount: amt, note: note.trim() })
   }
 
@@ -68,6 +93,16 @@ export default function AddExpense() {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px' }}>
+        {!onSite && (
+          <div style={{
+            font: '600 12.5px/1.5 var(--f-body)', color: 'var(--warn)',
+            background: 'var(--warn-soft)', border: '1px solid var(--warn-line)',
+            borderRadius: 12, padding: '11px 14px', margin: '4px 0 14px',
+          }}>
+            You are not on a site yet, so expenses cannot be filed. Ask the office to put
+            you on one — everything else on the app works in the meantime.
+          </div>
+        )}
         <div style={{ textAlign: 'center', padding: '8px 0 18px' }}>
           <div style={{ font: '600 10px/1 var(--f-mono)', letterSpacing: '.1em', color: 'var(--text-40)' }}>AMOUNT SPENT</div>
           <input
@@ -103,7 +138,13 @@ export default function AddExpense() {
 
       <div style={{ flex: 'none', padding: '14px 20px 26px', background: 'linear-gradient(0deg, var(--bg-panel) 70%, transparent)' }}>
         <button className="btn btn-primary" style={{ width: '100%', height: 52, fontSize: 15, opacity: valid && !busy ? 1 : 0.5 }} disabled={!valid || busy} onClick={submit}>
-          {busy ? 'Sending…' : photos.length ? `Send to ${eng?.name.split(' ')[0] || 'head engineer'} for review →` : 'Add a bill photo to send'}
+          {/* Name the actual blocker. Without the first case the button reads
+              "Add a bill photo to send" to someone who has already added one
+              and is really blocked on having no site. */}
+          {busy ? 'Sending…'
+            : !onSite ? 'No site assigned yet'
+            : photos.length ? `Send to ${eng?.name.split(' ')[0] || 'head engineer'} for review →`
+            : 'Add a bill photo to send'}
         </button>
       </div>
     </div>

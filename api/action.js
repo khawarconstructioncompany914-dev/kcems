@@ -87,10 +87,15 @@ export default async function handler(req, res) {
         const p = b.payload || {}
         const photos = incomingPhotos(p)
         if (!photos.length) return json(res, 400, { error: 'photo_required' })
+        // expense.site_id is NOT NULL, and a supervisor who has not been put on
+        // a site yet has none to fall back to. Without this the insert failed
+        // on the constraint and the person was shown the raw Postgres text.
+        const siteId = p.siteId || me.site_id
+        if (!siteId) return json(res, 400, { error: 'no_site_assigned' })
         // The function returns the `expense` composite, so it can sit in FROM
         // and expand to columns — one call, and we get the new id back.
         const r = await q('select id from kcems_log_expense($1,$2,$3,$4,$5,$6)',
-          [me.id, p.siteId || me.site_id, Math.round(p.amount), p.category, p.note, null])
+          [me.id, siteId, Math.round(p.amount), p.category, p.note, null])
         const id = r.rows[0].id
         await saveExpensePhotos(id, await uploadPhotos(`${me.id}/${id}`, photos), actor)
         return ok(res)

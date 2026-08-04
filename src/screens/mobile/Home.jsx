@@ -25,7 +25,12 @@ export default function MobileHome() {
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-ink)' }} />
         </div>
         <div className="num" style={{ font: '700 40px/1 var(--f-display)', letterSpacing: '-.03em', margin: '16px 0 6px' }}>{formatMoney(bal.cash)}</div>
-        <div style={{ font: '600 12px/1 var(--f-body)', color: 'var(--on-accent-dim)' }}>{me.name} · {site?.name}</div>
+        {/* A supervisor who has not been put on a site yet has no site name to
+            show, and rendering "undefined" tells them nothing about why they
+            cannot log anything. */}
+        <div style={{ font: '600 12px/1 var(--f-body)', color: 'var(--on-accent-dim)' }}>
+          {me.name}{site?.name ? ` · ${site.name}` : ' · no site yet'}
+        </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
           <div style={{ flex: 1, background: 'var(--on-accent-wash)', borderRadius: 11, padding: '9px 11px' }}>
             <div style={{ font: '600 9px/1 var(--f-mono)', color: 'var(--on-accent-dim)' }}>FUNDED</div>

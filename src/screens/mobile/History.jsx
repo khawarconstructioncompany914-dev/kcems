@@ -84,9 +84,14 @@ export default function History() {
       </div>
 
       <ResubmitModal e={fixing} onClose={() => setFixing(null)}
-        onDone={(payload) => {
-          dispatch({ type: 'RESUBMIT', id: fixing.id, actorId: me.id, ...payload })
-          toast('Re-submitted for review')
+        onDone={async (payload) => {
+          // was fire-and-forget: the modal closed and said "re-submitted"
+          // whether or not the server took it
+          const res = await dispatch({ type: 'RESUBMIT', id: fixing.id, actorId: me.id, ...payload })
+          if (res && res.status >= 400) {
+            return toast(`Not sent — ${res.body?.error || 'please try again'}. Nothing was saved.`, 'danger')
+          }
+          toast(res?.body?.queued ? 'No signal — saved, it will send itself' : 'Re-submitted for review')
           setFixing(null)
         }} />
 
