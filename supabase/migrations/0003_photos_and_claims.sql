@@ -61,7 +61,9 @@ create index if not exists idx_expense_kind on expense(kind);
 -- ---------- keep site spend scoped to real site expenses only ----------
 -- A reimbursement has site_id = null so it would never match a site anyway, but
 -- being explicit means the view stays correct if a claim ever gets a site.
-create or replace view v_site_spend as
+-- security_invoker — see the note in 0001; `create or replace view` resets view
+-- options, so this redefinition has to carry it too
+create or replace view v_site_spend with (security_invoker = on) as
 select
   s.id as site_id,
   s.budget,
