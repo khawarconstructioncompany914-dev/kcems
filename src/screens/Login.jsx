@@ -36,6 +36,14 @@ export default function Login() {
     setBusy(false)
     if (!res.ok) {
       if (res.reason === 'disabled') return setErr('This account has been disabled. Contact the owner.')
+      if (res.reason === 'server_error') {
+        return setErr('The system is not responding — this is not your password. Tell the office; nobody can sign in until it is fixed.')
+      }
+      if (res.reason === 'offline') {
+        return setErr('No internet connection. Signing in needs one — check your signal and try again.')
+      }
+      // `backend_not_configured` needs no case of its own: it arrives as a 503,
+      // which the 5xx branch above already reports as "tell the office".
       if (res.reason === 'too_many_attempts') {
         return setErr(`Too many sign-in attempts from here. Try again ${waitWords(res.retryAfter)}, or ask the owner or admin to reset your password.`)
       }
