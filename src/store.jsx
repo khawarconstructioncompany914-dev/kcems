@@ -320,6 +320,111 @@ function reducer(state, action) {
         audit: log({ actorId: action.actorId, action: 'attendance.review', entity: 'Attendance', entityId: action.leaveGroup || action.attendanceId, after: { status: action.approve ? 'approved' : 'rejected' } }),
       }
 
+    // ---------------- vendors & bank ----------------
+    // Mirrors 0008 so the demo store behaves like the live one. Balances are
+    // derived in the selectors, never stored — the same rule the SQL views
+    // follow, and the whole reason the digital ledger beats the paper one.
+    case 'CREATE_VENDOR_CATEGORY': {
+      const c = { id: uid('vc'), name: action.payload.name }
+      return {
+        ...state,
+        vendorCategories: [...(state.vendorCategories || []), c].sort((a, b) => a.name.localeCompare(b.name)),
+        audit: log({ actorId: action.actorId, action: 'vendor_category.create', entity: 'VendorCategory', entityId: c.id, after: { name: c.name } }),
+      }
+    }
+
+    case 'CREATE_VENDOR': {
+      const p = action.payload || {}
+      const v = {
+        id: uid('vn'), name: p.name, categoryId: p.categoryId || null,
+        contactName: p.contactName || null, contactPhone: p.contactPhone || null,
+        status: 'active', createdAt: now,
+      }
+      return {
+        ...state,
+        vendors: [...(state.vendors || []), v].sort((a, b) => a.name.localeCompare(b.name)),
+        audit: log({ actorId: action.actorId, action: 'vendor.create', entity: 'Vendor', entityId: v.id, after: { name: v.name } }),
+      }
+    }
+
+    case 'UPDATE_VENDOR':
+      return {
+        ...state,
+        vendors: (state.vendors || []).map((v) => (v.id === action.vendorId ? { ...v, ...action.patch } : v)),
+        audit: log({ actorId: action.actorId, action: 'vendor.update', entity: 'Vendor', entityId: action.vendorId, after: action.patch }),
+      }
+
+    case 'ASSIGN_VENDOR_SITE': {
+      const exists = (state.siteVendors || []).some((sv) => sv.siteId === action.siteId && sv.vendorId === action.vendorId)
+      if (exists) return state
+      const sv = { id: uid('sv'), siteId: action.siteId, vendorId: action.vendorId }
+      return {
+        ...state,
+        siteVendors: [...(state.siteVendors || []), sv],
+        audit: log({ actorId: action.actorId, action: 'vendor.assign_site', entity: 'SiteVendor', entityId: sv.id, after: { vendorId: action.vendorId, siteId: action.siteId } }),
+      }
+    }
+
+    case 'UNASSIGN_VENDOR_SITE':
+      return {
+        ...state,
+        siteVendors: (state.siteVendors || []).filter((sv) => !(sv.siteId === action.siteId && sv.vendorId === action.vendorId)),
+        audit: log({ actorId: action.actorId, action: 'vendor.unassign_site', entity: 'SiteVendor', entityId: action.vendorId, after: { vendorId: action.vendorId, siteId: action.siteId } }),
+      }
+
+    case 'CREATE_VENDOR_BILL': {
+      const p = action.payload || {}
+      const bill = {
+        id: uid('vb'), vendorId: p.vendorId, siteId: p.siteId, categoryId: p.categoryId || null,
+        title: p.title, contractedAmount: Math.round(p.amount), rateNote: p.rateNote || null,
+        startDate: p.startDate || null, status: 'open', createdAt: now,
+        photos: toPhotos(p.photos),
+      }
+      // creating a bill deploys the vendor to that site, matching the SQL
+      const already = (state.siteVendors || []).some((sv) => sv.siteId === p.siteId && sv.vendorId === p.vendorId)
+      return {
+        ...state,
+        vendorBills: [bill, ...(state.vendorBills || [])],
+        siteVendors: already ? state.siteVendors : [...(state.siteVendors || []), { id: uid('sv'), siteId: p.siteId, vendorId: p.vendorId }],
+        audit: log({ actorId: action.actorId, action: 'vendor_bill.create', entity: 'VendorBill', entityId: bill.id, after: { contractedAmount: bill.contractedAmount, vendorId: p.vendorId, siteId: p.siteId } }),
+      }
+    }
+
+    case 'SET_VENDOR_BILL_STATUS':
+      return {
+        ...state,
+        vendorBills: (state.vendorBills || []).map((b) => (b.id === action.billId ? { ...b, status: action.status } : b)),
+        audit: log({ actorId: action.actorId, action: `vendor_bill.${action.status}`, entity: 'VendorBill', entityId: action.billId, after: { status: action.status } }),
+      }
+
+    case 'CREATE_BANK_ACCOUNT': {
+      const p = action.payload || {}
+      const a = {
+        id: uid('ba'), bankName: p.bankName, accountTitle: p.accountTitle, accountNumber: p.accountNumber,
+        branch: p.branch || null, address: p.address || null, status: 'active',
+        openingBalance: Math.round(p.openingBalance || 0), createdAt: now,
+      }
+      return {
+        ...state,
+        bankAccounts: [...(state.bankAccounts || []), a],
+        audit: log({ actorId: action.actorId, action: 'bank_account.create', entity: 'BankAccount', entityId: a.id, after: { bankName: a.bankName, accountTitle: a.accountTitle } }),
+      }
+    }
+
+    case 'BANK_TXN': {
+      const p = action.payload || {}
+      const t = {
+        id: uid('bt'), bankAccountId: p.accountId, vendorBillId: p.vendorBillId || null,
+        type: p.type, purpose: p.purpose || 'other', amount: Math.round(p.amount),
+        note: p.note || null, byUserId: action.actorId, createdAt: now,
+      }
+      return {
+        ...state,
+        bankTxns: [t, ...(state.bankTxns || [])],
+        audit: log({ actorId: action.actorId, action: `bank_txn.${t.type}`, entity: 'BankTxn', entityId: t.id, after: { amount: t.amount, purpose: t.purpose, vendorBillId: t.vendorBillId } }),
+      }
+    }
+
     // re-wire a supervisor to a different engineer
     case 'REASSIGN_SUP':
       return {
@@ -399,6 +504,8 @@ function LocalStoreProvider({ children }) {
 const EMPTY = {
   users: [], sites: [], expenses: [], funds: [], attendance: [], progress: [], audit: [],
   balances: null, siteSpend: null, session: null,
+  vendorCategories: [], vendors: [], siteVendors: [], vendorBills: [],
+  bankAccounts: null, bankTxns: null,
 }
 
 const toState = (body) => ({
@@ -414,6 +521,14 @@ const toState = (body) => ({
   // knows whether the month it is showing is actually in the data it holds.
   attendanceMonth: body.attendanceMonth ?? null,
   attendanceScope: body.attendanceScope ?? null,
+  // null (not []) when the role may not see them — the screens use that to say
+  // "not yours to see" rather than "none exist yet".
+  vendorCategories: body.vendorCategories ?? null,
+  vendors: body.vendors ?? null,
+  siteVendors: body.siteVendors ?? null,
+  vendorBills: body.vendorBills ?? null,
+  bankAccounts: body.bankAccounts ?? null,
+  bankTxns: body.bankTxns ?? null,
   session: body.session || null,
 })
 
@@ -707,6 +822,58 @@ export function makeSelectors(state) {
     return datesBetween(from, to).filter((d) => taken.has(d))
   }
 
+  // ---------- vendors & bank ----------
+  // `null` means this role is not shown them at all; `[]` means none exist yet.
+  // The screens say different things for the two, so the distinction survives
+  // all the way from api/data.js to here.
+  const vendors = state.vendors
+  const vendorBills = state.vendorBills
+  const bankAccounts = state.bankAccounts
+  const bankTxns = state.bankTxns
+  const canSeeVendors = (user = me) => ['owner', 'admin', 'finance'].includes(user?.role)
+  const canEditVendors = (user = me) => ['owner', 'admin'].includes(user?.role)
+  const canSeeBank = (user = me) => ['owner', 'finance'].includes(user?.role)
+
+  const vendorById = (id) => (vendors || []).find((v) => v.id === id)
+  const vendorCategoryById = (id) => (state.vendorCategories || []).find((c) => c.id === id)
+  const sitesForVendor = (vendorId) => (state.siteVendors || [])
+    .filter((sv) => sv.vendorId === vendorId).map((sv) => siteById(sv.siteId)).filter(Boolean)
+  const vendorsForSite = (siteId) => (state.siteVendors || [])
+    .filter((sv) => sv.siteId === siteId).map((sv) => vendorById(sv.vendorId)).filter(Boolean)
+
+  // Mirrors v_vendor_bill_balance: cash_out against the bill, less any cash_in
+  // booked back to it. In live mode the server already computed `paid` and
+  // `balance`; recomputing here would double-count nothing but would disagree
+  // with the server the moment the windowing rules differ, so prefer its answer.
+  const billBalance = (bill) => {
+    if (!bill) return { paid: 0, balance: 0 }
+    if (typeof bill.paid === 'number' && typeof bill.balance === 'number') {
+      return { paid: bill.paid, balance: bill.balance }
+    }
+    const paid = (bankTxns || [])
+      .filter((t) => t.vendorBillId === bill.id)
+      .reduce((a, t) => a + (t.type === 'cash_out' ? t.amount : -t.amount), 0)
+    return { paid, balance: bill.contractedAmount - paid }
+  }
+
+  const vendorBillsForVendor = (vendorId) => (vendorBills || []).filter((b) => b.vendorId === vendorId)
+  const vendorBillsForSite = (siteId) => (vendorBills || []).filter((b) => b.siteId === siteId)
+
+  // Mirrors v_bank_account_balance.
+  const accountBalance = (account) => {
+    if (!account) return { cashIn: 0, cashOut: 0, closingBalance: 0 }
+    if (typeof account.closingBalance === 'number' && typeof account.cashIn === 'number') {
+      return { cashIn: account.cashIn, cashOut: account.cashOut, closingBalance: account.closingBalance }
+    }
+    const rows = (bankTxns || []).filter((t) => t.bankAccountId === account.id)
+    const cashIn = rows.filter((t) => t.type === 'cash_in').reduce((a, t) => a + t.amount, 0)
+    const cashOut = rows.filter((t) => t.type === 'cash_out').reduce((a, t) => a + t.amount, 0)
+    return { cashIn, cashOut, closingBalance: account.openingBalance + cashIn - cashOut }
+  }
+
+  const bankAccountById = (id) => (bankAccounts || []).find((a) => a.id === id)
+  const bankTxnsForAccount = (id) => (bankTxns || []).filter((t) => t.bankAccountId === id)
+
   // ---------- site progress ----------
   // Expected progress assumes even, linear work between the two dates. That is
   // a rough model and the UI says so — it is a prompt to look, not a verdict.
@@ -746,6 +913,11 @@ export function makeSelectors(state) {
     attendance, attendanceFor, attendanceOn, myAttendanceToday,
     pendingLeave, pendingLeaveRequests, pendingLeaveCount,
     canSeeAllAttendance, myLeaveRequests, leaveClash,
+    vendors, vendorBills, bankAccounts, bankTxns,
+    canSeeVendors, canEditVendors, canSeeBank,
+    vendorById, vendorCategoryById, sitesForVendor, vendorsForSite,
+    billBalance, vendorBillsForVendor, vendorBillsForSite,
+    accountBalance, bankAccountById, bankTxnsForAccount,
     siteSchedule, progressHistory,
   }
 }

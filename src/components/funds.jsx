@@ -36,11 +36,17 @@ export function AddFundsModal({ open, onClose, supervisorId, presetSupervisor = 
   const submit = async () => {
     if (!valid || busy) return
     setBusy(true)
-    await dispatch({
+    const res = await dispatch({
       type: 'ADD_FUNDS', supervisorId: sid, amount: amt, method, note, actorId: me.id,
       photos: photos.map((p) => ({ dataUrl: p.dataUrl, capturedAt: p.capturedAt })),
     })
     setBusy(false)
+    // Handing over cash is the one action with no paper trail of its own. If
+    // the server refused it, saying "Added Rs 50,000" and closing the modal
+    // would leave finance believing money was recorded that was not.
+    if (res && res.status >= 400) {
+      return toast(`Not recorded — ${res.body?.error || 'please try again'}. Nothing was saved.`, 'danger')
+    }
     toast(`Added ${formatMoney(amt)} to ${sup?.name?.split(' ')[0]}`, 'accent')
     setAmount(''); setNote(''); setPhotos([]); onClose()
   }

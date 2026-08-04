@@ -174,6 +174,77 @@ export function buildSeed() {
     })
   }
 
+  // ---------- Vendors, contracts and the bank ledger ----------
+  // Shaped like the paper sub-contractor agreement this replaces: a trade, a
+  // contracted estimate, and a running column of payments against it.
+  const vendorCategories = [
+    { id: 'vc_plaster', name: 'Plaster / Chinai' },
+    { id: 'vc_rcc', name: 'RCC work' },
+    { id: 'vc_tile', name: 'Tile / Granite' },
+    { id: 'vc_glass', name: 'Glass work' },
+    { id: 'vc_ceiling', name: 'Ceiling' },
+    { id: 'vc_electrical', name: 'Electrical' },
+  ]
+
+  const vendors = [
+    { id: 'vn_safder', name: 'Safder Bhatti', categoryId: 'vc_plaster', contactName: 'Safder', contactPhone: '+92 300 4567890', status: 'active', createdAt: daysAgo(60) },
+    { id: 'vn_rashid', name: 'Rashid Tiles & Granite', categoryId: 'vc_tile', contactName: 'Rashid Mehmood', contactPhone: '+92 321 7654321', status: 'active', createdAt: daysAgo(45) },
+    { id: 'vn_noor', name: 'Noor Glass House', categoryId: 'vc_glass', contactName: 'Noor Ahmed', contactPhone: '+92 333 1122334', status: 'active', createdAt: daysAgo(30) },
+    { id: 'vn_shahid', name: 'Shahid Electric Works', categoryId: 'vc_electrical', contactName: 'Shahid', contactPhone: '+92 301 9988776', status: 'inactive', createdAt: daysAgo(90) },
+  ]
+
+  const siteVendors = [
+    { id: 'sv1', siteId: 'dha6', vendorId: 'vn_safder' },
+    { id: 'sv2', siteId: 'gulberg', vendorId: 'vn_safder' },
+    { id: 'sv3', siteId: 'dha6', vendorId: 'vn_rashid' },
+    { id: 'sv4', siteId: 'emaar_c', vendorId: 'vn_noor' },
+  ]
+
+  const vendorBills = [
+    { id: 'vb_safder_dha', vendorId: 'vn_safder', siteId: 'dha6', categoryId: 'vc_plaster',
+      title: 'Plaster — blocks A & B', contractedAmount: 1_500_000,
+      rateNote: 'Chinai/plaster Rs 32/sq ft, RCC Rs 55/sq ft. Rates hold only if work follows the drawing and the supervisor’s method.',
+      startDate: daysAgo(55).slice(0, 10), status: 'open', createdAt: daysAgo(55), photos: [] },
+    { id: 'vb_rashid_dha', vendorId: 'vn_rashid', siteId: 'dha6', categoryId: 'vc_tile',
+      title: 'Floor tiling — ground floor', contractedAmount: 640_000,
+      rateNote: 'Rs 145/sq ft laid, material by company.',
+      startDate: daysAgo(20).slice(0, 10), status: 'open', createdAt: daysAgo(20), photos: [] },
+    { id: 'vb_noor_emaar', vendorId: 'vn_noor', siteId: 'emaar_c', categoryId: 'vc_glass',
+      title: 'Glass partitions — 2nd floor', contractedAmount: 380_000,
+      rateNote: '12mm toughened, Rs 480/sq ft fitted.',
+      startDate: daysAgo(38).slice(0, 10), status: 'closed', createdAt: daysAgo(38), photos: [] },
+  ]
+
+  const bankAccounts = [
+    { id: 'ba_ubl', bankName: 'UBL', accountTitle: 'Khawar Construction Co.', accountNumber: '0123-456789012',
+      branch: 'Sector I-9, Islamabad', address: 'I-9 Markaz, Islamabad', status: 'active',
+      openingBalance: 4_000_000, createdAt: daysAgo(120) },
+    { id: 'ba_abl', bankName: 'ABL', accountTitle: 'Khawar Construction Co. — Operations', accountNumber: '9876-543210987',
+      branch: 'Gulberg III, Lahore', address: 'Main Boulevard, Gulberg III', status: 'active',
+      openingBalance: 1_200_000, createdAt: daysAgo(120) },
+  ]
+
+  // The payment column from the paper form: a run of instalments against the
+  // plaster contract, plus the deposits that funded them.
+  const pay = (id, days, amount, billId, purpose = 'vendor_payment', account = 'ba_ubl') => ({
+    id, bankAccountId: account, vendorBillId: billId, type: 'cash_out', purpose,
+    amount, note: null, byUserId: 'u_fin', createdAt: daysAgo(days),
+  })
+  const bankTxns = [
+    { id: 'bt_open1', bankAccountId: 'ba_ubl', vendorBillId: null, type: 'cash_in', purpose: 'owner_deposit',
+      amount: 2_500_000, note: 'Owner funding — August', byUserId: 'u_fin', createdAt: daysAgo(40) },
+    pay('bt_s1', 53, 130_000, 'vb_safder_dha'),
+    pay('bt_s2', 46, 70_000, 'vb_safder_dha', 'vendor_payment', 'ba_abl'),
+    pay('bt_s3', 42, 100_000, 'vb_safder_dha'),
+    pay('bt_s4', 35, 80_000, 'vb_safder_dha', 'vendor_payment', 'ba_abl'),
+    pay('bt_s5', 25, 160_000, 'vb_safder_dha'),
+    pay('bt_s6', 18, 100_000, 'vb_safder_dha'),
+    pay('bt_r1', 12, 200_000, 'vb_rashid_dha'),
+    pay('bt_n1', 30, 380_000, 'vb_noor_emaar'),
+    { id: 'bt_wd1', bankAccountId: 'ba_abl', vendorBillId: null, type: 'cash_out', purpose: 'withdrawal',
+      amount: 150_000, note: 'Cash for site floats', byUserId: 'u_fin', createdAt: daysAgo(9) },
+  ]
+
   return {
     users,
     sites,
@@ -181,6 +252,12 @@ export function buildSeed() {
     expenses,
     progress,
     attendance,
+    vendorCategories,
+    vendors,
+    siteVendors,
+    vendorBills,
+    bankAccounts,
+    bankTxns,
     audit: [],
     session: null, // logged-out
   }

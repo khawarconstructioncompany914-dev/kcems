@@ -37,6 +37,24 @@ const VERBS = {
   'site.progress': ['logged site progress', 'flow'],
   'attendance.mark': ['marked their attendance', 'flow'],
   'attendance.review': ['decided a leave request', 'flow'],
+  'attendance.leave_request': ['requested leave', 'flow'],
+  'vendor.create': ['added a vendor', 'admin'],
+  'vendor.update': ['edited a vendor', 'admin'],
+  'vendor.assign_site': ['put a vendor on a site', 'admin'],
+  'vendor.unassign_site': ['took a vendor off a site', 'admin'],
+  'vendor_category.create': ['added a trade', 'admin'],
+  'vendor_bill.create': ['recorded a sub-contract', 'money'],
+  'vendor_bill.closed': ['closed a sub-contract', 'flow'],
+  'vendor_bill.open': ['re-opened a sub-contract', 'flow'],
+  'bank_account.create': ['added a bank account', 'admin'],
+  'bank_txn.cash_in': ['recorded money into the bank', 'good'],
+  'bank_txn.cash_out': ['paid money out of the bank', 'money'],
+}
+
+// Purposes are stored as enum keys; the log should read like a sentence.
+const PURPOSE_WORDS = {
+  vendor_payment: 'vendor payment', owner_deposit: 'owner deposit',
+  withdrawal: 'withdrawal', salary: 'salary', other: 'other',
 }
 
 const KIND_COLOR = {
@@ -46,9 +64,10 @@ const KIND_COLOR = {
 
 const GROUPS = {
   all: () => true,
-  money: (a) => a.action.startsWith('expense.') || a.action.startsWith('funds.'),
+  money: (a) => a.action.startsWith('expense.') || a.action.startsWith('funds.')
+    || a.action.startsWith('bank_') || a.action.startsWith('vendor_bill.'),
   people: (a) => a.action.startsWith('user.') || a.action.startsWith('attendance.'),
-  sites: (a) => a.action.startsWith('site.'),
+  sites: (a) => a.action.startsWith('site.') || a.action.startsWith('vendor.') || a.action.startsWith('vendor_category.'),
 }
 
 // The `after` blob differs per action; show only the parts that mean something
@@ -64,6 +83,9 @@ function detail(row) {
   if (a.status && !String(a.status).startsWith(verb.replace(/e$/, ''))) {
     bits.push(String(a.status).replace(/_/g, ' '))
   }
+  if (typeof a.contractedAmount === 'number') bits.push(formatMoney(a.contractedAmount))
+  if (a.purpose) bits.push(PURPOSE_WORDS[a.purpose] || a.purpose)
+  if (a.bankName) bits.push(a.bankName)
   if (typeof a.pct === 'number') bits.push(`${a.pct}%`)
   if (a.kind) bits.push(a.kind)
   if (a.role) bits.push(ROLES[a.role]?.label || a.role)

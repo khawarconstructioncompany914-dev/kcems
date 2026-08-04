@@ -205,3 +205,38 @@ export const mapFund = (f) => ({
   id: f.id, supervisorId: f.supervisor_id, type: f.type, method: f.method, amount: f.amount,
   byUserId: f.by_user_id, note: f.note, createdAt: f.created_at, photos: [],
 })
+
+// ---------- vendors & bank (0008) ----------
+export const mapVendorCategory = (c) => ({ id: c.id, name: c.name })
+
+export const mapVendor = (v) => ({
+  id: v.id, name: v.name, categoryId: v.category_id, contactName: v.contact_name,
+  contactPhone: v.contact_phone, status: v.status, createdAt: v.created_at,
+})
+
+export const mapSiteVendor = (sv) => ({ id: sv.id, siteId: sv.site_id, vendorId: sv.vendor_id })
+
+// `paid` and `balance` arrive from the v_vendor_bill_balance join. The
+// fallbacks are for a caller that selects the table alone: a bill with no
+// payments is unpaid and owes its full amount, which is the honest default —
+// not zero, which would read as "nothing outstanding".
+export const mapVendorBill = (b) => ({
+  id: b.id, vendorId: b.vendor_id, siteId: b.site_id, categoryId: b.category_id,
+  title: b.title, contractedAmount: b.contracted_amount, rateNote: b.rate_note,
+  startDate: b.start_date, status: b.status, createdAt: b.created_at,
+  paid: b.paid ?? 0, balance: b.balance ?? b.contracted_amount,
+  photos: [],
+})
+
+export const mapBankAccount = (a) => ({
+  id: a.id, bankName: a.bank_name, accountTitle: a.account_title, accountNumber: a.account_number,
+  branch: a.branch, address: a.address, status: a.status, openingBalance: a.opening_balance,
+  cashIn: a.cash_in ?? 0, cashOut: a.cash_out ?? 0,
+  closingBalance: a.closing_balance ?? a.opening_balance,
+})
+
+export const mapBankTxn = (t) => ({
+  id: t.id, bankAccountId: t.bank_account_id, vendorBillId: t.vendor_bill_id,
+  type: t.type, purpose: t.purpose, amount: t.amount, note: t.note,
+  byUserId: t.by_user_id, createdAt: t.created_at,
+})

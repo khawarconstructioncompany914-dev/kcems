@@ -37,7 +37,7 @@ export default function MyExpenses() {
   const submit = async () => {
     if (!valid || busy) return
     setBusy(true)
-    await dispatch({
+    const res = await dispatch({
       type: 'LOG_CLAIM',
       payload: {
         claimantId: me.id, amount: amt, category: cat, note: note.trim(),
@@ -45,8 +45,13 @@ export default function MyExpenses() {
       },
     })
     setBusy(false)
+    // Don't clear the form and claim success without checking — a refused
+    // claim used to wipe what was typed and report that it had been sent.
+    if (res && res.status >= 400) {
+      return toast(`Not sent — ${res.body?.error || 'please try again'}. Nothing was saved.`, 'danger')
+    }
     setAmount(''); setNote(''); setPhotos([]); setCat('travel')
-    toast(`Claim sent to finance · ${formatMoney(amt)}`)
+    toast(res?.body?.queued ? 'No signal — saved, it will send itself' : `Claim sent to finance · ${formatMoney(amt)}`)
   }
 
   return (
