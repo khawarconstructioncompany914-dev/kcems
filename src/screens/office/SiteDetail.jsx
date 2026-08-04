@@ -8,7 +8,8 @@ import { Monogram, Progress, StatusPill, Modal } from '../../components/bits.jsx
 export default function SiteDetail() {
   const { id } = useParams()
   const { dispatch, toast } = useStore()
-  const { state, me, siteById, userById, siteSpend, cashInHand, supervisors, expenseView, siteSchedule, progressHistory } = useSelectors()
+  const { state, me, siteById, userById, siteSpend, cashInHand, supervisors, expenseView, siteSchedule, progressHistory,
+          canSeeVendors, vendorById, billBalance, vendorBillsForSite } = useSelectors()
   const [logging, setLogging] = useState(false)
   const site = siteById(id)
   if (!site) return <div style={{ color: 'var(--text-50)' }}>Site not found. <Link to="/sites">Back</Link></div>
@@ -19,6 +20,7 @@ export default function SiteDetail() {
   const cats = ['materials', 'labour', 'fuel', 'tea_food'].map((k) => ({ k, val: sp.byCat[k] || 0 }))
   const sched = siteSchedule(site)
   const history = progressHistory(id)
+  const siteBills = vendorBillsForSite(id)
   const pct = site.progress?.pct ?? 0
   // progress is never self-reported by the people being measured: a head
   // engineer may log it for their own sites, the office for any
@@ -131,6 +133,34 @@ export default function SiteDetail() {
               )
             })}
           </Card>
+
+          {/* Sub-contractors on this site. Read-only — assigning them and
+              recording contracts lives on /vendors, which finance cannot reach
+              at all, so this only renders for the roles that are shown them. */}
+          {canSeeVendors() && siteBills.length > 0 && (
+            <Card pad={22}>
+              <div style={{ font: '700 14px/1 var(--f-body)', color: 'var(--text)', marginBottom: 12 }}>Sub-contractors</div>
+              {siteBills.map((b) => {
+                const { paid, balance } = billBalance(b)
+                return (
+                  <div key={b.id} style={{ padding: '11px 0', borderTop: '1px solid var(--border-3)' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ font: '600 12.5px/1.3 var(--f-body)', color: 'var(--text)' }}>{vendorById(b.vendorId)?.name}</div>
+                        <div style={{ font: '500 11.5px/1.4 var(--f-body)', color: 'var(--text-50)', marginTop: 2 }}>{b.title}</div>
+                      </div>
+                      <div className="num" style={{ font: '700 12.5px/1 var(--f-display)', color: balance > 0 ? 'var(--warn)' : 'var(--accent)' }}>
+                        {balance > 0 ? formatCompact(balance) : 'settled'}
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 7 }}>
+                      <Progress pct={b.contractedAmount ? Math.min(100, Math.round((paid / b.contractedAmount) * 100)) : 0} height={6} />
+                    </div>
+                  </div>
+                )
+              })}
+            </Card>
+          )}
 
           <Card pad={22}>
             <div style={{ font: '700 14px/1 var(--f-body)', color: 'var(--text)', marginBottom: 12 }}>Recent expenses</div>

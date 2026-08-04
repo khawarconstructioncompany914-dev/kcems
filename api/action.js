@@ -12,6 +12,15 @@ const CLAIM_CATS = new Set(['travel', 'lodging', 'tea_food', 'other'])
 // engineer (supervisor) cannot log it, only their head engineer or the office.
 const PROGRESS_ROLES = new Set(['engineer', 'owner', 'admin'])
 
+// The vendor/bank split mirrors who holds which pen on the paper form: Muzamil
+// signs the contract terms at the top, Tariq records the payments at the
+// bottom. Deliberately disjoint apart from the owner — admin cannot move money,
+// finance cannot change what was agreed.
+const VENDOR_ROLES = new Set(['owner', 'admin'])
+const BANK_ROLES = new Set(['owner', 'finance'])
+
+const BANK_PURPOSES = new Set(['vendor_payment', 'owner_deposit', 'withdrawal', 'salary', 'other'])
+
 const ok = (res) => json(res, 200, { ok: true })
 const deny = (res) => json(res, 403, { error: 'forbidden' })
 
@@ -221,6 +230,104 @@ export default async function handler(req, res) {
           await q('select kcems_review_leave($1,$2,$3)', [b.attendanceId, Boolean(b.approve), actor])
         }
         return ok(res)
+      }
+
+      // ---------- vendors (admin side) ----------
+      case 'CREATE_VENDOR_CATEGORY': {
+        if (!VENDOR_ROLES.has(me.role)) return deny(res)
+        const name = String(b.payload?.name || '').trim()
+        if (!name) return json(res, 400, { error: 'missing_fields' })
+        const taken = await q('select 1 from vendor_category where lower(name) = lower($1)', [name])
+        if (taken.rowCount) return json(res, 409, { error: 'category_exists' })
+        const r = await q('select id from kcems_create_vendor_category($1,$2)', [actor, name])
+        return json(res, 200, { ok: true, id: r.rows[0].id })
+      }
+
+      case 'CREATE_VENDOR': {
+        if (!VENDOR_ROLES.has(me.role)) return deny(res)
+        const p = b.payload || {}
+        const name = String(p.name || '').trim()
+        if (!name) return json(res, 400, { error: 'missing_fields' })
+        const r = await q('select id from kcems_create_vendor($1,$2,$3,$4,$5)',
+          [actor, name, p.categoryId || null, p.contactName || null, p.contactPhone || null])
+        return json(res, 200, { ok: true, id: r.rows[0].id })
+      }
+
+      case 'UPDATE_VENDOR': {
+        if (!VENDOR_ROLES.has(me.role)) return deny(res)
+        const patch = b.patch || {}
+        // Every argument is coalesced in SQL, so null means "leave alone" —
+        // which is why an empty string has to become null here rather than
+        // being passed through and blanking the field.
+        const blank = (v) => (v === undefined || v === null || String(v).trim() === '' ? null : String(v).trim())
+        await q('select kcems_update_vendor($1,$2,$3,$4,$5,$6,$7)', [
+          actor, b.vendorId, blank(patch.name), patch.categoryId || null,
+          blank(patch.contactName), blank(patch.contactPhone),
+          patch.status === 'active' || patch.status === 'inactive' ? patch.status : null,
+        ])
+        return ok(res)
+      }
+
+      case 'ASSIGN_VENDOR_SITE':
+      case 'UNASSIGN_VENDOR_SITE': {
+        if (!VENDOR_ROLES.has(me.role)) return deny(res)
+        if (!b.vendorId || !b.siteId) return json(res, 400, { error: 'missing_fields' })
+        const fn = b.type === 'ASSIGN_VENDOR_SITE' ? 'kcems_assign_vendor_site' : 'kcems_unassign_vendor_site'
+        await q(`select ${fn}($1,$2,$3)`, [actor, b.vendorId, b.siteId])
+        return ok(res)
+      }
+
+      case 'CREATE_VENDOR_BILL': {
+        if (!VENDOR_ROLES.has(me.role)) return deny(res)
+        const p = b.payload || {}
+        const amount = Math.round(Number(p.amount))
+        if (!p.vendorId || !p.siteId || !String(p.title || '').trim()) return json(res, 400, { error: 'missing_fields' })
+        if (!(amount > 0)) return json(res, 400, { error: 'bad_amount' })
+        const r = await q('select id from kcems_create_vendor_bill($1,$2,$3,$4,$5,$6,$7,$8)',
+          [actor, p.vendorId, p.siteId, p.categoryId || null, String(p.title).trim(),
+           amount, p.rateNote || null, p.startDate || null])
+        const id = r.rows[0].id
+        // Photos are optional here, unlike an expense: the paper agreement may
+        // be signed days before anybody photographs it.
+        const up = await uploadPhotos(`vendor/${id}`, incomingPhotos(p), 4)
+        for (const ph of up) {
+          await q(`insert into vendor_bill_photo (vendor_bill_id, storage_path, captured_at, uploaded_by)
+                   values ($1, $2, coalesce($3::timestamptz, now()), $4)`, [id, ph.path, ph.capturedAt, actor])
+        }
+        return json(res, 200, { ok: true, id })
+      }
+
+      case 'SET_VENDOR_BILL_STATUS': {
+        if (!VENDOR_ROLES.has(me.role)) return deny(res)
+        if (b.status !== 'open' && b.status !== 'closed') return json(res, 400, { error: 'bad_status' })
+        await q('select kcems_set_vendor_bill_status($1,$2,$3)', [actor, b.billId, b.status])
+        return ok(res)
+      }
+
+      // ---------- bank (finance side) ----------
+      case 'CREATE_BANK_ACCOUNT': {
+        if (!BANK_ROLES.has(me.role)) return deny(res)
+        const p = b.payload || {}
+        if (!String(p.bankName || '').trim() || !String(p.accountTitle || '').trim() || !String(p.accountNumber || '').trim()) {
+          return json(res, 400, { error: 'missing_fields' })
+        }
+        const r = await q('select id from kcems_create_bank_account($1,$2,$3,$4,$5,$6,$7)',
+          [actor, String(p.bankName).trim(), String(p.accountTitle).trim(), String(p.accountNumber).trim(),
+           p.branch || null, p.address || null, Math.round(Number(p.openingBalance) || 0)])
+        return json(res, 200, { ok: true, id: r.rows[0].id })
+      }
+
+      case 'BANK_TXN': {
+        if (!BANK_ROLES.has(me.role)) return deny(res)
+        const p = b.payload || {}
+        const amount = Math.round(Number(p.amount))
+        if (p.type !== 'cash_in' && p.type !== 'cash_out') return json(res, 400, { error: 'bad_type' })
+        if (!p.accountId) return json(res, 400, { error: 'missing_fields' })
+        if (!(amount > 0)) return json(res, 400, { error: 'bad_amount' })
+        const purpose = BANK_PURPOSES.has(p.purpose) ? p.purpose : 'other'
+        const r = await q('select id from kcems_bank_txn($1,$2,$3::bank_txn_type_t,$4,$5::bank_purpose_t,$6,$7)',
+          [actor, p.accountId, p.type, amount, purpose, p.vendorBillId || null, p.note || null])
+        return json(res, 200, { ok: true, id: r.rows[0].id })
       }
 
       case 'CREATE_USER': {

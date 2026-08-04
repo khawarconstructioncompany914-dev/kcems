@@ -17,6 +17,8 @@ import SiteDetail from './screens/office/SiteDetail.jsx'
 import Reports from './screens/office/Reports.jsx'
 import AdminAccess from './screens/office/AdminAccess.jsx'
 import Activity from './screens/office/Activity.jsx'
+import Vendors from './screens/office/Vendors.jsx'
+import Bank from './screens/office/Bank.jsx'
 import Bills from './screens/office/Bills.jsx'
 import MyExpenses from './screens/office/MyExpenses.jsx'
 import OfficeAttendance from './screens/office/Attendance.jsx'
@@ -87,6 +89,12 @@ export default function App() {
           {/* the audit trail spans every site and everyone's actions, so it
               stays with the two roles that already see all of both */}
           <Route path="/activity"  element={<RoleGate roles={['owner', 'admin']}><Activity /></RoleGate>} />
+          {/* The vendor/bank split mirrors who holds which pen on the paper
+              agreement: admin signs the contract terms, finance moves the money.
+              Finance reaches vendor bills through the bank screen's contract
+              picker rather than through /vendors. */}
+          <Route path="/vendors"   element={<RoleGate roles={['owner', 'admin']}><Vendors /></RoleGate>} />
+          <Route path="/bank"      element={<RoleGate roles={['owner', 'finance']}><Bank /></RoleGate>} />
           <Route path="/bills"     element={<RoleGate roles={['owner', 'finance', 'admin']}><Bills /></RoleGate>} />
           {/* an engineer's own reimbursement claims — office shell, same as their queue */}
           <Route path="/my-expenses" element={<RoleGate roles={['engineer']}><MyExpenses /></RoleGate>} />

@@ -1,4 +1,7 @@
-import { currentUser, q, json, mapUser, mapSite, mapExpense, mapFund, mapAttendance } from './_lib.js'
+import {
+  currentUser, q, json, mapUser, mapSite, mapExpense, mapFund, mapAttendance,
+  mapVendorCategory, mapVendor, mapSiteVendor, mapVendorBill, mapBankAccount, mapBankTxn,
+} from './_lib.js'
 
 // Group photo rows by their owning entity: { [ownerId]: [{ path, capturedAt }] }
 function groupPhotos(rows, key) {
@@ -22,6 +25,18 @@ const ATTENDANCE_WINDOW_DAYS = 45
 // "who is on site" question the grid was originally for, and the office is the
 // only place that needs the record.
 const ATTENDANCE_ALL = new Set(['owner', 'admin', 'finance'])
+
+// Vendors and their contracts are office information: finance sees them
+// read-only so Tariq knows what he is paying against. The bank ledger is
+// narrower — admin never sees an account, a balance or a transaction, which
+// mirrors the paper split where Muzamil never holds the cheque book.
+//
+// Bills do carry `paid` and `balance`, which are derived from bank
+// transactions, so admin sees totals per contract. That is deliberate: knowing
+// a contract is 60% paid is what lets Muzamil manage the vendor, and it reveals
+// nothing about accounts, balances or any individual payment.
+const VENDOR_VISIBLE = new Set(['owner', 'admin', 'finance'])
+const BANK_VISIBLE = new Set(['owner', 'finance'])
 
 // Ledger rows older than this are left out of the default snapshot. Expenses
 // only ever accumulate, and this endpoint is re-fetched after every single
@@ -57,7 +72,12 @@ export default async function handler(req, res) {
 
   // `$1 = full` short-circuits the date test, so one query serves both modes
   // rather than string-building two variants of the same SQL.
-  const [users, sites, expenses, funds, progress, attendance, balances, siteSpend, audit] = await Promise.all([
+  const canSeeVendors = VENDOR_VISIBLE.has(me.role)
+  const canSeeBank = BANK_VISIBLE.has(me.role)
+  const none = Promise.resolve({ rows: [] })
+
+  const [users, sites, expenses, funds, progress, attendance, balances, siteSpend, audit,
+         vendorCats, vendors, siteVendors, vendorBills, bankAccounts, bankTxns] = await Promise.all([
     q('select * from app_user order by created_at'),
     q('select * from site order by created_at'),
     q(`select * from expense
@@ -86,7 +106,28 @@ export default async function handler(req, res) {
                   u.name as actor_name, u.role as actor_role
              from audit_log a left join app_user u on u.id = a.actor_id
             order by a.created_at desc limit $1`, [AUDIT_LIMIT])
-      : Promise.resolve({ rows: [] }),
+      : none,
+
+    // ---------- vendors & bank (0008) ----------
+    // Not windowed: a company runs tens of vendors and a few hundred bills, not
+    // the thousands of rows an expense ledger accumulates. If that changes, the
+    // bill list is the one to bound first.
+    canSeeVendors ? q('select * from vendor_category order by name') : none,
+    canSeeVendors ? q('select * from vendor order by name') : none,
+    canSeeVendors ? q('select * from site_vendor') : none,
+    canSeeVendors
+      ? q(`select vb.*, bal.paid, bal.balance
+             from vendor_bill vb
+             join v_vendor_bill_balance bal on bal.vendor_bill_id = vb.id
+            order by vb.created_at desc`)
+      : none,
+    canSeeBank
+      ? q(`select a.*, bal.cash_in, bal.cash_out, bal.closing_balance
+             from bank_account a
+             join v_bank_account_balance bal on bal.bank_account_id = a.id
+            order by a.created_at`)
+      : none,
+    canSeeBank ? q('select * from bank_txn order by created_at desc') : none,
   ])
 
   // Photos are fetched for the rows actually being returned. Fetching the whole
@@ -94,7 +135,8 @@ export default async function handler(req, res) {
   // it"; it is not fine now, and it was never necessary.
   const expenseIds = expenses.rows.map((e) => e.id)
   const fundIds = funds.rows.map((f) => f.id)
-  const [ePhotos, fPhotos] = await Promise.all([
+  const billIds = vendorBills.rows.map((b) => b.id)
+  const [ePhotos, fPhotos, vPhotos] = await Promise.all([
     expenseIds.length
       ? q(`select expense_id, storage_path, captured_at from expense_photo
             where expense_id = any($1::uuid[]) order by captured_at`, [expenseIds])
@@ -103,10 +145,15 @@ export default async function handler(req, res) {
       ? q(`select fund_txn_id, storage_path, captured_at from fund_txn_photo
             where fund_txn_id = any($1::uuid[]) order by captured_at`, [fundIds])
       : Promise.resolve({ rows: [] }),
+    billIds.length
+      ? q(`select vendor_bill_id, storage_path, captured_at from vendor_bill_photo
+            where vendor_bill_id = any($1::uuid[]) order by captured_at`, [billIds])
+      : Promise.resolve({ rows: [] }),
   ])
 
   const expensePhotos = groupPhotos(ePhotos.rows, 'expense_id')
   const fundPhotos = groupPhotos(fPhotos.rows, 'fund_txn_id')
+  const billPhotos = groupPhotos(vPhotos.rows, 'vendor_bill_id')
 
   // One pass over progress, newest-first: the first row seen for a site is that
   // site's current figure, and the rest is its history.
@@ -154,6 +201,16 @@ export default async function handler(req, res) {
   json(res, 200, {
     users: allUsers, sites: allSites, expenses: exp, funds: fnd,
     attendance: att, progress: progressLog,
+    // Absent rather than empty when the role may not see them, so the UI can
+    // tell "you have no bank accounts" apart from "this is not yours to see".
+    vendorCategories: canSeeVendors ? vendorCats.rows.map(mapVendorCategory) : null,
+    vendors: canSeeVendors ? vendors.rows.map(mapVendor) : null,
+    siteVendors: canSeeVendors ? siteVendors.rows.map(mapSiteVendor) : null,
+    vendorBills: canSeeVendors
+      ? vendorBills.rows.map((b) => ({ ...mapVendorBill(b), photos: billPhotos.get(b.id) || [] }))
+      : null,
+    bankAccounts: canSeeBank ? bankAccounts.rows.map(mapBankAccount) : null,
+    bankTxns: canSeeBank ? bankTxns.rows.map(mapBankTxn) : null,
     balances: Object.fromEntries(bal.map((b) => [b.supervisor_id, {
       funded: b.funded, spent: b.spent, cash: b.cash_in_hand, owed: b.owed_back,
     }])),
